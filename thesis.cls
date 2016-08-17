@@ -311,7 +311,7 @@
 %  BIBLIOGRAPHY
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % RPI def: for use in making an unnumbered bibliography with hanging indents
-\def\bibentry{\vskip10pt\par\noindent\hangindent=40pt\frenchspacing}
+% \def\bibentry{\vskip10pt\par\noindent\hangindent=40pt\frenchspacing}
 
 % report definition modified for no automatic heading and use ragged right
 \newcommand{\bibalign}{\raggedright}
