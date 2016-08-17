@@ -1,4 +1,4 @@
-%% 
+%%
 %% This is file `thesis.cls', for use at Rensselaer Polytechnic Institute.
 %% It is based on the standard LaTeX report class.
 %% Originally written by Harriet Borton (ITS), April 1996.
@@ -7,18 +7,18 @@
 %% Modified Dec 17 2007; change title page for MS degree as requested by OGS.
 %% Modified Jan 28 2008; provide abstract title page for MS, incorporate 3-advisers.
 %% Modified Jan 6 2009; small change to title page to avoid warning w/hyperref pkg
-%% 
+%%
 %% On RCS, template files for preparing a thesis are in the directory
 %% /dept/arc/docs/latex-thesis/
-%% 
-%% This file is part of the LaTeX2e system. 
-%% ---------------------------------------- 
-%% 
+%%
+%% This file is part of the LaTeX2e system.
+%% ----------------------------------------
+%%
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesClass{thesis}[2009/01/06 Rensselaer Polytechnic Institute]
-%  Note that the setspace package is built in (code included near the end of 
+%  Note that the setspace package is built in (code included near the end of
 %  this file) to provide "line-and-a half spacing" (1.4 by default) and also
-%  the singlespace environment. 
+%  the singlespace environment.
 
 % RPI option chap:
 \newif\ifchap  % true for chap option
@@ -42,7 +42,7 @@
 %  FOOTNOTES:   make them continuously numbered throughout document
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % define command that can undo having footnotes reset with each chapter:
-% (taken from removefr.sty by Donald Arseneau) 
+% (taken from removefr.sty by Donald Arseneau)
 \def\@removefromreset#1#2{\let\@tempb\@elt
    \expandafter\let\expandafter\@tempa\csname c@#1\endcsname
    \def\@elt##1{\expandafter\ifx\csname c@##1\endcsname\@tempa\else
@@ -52,7 +52,7 @@
 % use the command \@removefromreset to undo the \@addtoreset in report.cls:
 \@removefromreset{footnote}{chapter}
 %
-% define command to allow people to reset footnote counter at will: 
+% define command to allow people to reset footnote counter at will:
 \def\resetfootnote{\setcounter{footnote}{0}}  % definition to reset footnote
 
 
@@ -72,7 +72,7 @@
 \marginparsep 10pt          % Horizontal space between outer margin and
                             % marginal note
 \textwidth 5.9in            % width of text
- 
+
 % VERTICAL SPACING:
                          % Top of page:
 \topmargin -.5in         %    distance from top of page to running head
@@ -85,7 +85,7 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                            SECTION HEADINGS
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \newcommand\chaptersize{\large}
 \newcommand\sectionsize{\large}
 \newcommand\subsectionsize{\normalsize}
@@ -114,7 +114,7 @@
 
 \def\@chapter[#1]#2{\ifnum\c@firstchapter=0    % start of rpi added stuff
                       \if@twoside\cleardoublepage\suppressfloats[t]\fi
-                      \pagenumbering{arabic} 
+                      \pagenumbering{arabic}
                       \setcounter{firstchapter}{1}
                     \fi
                     \renewcommand{\thepage}{\arabic{page}}
@@ -128,7 +128,7 @@
                     \else
                       \addcontentsline{toc}{chapter}{#1}%
                     \fi
-                    \chaptermark{#1}% 
+                    \chaptermark{#1}%
 %                    \addtocontents{lof}{\protect\addvspace{10\p@}}%
 %                    \addtocontents{lot}{\protect\addvspace{10\p@}}%
                     \if@twocolumn
@@ -145,7 +145,7 @@
          \bfseries \@chapapp{} \thechapter    % print "Chapter" and number
          \vskip -3pt           %\par\nobreak (original)
        \else
-         \bfseries \thechapter. 
+         \bfseries \thechapter.
        \fi
     \fi
     \interlinepenalty\@M
@@ -156,7 +156,7 @@
 \def\@makeschapterhead#1{%    heading for chapter* command (no numbering)
   \vspace*{0\p@}%
   {\parindent \z@ \raggedright \centering
-    \normalfont  \chaptersize 
+    \normalfont  \chaptersize
     \interlinepenalty\@M
     \bfseries  #1\par\nobreak
     \vskip 15\p@
@@ -216,7 +216,7 @@
   \vskip\belowcaptionskip}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%  TABLE of CONTENTS,  LIST OF TABLES,  LIST OF FIGURES 
+%  TABLE of CONTENTS,  LIST OF TABLES,  LIST OF FIGURES
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \renewcommand\tableofcontents{%
@@ -233,7 +233,7 @@
     \if@restonecol\twocolumn\fi
     \end{singlespace}
     }
- 
+
 \renewcommand*\l@chapter{\pagebreak[3]\vskip 10pt plus 1pt minus 1pt
                          \@dottedtocline{0}{0em}{1.4em}}
 \renewcommand*\l@section{\vskip 6pt plus 1pt minus 1pt
@@ -244,8 +244,8 @@
                          \@dottedtocline{3}{7.0em}{4.1em}}
 
 % The following removed because it's not consistent with entries from longtable
-%% modify the definition below (taken from latex.ltx) to include 
-%% "Table" and "Figure" in entries for lot and lof: 
+%% modify the definition below (taken from latex.ltx) to include
+%% "Table" and "Figure" in entries for lot and lof:
 %\long\def\@caption#1[#2]#3{%\baselineskip 14.5 pt
 %  \addcontentsline{\csname ext@#1\endcsname}{#1}%
 %  {\protect\numberline{\csname fnum@#1\endcsname}{\ignorespaces #2}}%
@@ -254,7 +254,7 @@
 %    \normalsize
 %    \@makecaption{\csname fnum@#1\endcsname}{\ignorespaces #3}\par
 %  \endgroup}
- 
+
 \renewcommand\listoffigures{%
     \if@twocolumn
       \@restonecoltrue\onecolumn
@@ -298,7 +298,7 @@
 %remove following at same time as remove code to put "Figure" in LOF
 %\renewcommand*\l@figure{\vskip 10pt plus 1pt minus 1pt
 %                       \@dottedtocline{1}{0em}{5.8em}}
- 
+
 \renewcommand*\l@figure{\vskip 10pt plus 1pt minus 1pt
                        \@dottedtocline{1}{0em}{2.8em}}
 \let\l@table\l@figure
@@ -334,7 +334,7 @@
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%  FOR RPI TITLEPAGE, ABSTR. TITLEPAGE & COPYRIGHT PAGE 
+%  FOR RPI TITLEPAGE, ABSTR. TITLEPAGE & COPYRIGHT PAGE
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
  \def\thesistitle#1{\gdef\@thesistitle{#1}}
@@ -343,12 +343,12 @@
  \def\department#1{\gdef\@department{#1}}
  \newcount\numcomm \numcomm=1
  \def\signaturelines#1{\numcomm=#1}
- \def\thadviser#1{\gdef\@thadviser{#1}} 
+ \def\thadviser#1{\gdef\@thadviser{#1}}
  \def\projadviser#1{\gdef\@projadviser{#1}} \projadviser{*}
- \def\cothadviser#1{\gdef\@cothadviser{#1}} \cothadviser{*} 
+ \def\cothadviser#1{\gdef\@cothadviser{#1}} \cothadviser{*}
  \def\coprojadviser#1{\gdef\@coprojadviser{#1}} \coprojadviser{*}
  \def\cocothadviser#1{\gdef\@cocothadviser{#1}} \cocothadviser{*}
- \def\cocoprojadviser#1{\gdef\@cocoprojadviser{#1}} \cocoprojadviser{*} 
+ \def\cocoprojadviser#1{\gdef\@cocoprojadviser{#1}} \cocoprojadviser{*}
  \def\doctype{\if \@projadviser *Dissertation \else Thesis \fi}
  \def\adviser{\if \@projadviser *\@thadviser \else \@projadviser\fi}
  \def\coadviser{\if \@coprojadviser *\@cothadviser\else \@coprojadviser\fi}
@@ -368,9 +368,9 @@
       \numcount=\numcomm
       %\leftline{Approved by the\hfil}
       \leftline{Examining Committee:\hfil}
-      \vskip 28pt \vfil 
+      \vskip 28pt \vfil
       \hrule width 2.8in \hfil \vskip -3pt
-      \leftline{\adviser, \doctype Adviser\hfil} 
+      \leftline{\adviser, \doctype Adviser\hfil}
       \advance \numcount by -1
       \if \coadviser * \else % there's a co-adviser
         \vskip 19pt\vfil\hrule width 2.8in\hfil\vskip -3pt
@@ -395,7 +395,7 @@
       \advance \numcount by -1 \ifnum\numcount > 0
       \vskip 19pt\vfil\hrule width 2.8in\hfil\vskip -3pt
       \leftline{\@membersix, Member\hfil} \fi
-} 
+}
 
  \def\titlepage{%
      \pagenumbering{roman}
@@ -413,9 +413,9 @@
          in Partial Fulfillment of the\\ [8pt]
          Requirements for the Degree of\\ [8pt]
          \uppercase\expandafter{\@degree}\\ [8pt]
-         Major Subject:~~\uppercase\expandafter{\@department}\\ 
+         Major Subject:~~\uppercase\expandafter{\@department}\\
          \ifnum\numcomm < 7 \vskip 32pt \else \vskip 24pt \fi
-         \sigblock 
+         \sigblock
          \ifnum \numcomm < 7 \vskip 32pt \else \vskip 24pt \fi
          Rensselaer Polytechnic Institute\\
          Troy, New York\\ [14pt]
@@ -428,7 +428,7 @@
 %    \pagenumbering{roman}
 %    \setcounter{page}{2}
 }
- 
+
 \def\copyrightpage{
     \hbox{ }
     \vfill
@@ -655,5 +655,5 @@
 % for fully justified bibliography: \renewcommand{\bibalign}{}
 
 \endinput
-%% 
+%%
 %% End of file `thesis.cls'.
