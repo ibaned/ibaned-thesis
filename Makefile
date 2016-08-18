@@ -3,10 +3,10 @@ MAIN = $(MAIN_BASE).tex
 SRCS = \
 $(MAIN) \
 rpiabs.tex \
-rpiack.tex \
+ack.tex \
 rpiapp.tex \
 rpibib.tex \
-rpichap1.tex \
+chap1-back.tex \
 rpichap2.tex \
 rpichap2.tex \
 title.tex
