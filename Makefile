@@ -9,7 +9,7 @@ rpibib.tex \
 rpichap1.tex \
 rpichap2.tex \
 rpichap2.tex \
-rpititle-phd.tex
+title.tex
 
 $(MAIN_BASE).pdf: $(SRCS)
 	pdflatex $(MAIN)
