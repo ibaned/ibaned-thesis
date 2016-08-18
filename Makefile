@@ -7,10 +7,10 @@ ack.tex \
 rpiapp.tex \
 rpibib.tex \
 chap1.tex \
-chap2-fund.tex \
-chap3-para.tex \
-chap4-adapt.tex \
-chap5-app.tex \
+chap2.tex \
+chap3.tex \
+chap4.tex \
+chap5.tex \
 title.tex
 
 $(MAIN_BASE).pdf: $(SRCS)

@@ -1,0 +1,79 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                                                                 %
+%                            CHAPTER FOUR                         %
+%                                                                 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\chapter{SCALABLE PARALLEL MESH ADAPTATION}
+
+\section{Definition}
+
+What does it mean to scale well.
+
+\begin{equation} \label{eq:big-o-scale}
+t = O\left(\frac{N}{P}\lg(P)\right)
+\end{equation}
+
+A list of requirements for scalability:
+
+\begin{enumerate}
+\item Never collect data of size $O(P)$ on one processor
+\end{enumerate}
+
+\section{Scalable Non-Blocking Collectives}
+
+Half of the PCU paper goes here; the key algorithms
+that got PHASTA to really large core counts and
+that PETSc/Trilinos are still catching up on for
+matrix assembly.
+
+\section{Small Message Routing}
+
+Something which both PCU and Omega\_h do is simulate
+mesh entities sending messages to each other, while
+doing this much more efficiently than the naive approach.
+
+\section{Remotes and Owners}
+
+Explain remote copies and owners, and how they become
+part of the two structures from \ref{chap:struct}.
+
+\section{Migration}
+
+Both the PUMI/APF and Omega\_h migration algorithms
+are quite different from what has been published for FMDB,
+and they are essentially what it means for a mesh
+data structure to be parallel.
+
+\section{Ghosting}
+
+As with migration, describe what is done in both PUMI/APF
+and Omega\_h.
+
+\section{Parallel Cavity Operations}
+
+\subsection{Dynamic Migration}
+
+The PUMI/APF ``Cavity Operator" system that supports MeshAdapt.
+
+\subsection{Independent Sets}
+
+The Omega\_h independent set system that supports adaptation
+with help from ghosting.
+
+\section{Load Balancing}
+
+The load balancing aspects of adapting:
+predictive load balancing, cite ParMA and Zoltan
+roles in MeshAdapt.
+
+\section{Determinism}
+
+Discuss things done by Omega\_h to achieve
+determinism on heterogeneous architectures.
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: t
+%%% End:
+
