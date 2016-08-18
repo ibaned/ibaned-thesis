@@ -9,6 +9,8 @@ rpibib.tex \
 chap1-back.tex \
 chap2-fund.tex \
 chap3-para.tex \
+chap4-adapt.tex \
+chap5-app.tex \
 title.tex
 
 $(MAIN_BASE).pdf: $(SRCS)
