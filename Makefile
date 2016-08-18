@@ -6,7 +6,7 @@ rpiabs.tex \
 ack.tex \
 rpiapp.tex \
 rpibib.tex \
-chap1-back.tex \
+chap1.tex \
 chap2-fund.tex \
 chap3-para.tex \
 chap4-adapt.tex \
