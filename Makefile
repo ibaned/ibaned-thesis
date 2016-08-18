@@ -1,5 +1,5 @@
-MAIN = rpithes.tex
-MAIN_BASE = $(MAIN:.tex=)
+MAIN_BASE = ibanez_thesis
+MAIN = $(MAIN_BASE).tex
 SRCS = \
 $(MAIN) \
 rpiabs.tex \
@@ -11,7 +11,7 @@ rpichap2.tex \
 rpichap2.tex \
 rpititle-phd.tex
 
-thesis.pdf: $(SRCS)
+$(MAIN_BASE).pdf: $(SRCS)
 	pdflatex $(MAIN)
 	bibtex $(MAIN_BASE)
 	pdflatex $(MAIN)
