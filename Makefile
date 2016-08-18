@@ -7,8 +7,8 @@ ack.tex \
 rpiapp.tex \
 rpibib.tex \
 chap1-back.tex \
-rpichap2.tex \
-rpichap2.tex \
+chap2-fund.tex \
+chap3-para.tex \
 title.tex
 
 $(MAIN_BASE).pdf: $(SRCS)

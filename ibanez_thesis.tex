@@ -1,8 +1,8 @@
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                                                                 %
 %                            ROOT FILE                            %
 %                                                                 %
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 %  Run LaTeX or pdfLaTeX on this file to produce your thesis.
 %  To produce the abstract title page followed by the abstract,
@@ -16,20 +16,21 @@
 % effect of this is to remove the use of bold for captions (thesis default).
 % To restore bold, also include the second line below.
 \usepackage[hang]{caption}      % to indent subsequent lines of captions
-\renewcommand{\captionfont}{\bfseries} % bold caption (needed with caption 
+\renewcommand{\captionfont}{\bfseries} % bold caption (needed with caption
                                        % package to restore boldface.)
 %\includeonly{rpichap1}  % use \includeonly to process only
-                         % the file(s) listed inside the braces        
-               
+                         % the file(s) listed inside the braces
+
 \begin{document}
- 
+
 %\include{rpititle-mas}   % titlepage material for Master's thesis or project
-\include{title}   % titlepage material for PhD thesis 
+\include{title}   % titlepage material for PhD thesis
 \include{ack}  % include for acknowledgements
 \include{rpiabs} % abstract
 \include{chap1-back} % chapter 1
-\include{rpichap2} % chapter 2
+\include{chap2-fund} % chapter 2
+\include{chap3-para} % chapter 3
 \include{rpibib} % bibliography
 \include{rpiapp} % appendix
- 
+
 \end{document}
