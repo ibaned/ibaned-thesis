@@ -11,6 +11,7 @@ chap2.tex \
 chap3.tex \
 chap4.tex \
 chap5.tex \
+chap6.tex \
 title.tex
 
 $(MAIN_BASE).pdf: $(SRCS)

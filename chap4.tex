@@ -61,16 +61,24 @@ The PUMI/APF ``Cavity Operator" system that supports MeshAdapt.
 The Omega\_h independent set system that supports adaptation
 with help from ghosting.
 
-\section{Load Balancing}
+\section{On-Node Parallelism}
 
-The load balancing aspects of adapting:
-predictive load balancing, cite ParMA and Zoltan
-roles in MeshAdapt.
+Second half of the PCU paper describes how we were able to use
+threading without rewriting everything.
+
+Omega\_h content on how to do threading and GPUs properly
+when the code is rewritten.
 
 \section{Determinism}
 
 Discuss things done by Omega\_h to achieve
 determinism on heterogeneous architectures.
+
+\subsection{Adjacency Inversion}
+
+The key algorithms Ben and I came up with go here.
+
+\subsection{Order-Independent Sums}
 
 %%% Local Variables:
 %%% mode: latex
