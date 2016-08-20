@@ -9,6 +9,11 @@ flex.png \
 arraylist.png \
 mixed.png
 
+BIBS = \
+scorec-refs/algorithms.bib \
+scorec-refs/frameworks.bib \
+scorec-refs/meshdb.bib
+
 SRCS = \
 $(MAIN) \
 rpiabs.tex \
@@ -22,7 +27,8 @@ chap4.tex \
 chap5.tex \
 chap6.tex \
 title.tex \
-$(FIGS)
+$(FIGS) \
+$(BIBS)
 
 $(MAIN_BASE).pdf: $(SRCS)
 	pdflatex $(MAIN)
