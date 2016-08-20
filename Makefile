@@ -1,5 +1,14 @@
 MAIN_BASE = ibanez_thesis
 MAIN = $(MAIN_BASE).tex
+
+FIGS = \
+full_rep.png \
+one_level.png \
+oo.png \
+flex.png \
+arraylist.png \
+mixed.png
+
 SRCS = \
 $(MAIN) \
 rpiabs.tex \
@@ -12,10 +21,14 @@ chap3.tex \
 chap4.tex \
 chap5.tex \
 chap6.tex \
-title.tex
+title.tex \
+$(FIGS)
 
 $(MAIN_BASE).pdf: $(SRCS)
 	pdflatex $(MAIN)
 	bibtex $(MAIN_BASE)
 	pdflatex $(MAIN)
 	pdflatex $(MAIN)
+
+%.png : %.mp
+	mpost $<
