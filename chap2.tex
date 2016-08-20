@@ -26,7 +26,23 @@ in abilities.
 
 \section{PUMI/APF Data Structure}
 
-SISC paper on PUMI/APF structure goes here.
+{\color{red} SISC attribution}
+
+\begin{enumerate}
+\item The representation centers around graph theoretic interpretations
+of topological adjacency.
+\item The mesh can remain topologically consistent with and associated with
+geometric model entities.
+\item The common element types of FE/FV methods can coexist in one structure.
+\item Additional data can be associated with entities to implement
+high order basis functions, including for geometric approximation.
+\item A mesh can be modified by adding and removing single entities in constant time.
+\item The entire mesh is stored in a few contiguous dynamic arrays.
+\end{enumerate}
+
+One key contribution of this paper is to show that the latter two properties,
+array storage and rapid single-entity modification, are not mutually exclusive
+and can be combined in a viable way.
 
 \section{Omega\_h Data Structure}
 

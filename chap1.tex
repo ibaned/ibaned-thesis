@@ -9,28 +9,48 @@
 
 \section{Introduction}
 
-\subsection{Goals}
-\label{sec:intro_goals}
-
-Parallel mesh adaptation for current and next generation supercomputers
-that can support a wide variety of applications.
-
-\subsection{Requirements}
-
-A more precise version of Section \ref{sec:intro_goals},
-itemizing specific features and citing references for them.
-
-\subsection{Overview of Contributions}
-
-Also indicates where in the thesis they are.
-This is probably the best time to introduce the
-different pieces of software: PUMI, APF, PCU, MeshAdapt, Omega\_h.
+A wide variety of aerospace, mechanical, and nuclear engineering
+problems require the solution of complex Partial Differential
+Equations (PDEs) in time and space.
+For efficiency and reliability, the solutions to these PDEs are
+found by computers.
+Computers are equipped with a limited amount of memory to
+store information, and must use a mathematical representation
+of a PDE solution that can be described using
+a limited amount of information.
+For many engineering problems of interest, the exact solution
+as described by any known representation would require an
+infinite amount of information, therefore approximate
+solutions are sought.
+A certain minimal amount of memory and processing power
+are required to obtain the lowest accuracy approximate
+solutions, and obtaining more accurate solutions requires
+more memory and/or processing power.
+For these reasons, computers with ever-increasing amounts
+of memory and processing power are designed and built to
+increase the accuracy of existing solutions and
+to solve previously unsolvable engineering problems.
+At any given point in history, the computers with the
+most memory and processing power are called supercomputers.
 
 \section{Definitions}
 
 \subsection{Nomenclature}
 
-Probably a big table goes here, with explaining text.
+{\color{red} Part of the nomenclature is attributed to SISC}
+
+\begin{tabular}{l|l}
+Processing Unit & \\
+Topological Complex & A breakdown of a domain in Cartesian space into \\
+topological entities \\
+Mesh & A topological complex whose entities have simple shape \\
+Entity & A topological entity of a mesh \\
+Vertex & A 0-dimensional entity \\
+Edge & A 1-dimensional entity \\
+Face & A 2-dimensional entity \\
+Region & A 3-dimensional entity \\
+Element & An entity not bounding another entity \\
+\end{tabular}
 
 \subsection{Conformal Meshes}
 
@@ -44,6 +64,49 @@ Define MPI, threads, CUDA terminology.
 
 Latex requires at least one citation to
 compile: \cite{edwards2013kokkos}.
+
+\section{Goals and Requirements}
+\label{sec:intro_goals}
+
+{\color{red} These goals are from the SISC paper in review, will
+need to be attributed}
+
+An unstructured mesh simulation code relies heavily on
+multiple core capabilities to deal with the mesh,
+and the range of features available at this level constrain
+the capabilities of the simulation as a whole.
+As such, the long-term goal towards which this thesis
+contributes is the development of a mesh handling system
+with the following capabilities:
+
+\begin{enumerate}
+\item The flexibility to adapt to evolving meshes
+\item The ability to represent any of the conforming meshes typically
+used by Finite Element (FE) and Finite Volume (FV) methods
+\item Low memory use
+\item High locality of storage
+\item Highly scalable implementation for distributed memory computers
+\item The ability to parallelize work inside heterogeneous
+supercomputer nodes
+\end{enumerate}
+
+The first goal is the most consequential; supporting adaptivity
+is the reason for much of the complexity in the structure
+and its difference compared to many non-adaptive mesh structures
+(see Section \ref{sec:adapt} for further discussion).
+In particular, we present a derivation for a family of structures
+with the following properties:
+
+\section{Requirements}
+
+A more precise version of Section \ref{sec:intro_goals},
+itemizing specific features and citing references for them.
+
+\subsection{Overview of Contributions}
+
+Also indicates where in the thesis they are.
+This is probably the best time to introduce the
+different pieces of software: PUMI, APF, PCU, MeshAdapt, Omega\_h.
 
 \section{Related Works}
 
