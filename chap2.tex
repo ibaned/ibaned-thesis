@@ -65,7 +65,7 @@ can also produce reduced representations.
 
 Once the set of explicit entities is chosen, one has
 options about which adjacencies to store.
-Recall from Section \ref{sec:adj} that downward and upward
+Recall from Section \ref{sec:def_adj} that downward and upward
 adjacencies are transitive, so it is enough to
 store a subset of the adjacencies such that reachability
 remains the same.
@@ -112,7 +112,7 @@ or using an exhaustive search if less information is available.
 If a structure can compute $M^d_i\{M^q\}$, where dimensions
 $d$ and $q$ are explicitly represented, in constant time,
 we say that it is {\it complete} \cite{seol2006efficient}.
-Recall from Section \ref{sec:fem} that upward adjacencies
+Recall from Section \ref{sec:def_fem} that upward adjacencies
 are bound by a constant, so they are computable in
 constant-time if enough information is stored.
 
@@ -184,7 +184,7 @@ reaches a node that is stored for triangle 0, then continues
 to a node stored for triangle 1, which contains a null pointer.
 This is fundamentally how upward adjacency is queried for a vertex.
 A singly-linked list can be used as opposed to doubly-linked one
-because per Section \ref{sec:intro_mesh}
+because per Section \ref{sec:def_mesh}
 the number of nodes in this list has a constant upper bound.
 This means we can afford the $O(m)$ runtime cost of removing a node from this
 list when a high-dimensional entity is removed

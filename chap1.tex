@@ -10,10 +10,11 @@
 \section{Introduction}
 
 A wide variety of aerospace, mechanical, and nuclear engineering
-problems require the solution of complex Partial Differential
+problems require solving complex Partial Differential
 Equations (PDEs) in time and space.
 For efficiency and reliability, the solutions to these PDEs are
-found by computers.
+found using computers.
+
 Computers are equipped with a limited amount of memory to
 store information, and must use a mathematical representation
 of a PDE solution that can be described using
@@ -22,6 +23,7 @@ For many engineering problems of interest, the exact solution
 as described by any known representation would require an
 infinite amount of information, therefore approximate
 solutions are sought.
+
 A certain minimal amount of memory and processing power
 are required to obtain the lowest accuracy approximate
 solutions, and obtaining more accurate solutions requires
@@ -33,14 +35,79 @@ to solve previously unsolvable engineering problems.
 At any given point in history, the computers with the
 most memory and processing power are called supercomputers.
 
+Supercomputers are expensive to acquire and even more
+expensive to operate in terms of electricity, cooling, and other
+maintenance, so their efficiency economic efficiency
+at producing accurate results is of critical importance.
+
+In the realm of PDE solutions, a discretization is an
+approximate mathematical representation of a solution,
+and many spatial discretizations are based on a mesh,
+which is more precisely defined in Section \ref{sec:def_mesh}.
+Chapter \ref{chap:struct} presents the full design
+and implementation of two new computer representations
+of meshes, which are focused on minimizing the amount
+of computer memory and processing required to use
+an accurate mesh, and are also compatible with mesh adaptation.
+
+Mesh adaptation is a way in which the spatial discretization
+(mesh) can be altered over time to maximize the accuracy
+of the solution obtainable with a certain amount
+of computing power.
+There are several open areas of research in mesh adaptation,
+and Chapter \ref{chap:adapt} presents advancements
+made in this work to design and implement
+mesh adaptation that can run efficiently on present
+and near-future supercomputers.
+
+Present supercomputers make extensive use of distributed
+memory parallelism by being constructed from tens of thousands of
+smaller computers (nodes) connected by a fast network.
+In an effort to reduce acquisition and maintenance costs
+for a given amount of computing power,
+present and future supercomputers will also make extensive use
+of shared memory parallelism, by having each node be constructed
+with hundreds to thousands of computing cores, all of which
+are capable of working in parallel.
+The combination of the two forms of parallelism is what
+makes a supercomputer \emph{heterogeneous}.
+
+Designing programs for these supercomputers is a critical
+challenge, because such programs must be able to precisely coordinate
+a complex hierarchy totalling millions of compute cores
+in order to solve a given problem at minimal cost.
+Chapter \ref{chap:parallel} presents contributions to
+the design and implementation of parallel programs,
+including both widely applicable tools and tools specifically
+designed to enable efficient parallel mesh adaptation.
+
+An additional challenge to the design of parallel programs
+is the fact that supercomputers fall into different
+architectural design categories which currently
+have very different programming interfaces.
+Thus, in order to design a program which is \emph{portably performant}
+over all architectures, one must try to abstract away
+their differences and, unfortunately, cater to the
+lowest common denominator of functionality.
+Throughout this thesis, we present two systems:
+the first only operates on some of architectures, but provides
+a wide array of adaptive functionality, while the second
+is portably performant across the major architectures
+but provides less adaptive functionality.
+
+Finally, Chapter \ref{chap:apps} presents several
+application programs which make use of the tools developed
+here in order to solve a variety of engineering problems.
+
 \section{Definitions}
+
+{\color{red} Many definition sub-sections attributed to SISC}
 
 \subsection{Nomenclature}
 
 {\color{red} Part of the nomenclature is attributed to SISC}
 
 \begin{tabular}{l|l}
-Processing Unit & \\
 Topological Complex & A breakdown of a domain in Cartesian space into \\
 topological entities \\
 Mesh & A topological complex whose entities have simple shape \\
@@ -52,7 +119,250 @@ Region & A 3-dimensional entity \\
 Element & An entity not bounding another entity \\
 \end{tabular}
 
-\subsection{Conformal Meshes}
+\subsection{Topological Complex}
+
+A point set is a subset of the points in some Cartesian
+space $\mathbb{R}^D$.
+
+A {\it topological complex} $T$ is a set of point sets
+containing points in $\mathbb{R}^D$.
+Each point set $T^d_i$ in $T$ is an open subset of some
+$d$-dimensional manifold embedded in $\mathbb{R}^D$,
+where $0\leq d \leq D$.
+We say that $d$ is the dimension of point set $T^d_i$.
+We can denote all point sets of dimension $d$ in the
+complex by $T^d$.
+
+All point sets in $T$ are disjoint from one another,
+and their union $\Omega = \bigcup T$ is a subset of some $D$-dimensional
+manifold, i.e. a $D$-dimensional manifold with boundary.
+We denote the boundary of this complex as $\Gamma = \partial\Omega$.
+Each point set is an open subset of a $d$-manifold,
+and the closed equivalent on said manifold,
+denoted $\bar{T}^d_i = T^d_i \cup \partial T^d_i$, is the set plus its boundary.
+Since the sets are disjoint, only their boundaries may intersect.
+In fact, all intersections of equal-dimension point sets must exist
+as unions of other, lower-dimensional point sets in $T$:
+
+\[\forall T^d_i,T^d_{j\neq i} \in T: \exists S \subseteq \{T^q_k \in T \big| q < d\}:
+\bigcup S = \partial T^d_i \cap \partial T^d_j\]
+
+Finally, to keep the surface properly divided, we require that
+the intersection of any point set boundary with the overall
+boundary also exist as a union of point sets:
+
+\[\forall T^d_i \in T: \exists S \subseteq \{T^q_k \in T \big| q < d\}:
+\bigcup S = \partial T^d_i \cap \Gamma\]
+
+Boundary-representation (BRep) CAD models are examples
+of topological complexes, as are meshes.
+Point sets of dimension 0 are called vertices, those
+of dimension 1 are called edges, faces have dimension 2
+and regions have dimension 3.
+When discussing a topological complex, we
+refer to point sets simply as entities.
+
+\subsection{Adjacency Relation}
+\label{sec:def_adj}
+
+Given a topological complex $T$, we can describe the relations between
+point sets in terms of adjacency.
+If a point set $b$ bounds a point set $a$,
+$b \subseteq \partial a$, then we say there is a
+downward adjacency $(a,b)$.
+Note that downward adjacency is a transitive relation:
+
+\[c \subseteq \partial b, b \subseteq \partial a \to c \subseteq \partial a\]
+
+For every downward adjacency $(a,b)$, there exists an upward
+adjacency $(b,a)$.
+The union of upward and downward adjacencies
+are called first-order adjacencies.
+Together, upward and downward adjacencies defined this way
+are called first-order adjacencies.
+
+A first-order adjacency relations in a mesh define a graph,
+which we call a topology graph.
+The majority of our work is concerned with finding
+efficient computer representations for topology graphs.
+
+The topology subgraph between a pair of dimensions $T^p$, $T^q$
+is a bipartite graph.
+We have a notation for queries of this bipartite graph:
+$T^p_i\{T^q\}$ is the set of entities (point sets) in $T^q$ adjacent to
+$T^p_i$.
+In general, one can query all entities adjacent 
+to a set of entities: $S\{T^q\} = \bigcup a \{T^q\}, a \in S$.
+This makes it easier to define second-order adjacencies,
+which are found by two transitive queries,
+for example $T^a_i\{T^b\}\{T^c\}$.
+
+Although these graphs have a natural direction for each
+edge (from higher dimension to lower), we are interested
+in being able to query both outgoing (downward) and
+incoming (upward) relations, so the storage will be
+bi-directional in many cases.
+
+Another useful concept will be the {\it entity use},
+which is essentially an adjacency relationship between two entities.
+If entity $b$ is in the boundary of entity $a$, then
+$b$ is used by $a$, and that occurrence is an entity use.
+The term shows up when data is stored once for every adjacency relation.
+
+\subsection{Mesh}
+\label{sec:def_mesh}
+
+A {\it mesh} $M$ is herein defined as a special case of topological
+complex where the closure of each entity $\bar{M}^d_i$
+is topologically a polytope of dimesion $d$.
+Mesh entities which do not bound other entities
+are the elements.
+
+All entities have topological genus zero, i.e. they have no holes,
+so they do not need multiple loop or shell constructs to
+describe their boundary the way a BRep CAD model would.
+
+\subsection{Finite Element Mesh}
+\label{sec:def_fem}
+
+We further define {\it finite element mesh} as a special case
+of a mesh, with certain restrictions and requirements.
+For our current purposes, a finite element mesh is composed
+of entities whose closures are one of the following
+polytope types:
+
+\begin{enumerate}
+\item point $(d = 0)$
+\item line $(d = 1)$
+\item triangle $(d = 2)$
+\item quadrilateral $(d = 2)$
+\item tetrahedron $(d = 3)$
+\item hexahedron $(d = 3)$
+\item (square-based) pyramid $(d = 3)$
+\item triangular prism $(d = 3)$
+\end{enumerate}
+
+This list can be easily extended to include additional polytope
+types of interest.
+
+In addition, the finite element method uses fields which are defined
+as piecewise functions composed of basis functions,
+controlled by a finite set of
+degrees of freedom, where each degree of freedom is attached
+to one mesh entity.
+This requires a mechanism for associating
+degrees of freedom with mesh entities.
+
+Finite element analysis procedures also require meshes where
+the number of elements around some boundary entity (such as a vertex
+or an edge) is limited to a reasonable upper bound,
+otherwise shape quality and numerical conditioning will degrade.
+Therefore, in such meshes, all upward adjacencies are bound
+by a constant.
+Any operation whose runtime is proportional to the
+number of upward adjacencies can be treated as a constant-time operation.
+
+\subsection{Mesh Construction and Modification}
+
+This work is focused on unstructured meshes where
+the number of upward adjacencies between mesh entities
+is not fixed.
+
+Such unstructured meshes have an
+advantage in representing complex geometry and in their
+ability to easily vary resolution throughout the geometry.
+There are two approaches to varying this resolution during
+a simulation.
+If an entirely new mesh is constructed, we say that the
+method is {\it remeshing}.
+If local changes are applied to the original mesh to transform
+it into the new mesh, we say the method {\it adapts}.
+Such local changes require adding and removing entities
+from the mesh within local portions of the domain.
+On the other hand, if the mesh is not changed during the
+simulation, we say that the mesh is {\it static}.
+
+Finally, if there are multiple polytope types per dimension,
+such as having both triangles and quadrilaterals in 2D, then
+we say the mesh is {\it mixed}.
+
+\subsection{Adaptation}
+\label{sec:def_adapt}
+
+Adaptation refers to a process of modifying the mesh by applying
+mesh entity-level operations on mesh cavities.
+We can define a {\it mesh cavity} as the
+union of several mesh entities, in which the
+mesh modification changes the interior (open set) of
+the mesh entities within the cavity, leaving its boundary unchanged.
+
+Adaptation has a number of benefits compared to complete remeshing.
+Remeshing has a runtime cost at least proportional to the number
+of total elements, while the cost of adaptation is only proportional
+to the number of mesh entities modified.
+Moreover, the transfer of field values from the old mesh
+to the new mesh is a complex procedure when remeshing,
+requiring spatial search algorithms and
+tends to apply remapping operators that are diffusive and/or
+have to deal with conservation requirements at a global level.
+
+Adaptation by local mesh modification supports local execution
+of solution transfer: refinement splits
+parent entities and is able to transfer solution exactly using
+shape function interpolation, and other operations are confined
+to a local cavity so that any searching is fast,
+and diffusive effects and conservation adjustments are local.
+
+Local mesh adaptation requires unique properties of the
+mesh data structure that are otherwise unnecessary for
+static meshes.
+Adaptive procedures are composed of a series of
+mesh entity additions and removals.
+Therefore, at a minimum, we require that \emph{entity
+addition and removal be constant-time operations}.
+
+For several reasons, it is preferable to modify a cavity
+by first constructing all new entities that fill the cavity,
+which overlap with the old, and then destroying all old entities.
+First, this allows both versions to be considered by a solution
+transfer algorithm, which needs the mesh topology from both
+to operate properly in the general case.
+Second, we are able to evaluate quality and correctness metrics
+of the new entities and, if those are unacceptable, cancel the
+operation by destroying the new entities and leaving
+the old entities in place.
+
+As a consequence, the mesh structure must \emph{tolerate temporary
+topological inconsistencies} introduced by adaptation.
+For example, the first modification made is either the addition
+of an entity which overlaps with existing entities
+or the removal of an entity.
+Adding an overlapping entity causes inconsistencies such as
+a face which has three adjacent regions in the temporary mesh.
+Removing an arbitrary entity can cause non-manifold configurations,
+such as that of a vertex adjacent to only two elements, which
+in turn only intersect at that vertex.
+
+Certain modifications, such as edge collapsing, can only correctly
+preserve the boundary of the mesh the mesh structure \emph{maintains
+a direct mapping from mesh entities to geometric (CAD) model
+entities}.
+This mapping is referred to as classification \cite{schroeder1990combined}.
+For example, sharp edges
+can be preserved when it is known that a mesh entity is
+on such a CAD model edge.
+The inverse map of classification is called reverse
+classification, and it defines the groups of mesh entities
+to which boundary conditions are applied.
+
+The implementations of edge collapsing which preserve
+topological similarity have so far required knowledge
+of the classification for all mesh entities,
+hence requiring a complete topological representation \cite{seol2006efficient}
+to safely coarsen a mesh.
+Beyond that, it is convenient in any case to represent
+edges explicitly, given that many adaptive algorithms
+are based on edge lengths \cite{biswas1998tetrahedral}.
 
 \subsection{Petascale and Heterogeneous Supercomputers}
 
@@ -93,7 +403,7 @@ supercomputer nodes
 The first goal is the most consequential; supporting adaptivity
 is the reason for much of the complexity in the structure
 and its difference compared to many non-adaptive mesh structures
-(see Section \ref{sec:adapt} for further discussion).
+(see Section \ref{sec:def_adapt} for further discussion).
 In particular, we present a derivation for a family of structures
 with the following properties:
 
