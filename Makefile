@@ -7,12 +7,16 @@ one_level.png \
 oo.png \
 flex.png \
 arraylist.png \
-mixed.png
+mixed.png \
+indset_iters.png \
+mpi_indset.png
 
 BIBS = \
 scorec-refs/algorithms.bib \
 scorec-refs/frameworks.bib \
-scorec-refs/meshdb.bib
+scorec-refs/meshdb.bib \
+scorec-refs/meshadapt.bib \
+scorec-refs/meshgen.bib
 
 SRCS = \
 $(MAIN) \
