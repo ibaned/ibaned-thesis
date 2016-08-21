@@ -22,6 +22,7 @@ A list of requirements for scalability:
 \end{enumerate}
 
 \section{Scalable Non-Blocking Collectives}
+\label{sec:nbx}
 
 Half of the PCU paper goes here; the key algorithms
 that got PHASTA to really large core counts and
@@ -29,6 +30,7 @@ that PETSc/Trilinos are still catching up on for
 matrix assembly.
 
 \section{Entity-Level Communication}
+\label{sec:dist}
 
 Something which both PCU and Omega\_h do is simulate
 mesh entities sending messages to each other, while
@@ -54,23 +56,32 @@ and Omega\_h.
 \section{Parallel Cavity Operations}
 
 \subsection{Dynamic Migration}
+\label{sec:cavity_operator}
 
 The PUMI/APF ``Cavity Operator" system that supports MeshAdapt.
 
 \subsection{Independent Sets}
+\label{sec:indset}
 
 The Omega\_h independent set system that supports adaptation
 with help from ghosting.
 
 \section{On-Node Parallelism}
 
+\subsection{Inter-Thread Communication}
+\label{sec:itc}
+
 Second half of the PCU paper describes how we were able to use
 threading without rewriting everything.
+
+\subsection{Parallel For Loops}
+\label{sec:parallel_for}
 
 Omega\_h content on how to do threading and GPUs properly
 when the code is rewritten.
 
 \section{Determinism}
+\label{sec:determinism}
 
 Discuss things done by Omega\_h to achieve
 determinism on heterogeneous architectures.

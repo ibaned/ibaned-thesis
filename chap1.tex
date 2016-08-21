@@ -409,8 +409,78 @@ with the following properties:
 
 \section{Overview of Software}
 
-{\color{red} This software overview is mostly from the TOMS paper,
-needs to be attributed}
+\subsection{PUMI}
+
+The Parallel Unstructured Mesh Infrastructure (PUMI) is a software package
+containing several libraries which together provide all the tooling
+necessary to store, query, and adapt partitioned meshes with
+simulation fields attached.
+PUMI's design is based on locally serial software threads which
+cooperate with one another using message passing, assuming
+there is no sharing of memory.
+Each software thread is required to have access to all computer
+functions including memory allocation, message passing, file I/O, and the ability
+to call any available third party library.
+Because of these assumptions, PUMI's code could not execute
+on more restricted architectures such as GPUs without very
+substantial re-design and re-implementation.
+
+\subsubsection{PCU}
+
+PCU is a C library which implements the key parallel communication
+systems required to construct more complex parallel programs
+which remain scalable.
+Its algorithms and implementation will be covered in detail
+in Sections \ref{sec:nbx}, \ref{sec:dist}, and \ref{sec:itc}.
+PCU uses MPI to transmit all its messages, making it portable
+across essentially all distributed memory supercomputers.
+
+\subsubsection{APF}
+
+APF is a C++ library whose original goal was to manage fields discretized
+over a mesh.
+In order to achieve that goal without being tied to a particular mesh
+implementation, APF included an abstract interface for interacting
+with any mesh implementation.
+Because algorithms based on this interface are immediately able to
+operate on multiple different mesh implementations, APF now contains
+many such algorithms dealing with topological and parallel operations.
+
+\subsubsection{MDS}
+
+MDS is a C library implementing the main mesh data structure for APF and
+therefore PUMI.
+It is array-based, supports adding and removing entities in constant time,
+can represent multiple element types at once, and is augmented with
+parallel connectivity information for partitioned meshes.
+This structure will be described in detail in Section \ref{sec:sisc}.
+
+\subsubsection{MeshAdapt}
+
+MeshAdapt is a C++ library that leverages PCU, APF, MDS, and other
+libraries in PUMI to implement scalable parallel mesh adaptation.
+MeshAdapt developments which are part of this thesis will be covered
+in detail in Sections \ref{sec:ma_methods} as well as Section
+\ref{sec:cavity_operator}.
+
+\subsection{Omega\_h}
+
+Omega\_h is a single C++ library which was designed from the beginning
+with the restrictions and potential of GPU programming in mind.
+It aims to provide as much of the core functionality of PUMI as
+is feasible in a portably performant way, which currently
+amounts to adapting triangle and tetrahedral meshes to anisotropic
+metrics.
+Omega\_h represents the first such portably performant code capable
+of mesh adaptation, and is a major contribution of this thesis.
+Its fundamental approach to on-node parallelism is
+presented in Section \ref{sec:parallel_for}, and techniques
+used to maintain deterministic execution are presented
+in Section \ref{sec:determinism}.
+Its data structure will be described in Section \ref{sec:omega_h-struct}.
+Its implementation of mesh adaption will be discussed mainly
+in Section \ref{sec:omega_h-adapt}, with key parallel aspects
+covered throughout Chapter \ref{chap:parallel}.
 
 \section{Related Works}
 
