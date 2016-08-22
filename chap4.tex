@@ -35,7 +35,7 @@ Present what is in MPI3, specifically at least the following key items:
 \item neighborhood \texttt{alltoallv}
 \end{enumerate}
 
-\section{PCU: Hybrid Non-Blocking Communication}
+\section{PCU: Scalable Inter-Thread Communication}
 \label{sec:pcu}
 
 {\color{red} attribution to the TOMS paper.}
@@ -43,6 +43,43 @@ Present what is in MPI3, specifically at least the following key items:
 {\color{red} Everything in this section needs to constantly
 compare/contrast against what is in Section \ref{sec:mpi3},
 reinforce that its being redone for a hybrid environment}
+
+PCU is a library that provides a parallel programming model including
+parallel control functions.
+Its two major functionalities are message passing that allows parallel tasks to
+coordinate and thread management that extends the MPI programming model
+into a hybrid MPI/thread system.
+
+The foundation of PCU is its point-to-point message passing routines where
+non-blocking synchronous message passing primitives are defined. There are
+two versions, one of which is a direct interface to MPI, and the second supports
+message passing between threads \cite{ibanez2014hybrid}. The two versions
+are interchangeable, and PCU can change which set of them is being used at
+run-time without affecting the rest of software components.
+
+Building on the point-to-point primitives, PCU has an extensible framework for
+collective operations such as reduction, broadcast, scan, and barrier.
+Any collective whose communication pattern can be encoded as some kind of tree
+is supported, and the most common ones come built-in to PCU.
+These collectives are directly available to users.
+
+Using both collectives and point-to-point communication, PCU provides a flexible
+user interfaces similar to MPI 3.0's neighborhood \texttt{alltoallv}.
+The first phase
+allows tasks to construct messages to multiple neighbors
+at once and then send them.
+The second phase ensures that neighbors
+receive all the messages they have been sent.
+This ``phased" communication algorithm is
+powered by the non-blocking consensus algorithm
+for sparse data exchange \cite{hoefler2010scalable}.
+
+Finally, PCU has a system for creating a pool of threads within each process and
+assigning them ranks the way MPI does to processes.
+Users can call this API to enter a hybrid MPI+threads mode in which all the
+communication APIs (point-to-point, collective, and phased) work between
+threads.
+These capabilities support PUMI's overall hybrid MPI+thread operation.
 
 \subsection{Messaging Primitives in PCU}
 \label{sec:pcu_p2p}
@@ -496,7 +533,7 @@ with the help of a generalized ``migration" mechanism.
 Migration redistributes the copies of the mesh entities
 across MPI ranks \cite{ibanez2015pumi}.
 Each MPI rank specifies which entities it requires in the new
-partition, using references to entities in the existing 
+partition, using references to entities in the existing
 partition.
 Multiple MPI ranks may request the same mesh entity, which
 is the underlying mechanism to support ghost layers,
