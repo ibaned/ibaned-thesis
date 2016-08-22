@@ -12,11 +12,7 @@ indset_iters.png \
 mpi_indset.png
 
 BIBS = \
-scorec-refs/algorithms.bib \
-scorec-refs/frameworks.bib \
-scorec-refs/meshdb.bib \
-scorec-refs/meshadapt.bib \
-scorec-refs/meshgen.bib
+scorec-refs/scorec-refs.bib
 
 SRCS = \
 $(MAIN) \

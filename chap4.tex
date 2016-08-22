@@ -21,13 +21,298 @@ A list of requirements for scalability:
 \item Never collect data of size $O(P)$ on one processor
 \end{enumerate}
 
-\section{Scalable Non-Blocking Collectives}
-\label{sec:nbx}
+\section{Scalable MPI Collectives}
+\label{sec:mpi3}
 
-Half of the PCU paper goes here; the key algorithms
-that got PHASTA to really large core counts and
-that PETSc/Trilinos are still catching up on for
-matrix assembly.
+Present what is in MPI3, specifically at least the following key items:
+
+\begin{enumerate}
+\item reductions
+\item scans
+\item graph communicators
+\item neighborhood reduction
+\item neighborhood \texttt{alltoall}
+\item neighborhood \texttt{alltoallv}
+\end{enumerate}
+
+\section{PCU: Hybrid Non-Blocking Communication}
+\label{sec:pcu}
+
+{\color{red} attribution to the TOMS paper.}
+
+{\color{red} Everything in this section needs to constantly
+compare/contrast against what is in Section \ref{sec:mpi3},
+reinforce that its being redone for a hybrid environment}
+
+\subsection{Messaging Primitives in PCU}
+\label{sec:pcu_p2p}
+
+{\color{red} attribution to the PCU paper.}
+
+The main unusual design choice of PCU compared to
+other hybrid programming systems is
+its focus on inter-thread message passing.
+Since we must rebuild some of the high-level message
+passing capabilities, we identify a set of primitive
+operations as described by the MPI standard \cite{walker1996mpi}
+which are sufficient for our applications:
+
+\begin{enumerate}
+\item Non-blocking synchronous send
+\item Non-blocking send request completion test
+\item Non-blocking probe
+\item Blocking receive
+\end{enumerate}
+
+These conceptual message-passing primitives are independent
+of their particular implementation.
+Note that because we require the send operation to be synchronous,
+it will complete if and only if the message is completely received at its
+destination.
+
+All the remaining algorithms rely only on these guaranteed properties
+of the message passing primitives.
+To develop inter-thread message passing, we implement inter-thread
+message passing passing primitives.
+These are currently based on calling thread-safe MPI versions of the
+same primitives, but an area of future work involves implementing
+more efficient primitives.
+
+In order to use MPI itself to pass messages between threads, we require
+that the implementation correctly handle self-sends.
+Then, we need to encode the source and destination thread IDs into the message
+metadata such that messages can be multiplexed out of a single process
+and demultiplexed at their destination process.
+The encoding of thread IDs makes use of the standard MPI\_TAG metadata
+integer, which is typically a 32-bit signed integer.
+We use 10 bits of this integer to encode each of the local IDs for the
+source and destination threads.
+This encoding of source and destination means that threads must inspect
+messages with more sophisticated checking of the tag than MPI\_RECV
+offers, since messages arriving at the same process may be destined
+for different threads within that process.
+We use MPI\_IPROBE to inspect the tag before using MPI\_RECV to commit
+to being the receiver.
+This combined probe and conditional receive procedure is specified
+in Algorithm \ref{alg:receive}.
+
+\begin{algorithm}
+\LinesNumbered
+\SetKwInOut{Input}{input}\SetKwInOut{Output}{output}
+\Input{pattern $P$}
+\Output{received message metadata $M$ and data $b$, or null}
+let message $M \gets$ non-blocking probe\;
+\If{$M$ is null (there is no message)}{
+  \Return null\;
+}
+\If{metadata of $M$ does not match $P$}{
+  \Return null\;
+}
+allocate buffer $b$ per metadata of $M$\;
+blocking receive $M$ into $b$\;
+\Return $(M,b)$\;
+\caption{Non-blocking pattern-match receive}
+\label{alg:receive}
+\end{algorithm}
+
+\subsection{Simple Collectives in PCU}
+\label{sec:pcu_coll}
+
+{\color{red} attribution to the PCU paper.}
+
+Collective operations are a necessary staple of
+distributed-memory high-performance computing.
+Operations such as parallel reduction, broadcast, and other collectives
+are key to coordinating threads \cite{pjevsivac2007performance}.
+More details on these collective algorithms and tradeoffs in their
+implementation can be found in \cite{thakur2003improving}.
+Non-blocking collectives are more advanced implementations which
+are typically used to overlap communication and computation.
+By using them, PCU benefits from this overlap.
+Furthermore, in Section \ref{sec:pcu_phased}, we present an algorithm
+for which blocking collectives are insufficient, and a non-blocking
+implementation is not just convenient but necessary.
+
+Since collectives are used by nearly all applications,
+we place a focus on developing built-in
+multithreaded collective operations based on the
+inter-thread message passing primitives.
+
+We consider three fundamental collective operations:
+broadcast, reduce, and scan.
+Other operations such as exclusive scan and all-reduce
+can be built from the first three.
+These operations were selected as the minimal subset
+of collectives needed for our unstructured mesh operations.
+
+These three collectives share many common features:
+they use $O(\log n)$ steps for $n$ threads,
+and at each step each thread is either idle, sending one
+message, or receiving one message.
+These shared characteristics make it easier to implement
+all the collectives in a general framework which abstracts
+away their differences, starting with the specific communication
+pattern used.
+A thread only needs to know which of the three actions to perform at each
+step and with which thread it is communicating, if any.
+This combined information is referred to as the communication pattern.
+
+The second abstraction we can make is that of a merge operator, which is
+essentially the MPI reduction operator (e.g. MPI\_SUM or MPI\_MAX).
+The merge operator modifies the local data based on incoming data.
+For example, an reduction sum adds incoming values to local values.
+We do not refer to it as the reduction operator because it is used
+in all cases, including broadcast.
+As an interesting corner case, the merge operator for broadcast simply
+assigns the incoming value as the local value.
+
+Following good software design, the communication pattern,
+merge operator, and data are each specified separately
+and are orthogonal from one another.
+This follows the example of interfaces such as MPI\_REDUCE.
+
+With these abstract components specified, we can execute a collective
+operation
+using the non-blocking point-to-point message passing primitives
+developed in Section \ref{sec:pcu_p2p}.
+Although the simplicity of collectives would allow blocking primitives
+to be used, using non-blocking primitives gives us a great benefit:
+we obtain a non-blocking collective operation.
+Such operations have been implemented before \cite{hoefler2007implementation}
+and subsequently proposed for the latest MPI standard \cite{hoefler2006non}.
+Our work implements hybrid threaded versions of such collectives.
+
+Users of this system initiate a collective operation, and can interleave
+computation with communication progress queries.
+Communication progress consists of checking for incoming messages in the current
+step and proceeding to the next step when they are received.
+
+Non-blocking collectives are useful from the perspective of
+of hiding latency, but they will prove to be indispensable to
+Algorithm \ref{alg:phased}.
+
+\subsection{Non-blocking Consensus in PCU}
+\label{sec:pcu_phased}
+
+{\color{red} This likely needs lots of consolidation with the
+original non-blocking consensus algorithm. Basically, should just
+reiterate the NBX algorithm and say that PCU reimplements it with
+its own primitives to get it working in hybrid mode.}
+
+A common problem that arises when dealing with parallel graphs,
+and similar structures, such as the adjacency relations of unstructured
+meshes, has to do with transporting graph, or mesh entities, from
+one thread to another
+due to changes in the graph or to other operations which affect
+load balance.
+Such transportation is specified in a one-sided,
+push-driven manner, which means that each thread knows which
+entities it should send to which other threads, but does
+not know what it will be receiving.
+
+Without {\it a priori} knowledge of the extent of information to be
+received, it is difficult to determine when to stop receiving
+information.
+A thread can perform a continuous loop which receives messages,
+but we must determine when to terminate that loop.
+
+This problem has been solved previously in a slightly less efficient
+manner \cite{ovcharenko2012neighborhood}, and is an important special case
+of the general termination detection problem.
+Here we present an optimal solution based on non-blocking barriers.
+The fundamental idea is this: all threads can stop receiving
+once all messages have been received.
+Given an individual message, we can use the synchronous non-blocking
+send provided by MPI to inform the sending thread of when the message
+is fully received by the receiving thread.
+In this way, each thread can be informed upon the successful receipt
+of each message it sends.
+
+If each thread keeps track of these send completions then,
+at some point, each individual thread is aware that every
+messages it sent has been received.
+If all threads could synchronize after that event, then
+we would know that all messages are received.
+Synchronizing after an event is usually done with a barrier,
+however in this case there is a problem with using a blocking barrier.
+If a thread enters a blocking barrier after messages it sent
+have been received, it may indefinitely ignore incoming messages
+which it is still responsible for receiving.
+In other words, the thread is done sending but it is not done receiving.
+This means that threads must continue to accept messages until
+the barrier is over, which necessitates a non-blocking barrier.
+The operation of sending and receiving messages this way
+is here referred to as a communication phase.
+The procedure for a single communication phase is more precisely defined
+by Algorithm \ref{alg:phased}.
+
+\begin{algorithm}
+\caption{(NEEDS REDOING) Phased message passing}
+\label{alg:phased}
+\end{algorithm}
+
+The runtime properties and bounds of Algorithm \ref{alg:phased} are vital
+to the scalability of user applications.
+As such, we will derive the important runtime properties and show how
+they are optimal in terms of the target applications.
+
+Given a set of messages $M$, the time required to fully transmit them
+can be approximated as $O(\alpha|M| + \beta\|M\|)$, where
+$|M|$ is the number messages and $\|M\|$ is the total sum of their
+content sizes, while $\alpha$ and $\beta$ are arbitrary constants
+representing latency and inverse bandwidth, respectively.
+
+Let us examine the runtime of Algorithm \ref{sec:pcu_phased} line-by-line.
+The runtime of line 2 is simply $O(|M|)$ since sends are non-blocking.
+The time for the loop on lines 3-5 is the time it takes
+for sends of $M$ to be acknowledged, which is on the same order
+as the time required to transmit $M$ since each message just incurs
+constant added latency waiting for acknowledgement.
+The loop on lines 7-9 is bounded by the maximum of barrier and receive times.
+Our non-blocking barrier is implemented using an $O(\log n)$ algorithm where
+$n$ is the total number of threads.
+The worst case for receive time is if all incoming messages get received at
+line 8.
+Let $I$ be the set of incoming messages, then given linear-time processing
+the second loop requires at least time $O(\beta\|I\|)$.
+We will omit latency costs for $I$ since the thread is only receiving
+and it will not alter our conclusions.
+In total, the communication phase requires time on the order of:
+
+\[O(\alpha|M| + \beta\|M\| + \max(\beta\|I\|,\log n))\]
+
+In our use cases, $|M|$, $\|M\|$ and $\|I\|$ are
+not dependent on the number of threads $n$ so, with respect to $n$,
+a communication phase is essentially bound by the barrier's $O(\log n)$ time.
+Note that we do overlap all incoming message processing with all outgoing
+message wait operations, so the potential for latency hiding is maximized.
+
+When implementing phased message passing, we also optimize performance
+by buffering messages.
+The user interface of phased communication allows us to pack
+all data traveling between the same pair of threads into a single message.
+This is done prior to executing Algorithm \ref{alg:phased}.
+As such, the number of messages sent $|M|$ is equal to the number of unique
+destinations and the number of messages received $|I|$ is equal to the number
+of unique sources.
+
+This relation of message counts to communication neighbors (sources and
+destinations) is quite useful in the process of determining runtime bounds.
+This is because, due to mesh partitioning, each thread has a small
+and constant number of neighbors,
+about 40 at most \cite{zhou2010petascale}.
+This limits the source and destination counts to 40 as well.
+
+We have shown previously that this buffering can greatly improve performance
+due to the latency cost $\alpha$ and MPI's own management overhead per message,
+especially for applications
+with a tendency to send very small messages between the same pair of threads
+\cite{ovcharenko2012neighborhood}.
+In the case of multiple threads per process, buffering also reduces
+the number of calls to MPI\_SEND and MPI\_RECV, which reduces
+contention for the MPI library between the threads in that process.
+When these calls are protected by a lock, avoiding contention is important
+\cite{mavriplis2002parallel}.
 
 \section{Entity-Level Communication}
 \label{sec:dist}

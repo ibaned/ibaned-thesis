@@ -448,7 +448,73 @@ are stored.
 \section{Omega\_h Data Structure}
 \label{sec:omega_h-struct}
 
+{\color{red} this is from the rejected IMR submission}
+
+{\color{red} a bit more intro describing the difference
+versus MDS}
+
+Among the many restrictions of GPU programming
+is that memory allocation within the GPU threads is strongly
+discouraged, or is not possible.
+This implies that allocations must be made large enough
+that a single CPU thread can handle their allocation and de-allocation.
+Combine this with the GPU parallelism model of having each
+thread handle a simple task corresponding to an array index, and
+it is clear that arrays are the optimal choice of data structure.
+
+{\color{red} also need to mention that contention free list
+heads and growth prevent us from using MDS structure
+with on-node threading}
+
+Our implementation uses array structures similar to those
+of the original MOAB mesh database \cite{tautges2004moab},
+and also of several solvers which implement their own structures.
+We assume that either all elements are tetrahedra or they are all triangles.
+This allows us to store downward adjacencies in a single array
+that can be thought of as two-dimensional.
+Upward adjacencies are stored in the widely known compressed row format,
+used for example in the METIS interface \cite{METIS}.
+We do store a full mesh representation \cite{beall1997general}, meaning
+that all faces and edges are also stored.
+We need at least the boundary faces and edges to robustly preserve
+topology, and storing all mesh entities simplifies data structures
+and algorithms.
+
+\begin{figure}[t]\vspace*{4pt}
+\caption{{\color{red} THIS NEEDS TO BE REDONE} Permanent (solid arrow) and on-demand (dashed arrow) adjacencies}\vspace*{-6pt}
+\label{fig:adjs}
+\end{figure}
+
 \subsection{Adjacency Cache}
+
+The majority of adaptation time and memory is consumed by the
+derivation and storage of mesh adjacencies.
+To mitigate the runtime cost, our mesh structure acts as an adjacency cache,
+which derives new adjacencies when they are requested and stores
+them in case of later requests.
+Figure \ref{fig:adjs} shows the adjacencies that we start with and some
+that are derived.
+By default, all entities are defined by their downward adjacency to mesh vertices.
+This is the only adjacency data that mesh adaptation code has to rebuild
+directly.
+Other adjacencies are inferred from the vertex adjacencies.
+
+We use two forms of adjacency inference:
+\begin{enumerate}
+\item Inversion: an upward adjacency is derived from is corresponding downward
+adjacency. This reduces to a low-degree graph inversion problem, which we
+solve either by sorting graph edges by their destination graph node or using
+atomic operations to associate graph edges with their destination graph nodes.
+\item Reflection: a downward adjacency from dimension $a$ to dimension $b$
+is derived by combining the adjacencies from $a$ to vertices and from
+vertices back to $b$.
+Seeking a subset of the vertices of $a$, we explore all $b$-dimension entities
+adjacent to the first vertex and check whether any of them have all the
+desired vertices.
+\end{enumerate}
+Despite numerous optimizations (an 8X improvement from the first implementation),
+these two operations continue to dominate the cost of mesh adaptation
+with inversion consuming 26\% and reflection consuming 54\%.
 
 \subsection{Alignment Codes}
 
