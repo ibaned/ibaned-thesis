@@ -9,7 +9,9 @@ flex.png \
 arraylist.png \
 mixed.png \
 indset_iters.png \
-mpi_indset.png
+mpi_indset.png \
+albany1.png \
+albany2.png
 
 BIBS = \
 scorec-refs/scorec-refs.bib
