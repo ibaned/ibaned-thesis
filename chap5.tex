@@ -13,15 +13,46 @@
 
 Introduce how parallel adaptivity fits into workflows.
 
-\section{PHASTA}
-
-Possibly more than one section; just a placeholder
-
-\section{Albany}
-
 \section{Proteus}
 
 \section{Alexa}
+
+\begin{figure}[t]\vspace*{4pt}
+\centerline{
+\includegraphics[width=0.5\textwidth]{tpp_noadapt.png}
+\includegraphics[width=0.5\textwidth]{tpp_adapt.png}}
+\caption{Triple point problem: (left) purely Lagrangian
+(right) Lagrangian with adaptation}\vspace*{-6pt}
+\label{fig:tpp}
+\end{figure}
+
+In collaboration with Sandia National Laboratories, an
+experimental shock hydrodynamics application is being developed
+to explore the benefits of using a Lagrangian formulation with
+adaptivity and mesh motion.
+Figure \ref{fig:tpp} shows one of our early test cases,
+a triple point problem \cite{del2011metric}.
+The figure compares the solution with and without adaptation
+included in the workflow.
+When adaptation is included, it is attempted after every explicit
+time step.
+Given the small amount of nodal motion per time step, relative
+to element sizes, each adaptivity call should be making very
+minimal changes to the topology and solution, if any.
+The code can proceed quickly without rebuilding any structures
+if no mesh modification is deemed necessary after a given time step.
+For the triple point case, the adaptive workflow required
+7722 time steps to reach the point ($t=4$) in Figure \ref{fig:tpp}.
+The non-adaptive workflow required 105,832 time steps (a 14X increase over the adaptive workflow)
+due to better element quality.
+We are just starting to develop the proper size field controls
+for this kind of application and its validation is ongoing
+work beyond the scope of this paper.
+We have also developed solution transfer methods for cavity operators
+that satisfy certain properties, such as conservation of
+mass and momentum.
+Continued development of transfer methods is important for bringing adaptivity to
+a wider range of applications.
 
 \section{PHASTA Active Flow Control}
 
