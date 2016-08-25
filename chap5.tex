@@ -9,11 +9,43 @@
 
 {\color{red} attribution of PHASTA active flow and Albany to TOMS paper}
 
+{\color{red} the Proteus and second Albany example are attributed to the SISC paper}
+
 \section{Workflow Integration}
 
 Introduce how parallel adaptivity fits into workflows.
 
 \section{Proteus}
+
+In collaboration with the U.S. Army Corp of Engineers'
+Coastal Hydraulics Laboratory and their Proteus CFD code,
+we are using our flexible array structure to enable
+coupled mesh adaptation with mesh motion in the face
+of fluid-structure interaction with moving objects.
+Figure \ref{fig:proteus} shows a mesh of a buoyant object
+splashing down inside a tank of water.
+Proteus carries out an initial nodal repositioning and
+smoothing to track this motion, while adaptivity
+guided by error estimates ensure the discretization
+error and element quality remain controlled.
+The adaptation metric may also be anisotropic, as shown
+in Figure \ref{fig:proteus_aniso}.
+
+\begin{figure}
+\begin{center}
+\includegraphics[width=0.4\textwidth]{proteus.png}
+\caption{Floating object fluid-structure-interaction adaptivity}
+\label{fig:proteus}
+\end{center}
+\end{figure}
+
+\begin{figure}
+\begin{center}
+\includegraphics[width=0.6\textwidth]{proteus_aniso.png}
+\caption{Anisotropic mesh near fluid boundary}
+\label{fig:proteus_aniso}
+\end{center}
+\end{figure}
 
 \section{Alexa}
 
@@ -240,6 +272,19 @@ PUMI more interoperable with any finite element codes involving the Trilinos
 framework. Figure \ref{fig:albany-mesh} illustrates the initial and adapted mesh
 in large deformation analysis with Albany adaptive loop.
 
+We are also using the MDS array structure to manage very large meshes
+in a compact and scalable way for a different Albany simulation
+studying the mechanical properties of computer circuitry.
+Figure \ref{fig:ibm} shows how the initial
+meshes used for this project represent
+multiple CAD model regions with graded resolution.
+The initial mesh is further refined and partitioned,
+and runs have exceeded one billion elements, utilizing
+up to 4 racks (65536 cores) of an IBM BlueGene/Q computer.
+The memory use of our structure is quite small compared
+to the storage used for the stiffness matrix and
+Krylov vectors in this problem.
+
 \begin{figure}
 \centering
 \begin{tabular}{cc}
@@ -248,6 +293,14 @@ in large deformation analysis with Albany adaptive loop.
 \end{tabular}
 \caption{Initial (left) and adapted mesh showing the Von Mises stress field that
 guides adaptivity (right)} \label{fig:albany-mesh}
+\end{figure}
+
+\begin{figure}
+\begin{center}
+\includegraphics[width=0.6\textwidth]{ibm.png}
+\caption{Graded multi-material mesh to initiate large scale runs}
+\label{fig:ibm}
+\end{center}
 \end{figure}
 
 \begin{figure}
