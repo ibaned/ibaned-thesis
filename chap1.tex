@@ -143,7 +143,7 @@ denoted $\bar{T}^d_i = T^d_i \cup \partial T^d_i$,
 is the open set plus its boundary.
 Since the sets are disjoint, only their boundaries may intersect.
 For all pairs of equal-dimension point sets, the intersection
-of their closures must exist as the union of other,
+of their boundaries must exist as the union of other,
 lower-dimensional point sets in $T$:
 
 \[\forall T^d_i,T^d_{j\neq i} \in T: \exists S \subseteq \{T^q_k \in T \big| q < d\}:
@@ -178,12 +178,10 @@ Note that downward adjacency is a transitive relation:
 
 For every downward adjacency $(a,b)$, there exists an upward
 adjacency $(b,a)$.
-The union of upward and downward adjacencies
-are called first-order adjacencies.
 Together, upward and downward adjacencies defined this way
 are called first-order adjacencies.
 
-A first-order adjacency relations in a mesh define a graph,
+The first-order adjacency relations in a mesh define a graph,
 which we call a topology graph.
 The majority of our work is concerned with finding
 efficient computer representations for topology graphs.
@@ -193,7 +191,7 @@ is a bipartite graph.
 We have a notation for queries of this bipartite graph:
 $T^p_i\{T^q\}$ is the set of entities (point sets) in $T^q$ adjacent to
 $T^p_i$.
-In general, one can query all entities adjacent 
+In general, one can query all entities adjacent
 to a set of entities: $S\{T^q\} = \bigcup a \{T^q\}, a \in S$.
 This makes it easier to define second-order adjacencies,
 which are found by two transitive queries,
@@ -206,7 +204,7 @@ incoming (upward) relations, so the storage will be
 bi-directional in many cases.
 
 Another useful concept will be the {\it entity use},
-which is essentially an adjacency relationship between two entities.
+which is essentially an edge of the topology graph.
 If entity $b$ is in the boundary of entity $a$, then
 $b$ is used by $a$, and that occurrence is an entity use.
 The term shows up when data is stored once for every adjacency relation.
@@ -214,20 +212,21 @@ The term shows up when data is stored once for every adjacency relation.
 \subsection{Mesh}
 \label{sec:def_mesh}
 
-A {\it mesh} $M$ is herein defined as a special case of topological
+A {\it mesh} $M$ is herein defined as a special case of a topological
 complex where the closure of each entity $\bar{M}^d_i$
 is topologically a polytope of dimesion $d$.
 Mesh entities which do not bound other entities
-are the elements.
+are called \emph{elements}.
 
-All entities have topological genus zero, i.e. they have no holes,
+Being polytopes topologically, mesh entities have no
+holes or internal empty spaces,
 so they do not need multiple loop or shell constructs to
 describe their boundary the way a BRep CAD model would.
 
 \subsection{Finite Element Mesh}
 \label{sec:def_fem}
 
-We further define {\it finite element mesh} as a special case
+We further define a {\it finite element mesh} as a special case
 of a mesh, with certain restrictions and requirements.
 For our current purposes, a finite element mesh is composed
 of entities whose closures are one of the following
@@ -247,13 +246,19 @@ polytope types:
 This list can be easily extended to include additional polytope
 types of interest.
 
-In addition, the finite element method uses fields which are defined
-as piecewise functions composed of basis functions,
-controlled by a finite set of
-degrees of freedom, where each degree of freedom is attached
-to one mesh entity.
-This requires a mechanism for associating
-degrees of freedom with mesh entities.
+This work is focused on \emph{unstructured meshes}, meaning
+their topology must be explicitly stored because it
+is not originally defined by some simple pattern such as a grid.
+Such unstructured meshes have an
+advantage in representing complex geometry and in their
+ability to easily vary resolution throughout the geometry.
+
+In addition, the Finite Element Method uses fields which are each defined
+as the weighted sum of finite number of basis functions,
+where the weights are referred to as \emph{degrees of freedom} and are each
+attached to one mesh entity.
+This requires a data structure that can attach
+degrees of freedom to mesh entities.
 
 Finite element analysis procedures also require meshes where
 the number of elements around some boundary entity (such as a vertex
@@ -264,16 +269,16 @@ by a constant.
 Any operation whose runtime is proportional to the
 number of upward adjacencies can be treated as a constant-time operation.
 
+{\color{red} consider including a more detailed proof of constant upward
+adjacency degree, which I already have written somewhere}
+
+Finally, if there are multiple polytope types per dimension,
+such as having both triangles and quadrilaterals in 2D, then
+we say the mesh is {\it mixed}.
+
 \subsection{Mesh Construction and Modification}
 
-This work is focused on unstructured meshes where
-the number of upward adjacencies between mesh entities
-is not fixed.
-
-Such unstructured meshes have an
-advantage in representing complex geometry and in their
-ability to easily vary resolution throughout the geometry.
-There are two approaches to varying this resolution during
+There are two approaches to modifying the topology throughout
 a simulation.
 If an entirely new mesh is constructed, we say that the
 method is {\it remeshing}.
@@ -283,10 +288,6 @@ Such local changes require adding and removing entities
 from the mesh within local portions of the domain.
 On the other hand, if the mesh is not changed during the
 simulation, we say that the mesh is {\it static}.
-
-Finally, if there are multiple polytope types per dimension,
-such as having both triangles and quadrilaterals in 2D, then
-we say the mesh is {\it mixed}.
 
 \subsection{Adaptation}
 \label{sec:def_adapt}
@@ -373,6 +374,8 @@ are based on edge lengths \cite{biswas1998tetrahedral}.
 \subsubsection{Programming Environments}
 
 {\color{red} Define MPI, threads, CUDA terminology.}
+
+This reference describes the CUDA environment: \cite{nickolls2008scalable}.
 
 \section{Goals}
 \label{sec:intro_goals}
