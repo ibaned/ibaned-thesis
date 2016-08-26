@@ -351,41 +351,46 @@ contention for the MPI library between the threads in that process.
 When these calls are protected by a lock, avoiding contention is important
 \cite{mavriplis2002parallel}.
 
+\section{Portable Parallel Loops}
+
+{\color{red} Omega\_h content on how to use threading and GPUs
+in a portable manner, with restrictions.}
+
 \section{Entity-Level Communication}
 \label{sec:dist}
 
-Something which both PCU and Omega\_h do is simulate
+{\color{red} Something which both PCU and Omega\_h do is simulate
 mesh entities sending messages to each other, while
-doing this much more efficiently than the naive approach.
+doing this much more efficiently than the naive approach.}
 
 \section{Remotes and Owners}
 
-Explain remote copies and owners, and how they become
-part of the two structures from \ref{chap:struct}.
+{\color{red} Explain remote copies and owners, and how they become
+part of the two structures from \ref{chap:struct}.}
 
 \section{Migration}
 
-Both the PUMI/APF and Omega\_h migration algorithms
+{\color{red} Both the PUMI/APF and Omega\_h migration algorithms
 are quite different from what has been published for FMDB,
 and they are essentially what it means for a mesh
-data structure to be parallel.
+data structure to be parallel.}
 
 \section{Ghosting}
 
-As with migration, describe what is done in both PUMI/APF
-and Omega\_h.
+{\color{red} As with migration, describe what is done in both PUMI/APF
+and Omega\_h.}
 
 \section{Parallel Cavity Operations}
 
 \subsection{Dynamic Migration}
 \label{sec:cavity_operator}
 
-The PUMI/APF ``Cavity Operator" system that supports MeshAdapt.
+{\color{red} The PUMI/APF ``Cavity Operator" system that supports MeshAdapt.}
 
 \subsection{Independent Sets}
 \label{sec:indset}
 
-{\color{red} this is from the rejected full-paper submission to IMR 2016}
+{\color{red} this is from the full-paper submission to IMR 2016}
 
 \subsubsection{Selection of a Set}
 
@@ -620,20 +625,6 @@ consider interior modifications first, followed by a repartitioning that
 allows consideration and modification of the near-boundary mesh
 \cite{loseille2015parallel,de1999parallel}, making them
 partitioning-dependent.
-
-\section{On-Node Parallelism}
-
-\subsection{Inter-Thread Communication}
-\label{sec:itc}
-
-Second half of the PCU paper describes how we were able to use
-threading without rewriting everything.
-
-\subsection{Parallel For Loops}
-\label{sec:parallel_for}
-
-Omega\_h content on how to do threading and GPUs properly
-when the code is rewritten.
 
 \section{Determinism}
 \label{sec:determinism}

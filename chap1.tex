@@ -90,10 +90,10 @@ over all architectures, one must try to abstract away
 their differences and, unfortunately, cater to the
 lowest common denominator of functionality.
 Throughout this thesis, we present two systems:
-the first only operates on some of architectures, but provides
+the first only operates on some architectures and provides
 a wide array of adaptive functionality, while the second
 is portably performant across the major architectures
-but provides less adaptive functionality.
+and provides less adaptive functionality.
 
 Finally, Chapter \ref{chap:apps} presents several
 application programs which make use of the tools developed
@@ -104,7 +104,7 @@ here in order to solve a variety of engineering problems.
 {\color{red} Part of the nomenclature is attributed to SISC}
 
 \begin{tabular}{l|l}
-Topological Complex & A breakdown of a domain in Cartesian space into \\
+Topological Complex & A breakdown of a domain in Cartesian space into
 topological entities \\
 Mesh & A topological complex whose entities have simple shape \\
 Entity & A topological entity of a mesh \\
@@ -139,17 +139,19 @@ manifold, i.e. a $D$-dimensional manifold with boundary.
 We denote the boundary of this complex as $\Gamma = \partial\Omega$.
 Each point set is an open subset of a $d$-manifold,
 and the closed equivalent on said manifold,
-denoted $\bar{T}^d_i = T^d_i \cup \partial T^d_i$, is the set plus its boundary.
+denoted $\bar{T}^d_i = T^d_i \cup \partial T^d_i$,
+is the open set plus its boundary.
 Since the sets are disjoint, only their boundaries may intersect.
-In fact, all intersections of equal-dimension point sets must exist
-as unions of other, lower-dimensional point sets in $T$:
+For all pairs of equal-dimension point sets, the intersection
+of their closures must exist as the union of other,
+lower-dimensional point sets in $T$:
 
 \[\forall T^d_i,T^d_{j\neq i} \in T: \exists S \subseteq \{T^q_k \in T \big| q < d\}:
 \bigcup S = \partial T^d_i \cap \partial T^d_j\]
 
 Finally, to keep the surface properly divided, we require that
 the intersection of any point set boundary with the overall
-boundary also exist as a union of point sets:
+boundary also exist as a union of lower-dimensional point sets:
 
 \[\forall T^d_i \in T: \exists S \subseteq \{T^q_k \in T \big| q < d\}:
 \bigcup S = \partial T^d_i \cap \Gamma\]
@@ -160,7 +162,7 @@ Point sets of dimension 0 are called vertices, those
 of dimension 1 are called edges, faces have dimension 2
 and regions have dimension 3.
 When discussing a topological complex, we
-refer to point sets simply as entities.
+refer to point sets as \emph{entities}.
 
 \subsection{Adjacency Relation}
 \label{sec:def_adj}
@@ -366,14 +368,11 @@ are based on edge lengths \cite{biswas1998tetrahedral}.
 
 \subsection{Petascale and Heterogeneous Supercomputers}
 
-Define things like processors, ``node", accelerator, etc.
+{\color{red} Define things like processors, ``node", accelerator, etc.}
 
 \subsubsection{Programming Environments}
 
-Define MPI, threads, CUDA terminology.
-
-Latex requires at least one citation to
-compile: \cite{edwards2013kokkos}.
+{\color{red} Define MPI, threads, CUDA terminology.}
 
 \section{Goals}
 \label{sec:intro_goals}

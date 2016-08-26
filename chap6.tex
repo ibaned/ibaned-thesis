@@ -10,5 +10,21 @@
 
 \section{Future Work}
 
-Probably the appropriate place to discuss convergence
-of the two codes.
+\subsection{Convergence of PUMI and Omega\_h}
+
+Section \ref{sec:two_codes} presented the rationale
+for the development of Omega\_h as a separate effort,
+which opens the question of whether it is possible
+to combine the two codes in the future.
+A combination is simply defined as a code which
+has a union of their capabilities, both theoretical
+and practical.
+
+If a code is to make any use of current and near-future GPUs,
+then it must be written in the more restrictive programming
+model that Omega\_h operates in.
+This applies equally well to any proposed combination of the
+two codes.
+This in turn requires a redesign of algorithms
+and structures that currently violate those restrictions,
+which includes the majority of the PUMI code.
