@@ -15,9 +15,30 @@ Indicate how each requirement affects complexity.
 
 \section{Related Work}
 
-Specifics of mesh representations in the literature.
-This can probably come from the SISC paper, plus
-some more SCOREC references.
+There are several other implementations of mesh data structures
+which offer various subsets of the features described herein:
+
+First, there are dynamic structures which support mesh adaptation.
+FMDB is an object-oriented structure that
+stores full one-level representations \cite{seol2006efficient}.
+It is capable of constant-time local
+mesh modifications and supporting adaptation code.
+Similar to FMDB is the mesh databased used by Comp\`{e}re and Remacle
+in the MAdLib adaptation package \cite{compere2010mesh}.
+Celes, Paulino, and Espinha also implement a structure capable of
+adaptation \cite{celes2005compact}.
+Another example of an adaptive structure
+is the GRUMMP system developed by Ollivier-Gooch
+and available at \texttt{http://tetra.mech.ubc.ca/GRUMMP}.
+
+Second, there are array-based structures designed for
+efficient access of unchanging meshes.
+STK is an array-based mesh structure being developed at
+Sandia National Laboratory \cite{edwards2010sierra}.
+MOAB is another array-based structure developed primarily
+at Argonne National Laboratory \cite{tautges_moab:_2004},
+and working with MOAB an Adjacent Half-Facet structure
+was implemented which can perform some modifications \cite{dyedov2014ahf}.
 
 \section{Two Paradigms, Two Structures}
 \label{sec:two_codes}
