@@ -38,9 +38,9 @@ Present what is in MPI3, specifically at least the following key items:
 \section{PCU: Scalable Inter-Thread Communication}
 \label{sec:pcu}
 
-{\color{red} attribution to the TOMS paper.}
+{\bf attribution to the TOMS paper.}
 
-{\color{red} Everything in this section needs to constantly
+{\bf Everything in this section needs to constantly
 compare/contrast against what is in Section \ref{sec:mpi3},
 reinforce that its being redone for a hybrid environment}
 
@@ -84,7 +84,7 @@ These capabilities support PUMI's overall hybrid MPI+thread operation.
 \subsection{Messaging Primitives in PCU}
 \label{sec:pcu_p2p}
 
-{\color{red} attribution to the PCU paper.}
+{\bf attribution to the PCU paper.}
 
 The main unusual design choice of PCU compared to
 other hybrid programming systems is
@@ -155,7 +155,7 @@ blocking receive $M$ into $b$\;
 \subsection{Simple Collectives in PCU}
 \label{sec:pcu_coll}
 
-{\color{red} attribution to the PCU paper.}
+{\bf attribution to the PCU paper.}
 
 Collective operations are a necessary staple of
 distributed-memory high-performance computing.
@@ -231,7 +231,7 @@ Algorithm \ref{alg:phased}.
 \subsection{Non-blocking Consensus in PCU}
 \label{sec:pcu_phased}
 
-{\color{red} This likely needs lots of consolidation with the
+{\bf This likely needs lots of consolidation with the
 original non-blocking consensus algorithm. Basically, should just
 reiterate the NBX algorithm and say that PCU reimplements it with
 its own primitives to get it working in hybrid mode.}
@@ -354,31 +354,31 @@ When these calls are protected by a lock, avoiding contention is important
 \section{Portable Parallel Loops}
 \label{sec:parallel_for}
 
-{\color{red} Omega\_h content on how to use threading and GPUs
+{\bf Omega\_h content on how to use threading and GPUs
 in a portable manner, with restrictions.}
 
 \section{Entity-Level Communication}
 \label{sec:dist}
 
-{\color{red} Something which both PCU and Omega\_h do is simulate
+{\bf Something which both PCU and Omega\_h do is simulate
 mesh entities sending messages to each other, while
 doing this much more efficiently than the naive approach.}
 
 \section{Remotes and Owners}
 
-{\color{red} Explain remote copies and owners, and how they become
+{\bf Explain remote copies and owners, and how they become
 part of the two structures from \ref{chap:struct}.}
 
 \section{Migration}
 
-{\color{red} Both the PUMI/APF and Omega\_h migration algorithms
+{\bf Both the PUMI/APF and Omega\_h migration algorithms
 are quite different from what has been published for FMDB,
 and they are essentially what it means for a mesh
 data structure to be parallel.}
 
 \section{Ghosting}
 
-{\color{red} As with migration, describe what is done in both PUMI/APF
+{\bf As with migration, describe what is done in both PUMI/APF
 and Omega\_h.}
 
 \section{Parallel Cavity Operations}
@@ -386,12 +386,12 @@ and Omega\_h.}
 \subsection{Dynamic Migration}
 \label{sec:cavity_operator}
 
-{\color{red} The PUMI/APF ``Cavity Operator" system that supports MeshAdapt.}
+{\bf The PUMI/APF ``Cavity Operator" system that supports MeshAdapt.}
 
 \subsection{Independent Sets}
 \label{sec:indset}
 
-{\color{red} this is from the full-paper submission to IMR 2016}
+{\bf this is from the full-paper submission to IMR 2016}
 
 \subsubsection{Selection of a Set}
 
