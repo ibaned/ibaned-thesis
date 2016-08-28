@@ -431,6 +431,7 @@ to call any available third party library.
 Because of these assumptions, PUMI's code could not execute
 on more restricted architectures such as GPUs without very
 substantial re-design and re-implementation.
+Key components of PUMI include:
 
 \subsubsection{PCU}
 
@@ -441,6 +442,9 @@ Its algorithms and implementation will be covered in detail
 in Section \ref{sec:pcu}.
 PCU uses MPI to transmit all its messages, making it portable
 across many distributed memory supercomputers.
+PCU also made an effort to implement hybrid threading in
+a way that was transparent to the rest of PUMI by providing
+MPI-like communication between threads.
 
 \subsubsection{APF}
 
@@ -488,10 +492,6 @@ Its data structure will be described in Section \ref{sec:omega_h-struct}.
 Its implementation of mesh adaption will be discussed mainly
 in Section \ref{sec:omega_h-adapt}, with key parallel aspects
 covered throughout Chapter \ref{chap:parallel}.
-
-\section{Related Works}
-
-{\bf TODO: brief mention of each related work.}
 
 %%% Local Variables:
 %%% mode: latex
