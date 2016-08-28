@@ -319,10 +319,13 @@ and diffusive effects and conservation adjustments are local.
 Local mesh adaptation requires unique properties of the
 mesh data structure that are otherwise unnecessary for
 static meshes.
-Adaptive procedures are composed of a series of
-mesh entity additions and removals.
-Therefore, at a minimum, we require that \emph{entity
+If adaptation is programmed as a series of entity
+additions and removals, then we require that \emph{entity
 addition and removal be constant-time operations}.
+Section \ref{sec:cavity_sched} presents two alternatives
+to scheduling cavity operations, the latter of which
+allows us to use a structure which cannot add and remove
+single entities.
 
 For several reasons, it is preferable to modify a cavity
 by first constructing all new entities that fill the cavity,
