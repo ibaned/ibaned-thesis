@@ -75,9 +75,8 @@ every entity is said to be a {\it full}
 representation.
 Any schemes which allow some entities to be represented
 implicitly (i.e. their presence does not consume memory)
-and be said to be {\it reduced} representations.
-We will cover full representations and show that our method
-can also produce reduced representations.
+are {\it reduced} representations.
+We present only full representations in this thesis.
 
 Once the set of explicit entities is chosen, one has
 options about which adjacencies to store.
@@ -197,7 +196,7 @@ for vertices to triangles.
 \end{figure}
 
 The second step is to use a linked-list technique \cite{karamete2016novel}
-to upward-adjacency storage amongst the entities
+to distribute upward-adjacency storage amongst the entities
 of higher dimension, alleviating the need for variable-length
 storage in lower-dimensional objects.
 If an object stores $m$ downward pointers, then it also stores
@@ -542,7 +541,7 @@ vertices back to $b$.
 Seeking a subset of the vertices of $a$, we explore all $b$-dimension entities
 adjacent to the first vertex and check whether any of them have all the
 desired vertices.
-\item Transition: {\bf TODO: describe this}
+\item Transiting: {\bf TODO: describe this}
 \end{enumerate}
 
 {\bf TODO: describe why using one-level is better than going to vertices}
