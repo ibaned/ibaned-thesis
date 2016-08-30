@@ -552,7 +552,7 @@ desired vertices.
 
 {\bf Query times, modification times, etc. for both structures.}
 
-\subsection{MDS performance}
+\subsection{Adjacency Query Performance}
 
 To substantiate our claims of $O(1)$ adjacency queries and
 give an example of typical query performance, we create two
@@ -564,7 +564,7 @@ adjacent entities of the second dimension.
 The time required to do this should be approximately the number
 of entities of the first dimension times the constant time
 required for one adjacency query.
-Tables \ref{tab:adj_100} and \ref{tab:adj_200} list these timing
+Tables \ref{tab:mds_adj_100} and \ref{tab:mds_adj_200} list these timing
 results for both meshes, and show fairly clearly that all times
 grow by about 2X since the number of elements is about 2X larger
 in the second mesh.
@@ -572,7 +572,7 @@ These timings were collected on a workstation with an Intel Xeon E5-2620v4 CPU.
 
 \begin{table}
 \caption{MDS adjacency timings (in milliseconds) for 100K tet mesh}
-\label{tab:adj_100}
+\label{tab:mds_adj_100}
 \begin{center}
 \begin{tabular}{l|r|}
 dimension & entity count \\\hline
@@ -594,7 +594,7 @@ dimension      & 3 & 21.1 & 13.1 &  2.2 &      \\
 
 \begin{table}
 \caption{MDS adjacency timings (in milliseconds) for 200K tet mesh}
-\label{tab:adj_200}
+\label{tab:mds_adj_200}
 \begin{center}
 \begin{tabular}{l|r|}
 dimension & entity count \\\hline
@@ -610,6 +610,51 @@ dimension & entity count \\\hline
                & 1 &  5.0 &      &  26.3 &  84.7 \\
 from           & 2 & 33.4 &  8.7 &       &  20.3 \\
 dimension      & 3 & 45.6 & 27.8 &   4.5 &       \\
+\end{tabular}
+\end{center}
+\end{table}
+
+Because Omega\_h uses an adjacency cache, the runtime cost
+of querying a particular adjacency depends on which adjacencies
+are already cached at the moment.
+In the trivial case, that adjacency is already cached and
+need only be read directly from memory.
+This trivial case is illustrated in Table \ref{tab:osh_walk_100},
+showing the time required to simply read and traverse cached adjacency
+information from memory, for all entities of a given dimension,
+using the same 100K mesh as Table \ref{tab:mds_adj_100}.
+Table \ref{tab:osh_adj_100} then presents incremental construction
+times, i.e. the time required to construct an adjacency
+(for all entities of the relevant dimension)
+assuming any pre-requisite adjacencies used in the construction
+have already been cached.
+
+\begin{table}
+\caption{Omega\_h traversal timings (in milliseconds) for 100K tet mesh}
+\label{tab:osh_walk_100}
+\begin{center}
+\begin{tabular}{|r|r|r r r r}
+               &   & \multicolumn{4}{c}{to dimension} \\\hline
+               &   &    0 &    1 &    2 &   3  \\\hline
+               & 0 &      &  0.2 &  0.2 &  0.2 \\
+               & 1 &  1.7 &      &  1.4 &  1.4 \\
+from           & 2 &  2.6 &  2.7 &      &  2.3 \\
+dimension      & 3 &  1.2 &  1.2 &  1.3 &      \\
+\end{tabular}
+\end{center}
+\end{table}
+
+\begin{table}
+\caption{Omega\_h incremental construction timings (in milliseconds) for 100K tet mesh}
+\label{tab:osh_adj_100}
+\begin{center}
+\begin{tabular}{|r|r|r r r r}
+               &   & \multicolumn{4}{c}{to dimension} \\\hline
+               &   &    0 &    1 &    2 &   3  \\\hline
+               & 0 &      &  7.6 & 31.1 & 16.1 \\
+               & 1 &      &      & 11.1 &  9.7 \\
+from           & 2 &  5.5 &      &      &  4.7 \\
+dimension      & 3 &  3.2 &  9.1 &      &      \\
 \end{tabular}
 \end{center}
 \end{table}
