@@ -370,13 +370,93 @@ Beyond that, it is convenient in any case to represent
 edges explicitly, given that many adaptive algorithms
 are based on edge lengths \cite{biswas1998tetrahedral}.
 
-\subsection{Petascale and Heterogeneous Supercomputers}
+\section{Heterogeneous Node Architecture}
 
-{\bf Define things like processors, ``node", accelerator, etc.}
+\subsection{Multi-core CPUs}
 
-\subsubsection{Programming Environments}
+\subsection{GPU Coprocessors}
+
+For the past two decades, many personal computers came
+equipped with pieces of specialized hardware called
+Graphics Processing Units (GPUs).
+These components were chips specifically hardwired to
+perform the highly parallelizable operations involved
+in displaying graphics, where each screen pixel could be handled
+by a separate parallel processor.
+As research in graphics progressed, there was a need to
+move from hardwired to programmable graphics processing
+to implement more realistic graphics algorithms.
+GPUs whose operations were somewhat programmable began appearing
+in 2002 such as NVidia's NV30 device.
+By 2004, Stanford University had developed a useful programming
+environment called BrookGPU \cite{buck2004brook}, which
+enabled researchers to more easily use GPUs to solve new problems
+and was subsequently adopted by AMD.
+Usage spread from the graphics community to the closely
+related scientific community.
+GPUs were an affordable personal solution for researchers
+to access substantial computing power.
+The interest soon motivated NVidia to release a programming
+environment called the Compute Unified Device Architecture (CUDA),
+alongside its GeForce 8800 products in 2006.
+By 2009, not only was CUDA was being seriously considered as a programming
+environment to solve a wide variety of problems \cite{hwu2009compute},
+but GPUs had made their way onto the world's top supercomputers.
+China's Tianhe-1A computer, revealed in 2010,
+contained over 7K NVidia GPUs, making it the world's
+most powerful supercomputer until 2011 \cite{yang2011tianhe}.
+American supercomputers soon followed suit, and in 2012
+the Titan supercomputer at Oak Ridge National Laboratory
+was equipped with over 14K NVidia GPUs \cite{bland2012titan},
+making it the world's most powerful in the year 2012.
+By this point, GPUs had thousands of ``cores" each.
+Although each GPU core remains very limited in comparison to a
+CPU core, their combination provides an order or magnitude
+more computing power than any CPU at the time.
+
+\subsection{The Intel Xeon Phi}
+
+During the years that GPUs were being introduced into leading supercomputers,
+Intel began developing a family of chips which were based on
+their multi-core CPUs but tended more and more towards GPU-like capabilities,
+by increasing the number of cores from tens to hundreds and while decreasing
+the amount of power per core.
+This family is called the Intel Xeon Phi line, and began with co-processors
+that behaved like GPUs, requiring a host CPU to send them specific compute
+requests.
+In 2013, China presented their TianHe-2 supercomputer, whose nodes had two Intel
+CPUs and three Intel Xeon Phi co-processors each.
+With 16K total nodes, TianHe-2 remained the world's most powerful supercomputer
+until 2016, the year of this writing.
+Intel has since evolved their Xeon Phi co-processor into a full-fledged
+processor with nearly one hundred CPU cores \cite{jeffers2013intel},
+which will be used to construct near-future supercomputers in the United States.
+
+\section{Programming Environments}
 
 {\bf Define MPI, threads, CUDA terminology.}
+
+When writing programs for heterogeneous supercomputers,
+there are a few key programming environments which motivate
+choices about the implementation.
+
+Distributed memory computers have for the past two decades
+been programmed using the Message Passing Interface (MPI)
+\cite{hempel1994mpi,walker1996mpi}.
+This interface remains the only reliable and portable way to construct
+programs for all distributed memory supercomputers,
+and is thus central to any scalable program.
+Although its early versions (version 2.0 and earlier) had
+scalability challenges \cite{balaji2009mpi}, MPI has evolved
+to effectively address these challenges and ``modern" MPI
+as described in \cite{gropp2014using} scales well into the
+million-core range.
+We will present optimal usage of modern MPI features in
+Section \ref{sec:mpi3} and show in Section \ref{sec:phasta_active}
+that one of the applications using tools developed
+in this thesis scales to 768K cores using only MPI \cite{rasquinCise2014}.
+
+Nevertheless
 
 This reference describes the CUDA environment: \cite{nickolls2008scalable}.
 
