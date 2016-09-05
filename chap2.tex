@@ -7,6 +7,14 @@
 \chapter{ARRAY-BASED MESH REPRESENTATIONS}
 \label{chap:struct}
 
+This Chapter presents two data structures, each used to represent
+the portion of the mesh (a.k.a. \emph{mesh part}) stored in one
+shared memory space.
+Each of these structures are augmented with information connecting multiple
+mesh parts across distributed memory spaces as described in
+Chapter \ref{chap:parallel}, the result of which is a pair of fully parallel
+mesh data structures.
+
 \section{Related Work}
 
 {\bf SISC attribution.}
@@ -35,6 +43,99 @@ MOAB is another array-based structure developed primarily
 at Argonne National Laboratory \cite{tautges_moab:_2004},
 and working with MOAB an Adjacent Half-Facet structure
 was implemented which can perform some modifications \cite{dyedov2014ahf}.
+
+\section{Choices in Representation}
+
+There are key choices in terms of which entities
+and adjacencies to store which apply equally well
+to both of the structures presented in this Chapter.
+
+\subsection{Choosing Entities to Store}
+
+Unstructured mesh applications must represent
+the portions of the mesh topology graph
+needed to support the operations carried out on the mesh.
+A representation which explicitly stores
+every entity is said to be a {\it full}
+representation.
+Any schemes which allow some entities to be represented
+implicitly (i.e. their presence does not consume memory)
+are {\it reduced} representations.
+
+As we began to discuss in Section \ref{sec:def_adapt},
+there are multiple factors in the decision of which entities to store:
+\begin{enumerate}
+\item For boundary condition application, it is necessary to
+be able to infer the classification of mesh faces.
+\item For mesh adaptivity, it is necessary to be able to
+infer the classification of any mesh entity, whether stored or not.
+\item In mesh adaptation, it is often useful to store values
+on the edges and vertices (for example, booleans indicating they
+are candidates for modification).
+\item If the basis functions used for PDE discretization have
+degrees of freedom on edges or faces, those edges and faces
+must be stored.
+\end{enumerate}
+
+There are many consequences of storing only a subset of entities that
+motivate us to avoid that approach in our work:
+\begin{enumerate}
+\item If some entities of a given dimension are not stored, then
+downward adjacencies from a higher dimension to the partially-stored dimension
+would need to be more complex.
+\begin{enumerate}
+\item Given a single high-dimensional entity, the ordering of its
+adjacent bounding entities is crucial.
+If some of them are not stored, the remaining adjacency relationships
+would need to be annotated with ordering information such that the correct
+ordering can still be reconstructed.
+\item Depending on the implementation, downward adjacencies would either
+not have constant degree of have ``null" values where non-stored entities
+are adjacent.
+Both would complicate all code that queries and manages
+downward adjacencies.
+\end{numerate}
+\item How to query information (such as classification) about a non-stored
+entity is unclear. FMDB took the approach of temporarily creating
+and storing those entities when queries were made \ref{seol2006efficient}.
+Celes, Paulino, and Espinha use a similar solution in their reduced
+representation \ref{celes2005compact}.
+This workaround is incompatible with portable execution, as GPUs
+would not allow creating entities individually in this manner.
+\end{enumerate}
+Beall and Shephard indicate other complexities involved
+with handling reduced representations \cite{beall1997general}.
+
+Given that adaptation would require us to store edges and boundary
+faces, we are left only considering whether to introduce great
+complexity in exchange for not storing interior faces.
+In this work we choose instead to store all entities.
+
+\subsection{Choosing Adjacencies to Store}
+
+Once the set of explicit entities is chosen, one has
+options about which adjacencies to store.
+Recall from Section \ref{sec:def_adj} that downward and upward
+adjacencies are transitive, so there are many
+subsets of the adjacencies from which the others
+can be reconstructed.
+For any given representation, the computation of $M^d_i\{M^q\}$
+can either be done efficiently using stored information
+or using an exhaustive search if less information is available.
+If one can compute $M^d_i\{M^q\}$ for a single
+given entity $M^d_i$ in constant time,
+we say that the stored information is {\it complete} \cite{seol2006efficient}.
+Recall from Section \ref{sec:def_fem} that upward adjacencies
+are bound by a constant, so they are computable in
+constant-time if enough information is stored.
+
+A comparison of representations based on the choice
+of dimensions and adjacencies between
+dimensions to represent
+was published by Garimella \cite{garimella2002mesh}.
+The choices we made in our structures are described separately
+for each data structure,
+in Sections \ref{sec:mds_adj} and \ref{sec:adj_cache}.
 
 \section{Two Paradigms, Two Structures}
 \label{sec:two_codes}
@@ -65,36 +166,18 @@ One key contribution of this thesis is to show that the latter two properties,
 array storage and rapid single-entity modification, are not mutually exclusive
 and can be combined in a viable way.
 
-\subsection{Choosing Adjacencies to Store}
+\subsection{Adjacencies stored in MDS}
+\label{sec:mds_adj}
 
-Unstructured mesh applications represent
-of the portions of the mesh topology graph
-needed to support the operations carried out on the mesh.
-A representation which explicitly stores
-every entity is said to be a {\it full}
-representation.
-Any schemes which allow some entities to be represented
-implicitly (i.e. their presence does not consume memory)
-are {\it reduced} representations.
-We present only full representations in this thesis.
-
-Once the set of explicit entities is chosen, one has
-options about which adjacencies to store.
-Recall from Section \ref{sec:def_adj} that downward and upward
-adjacencies are transitive, so it is enough to
-store a subset of the adjacencies such that reachability
-remains the same.
-One example of this is the {\it one-level} representation,
-in which we choose some ordered subset of the dimensions
-to explicitly represent and then store the upward
+MDS is based on the full {\it one-level} representation,
+in which we store the upward
 and downward adjacencies between each consecutive
 pair of dimensions \cite{beall1997general}.
-The full one-level representation, for example, stores
+In particular, it stores
 region-face, face-edge, and edge-vertex adjacencies
 (both upward and downward).
-We will present both full and reduced one-level representations.
-Despite this focus on the one-level adjacencies, our structure
-in general can be used to store any subset of
+Despite this focus on the one-level adjacencies, the general MDS
+structure can be used to store any subset of
 adjacency relations.
 
 \begin{figure}
@@ -116,21 +199,6 @@ downward (high to low dimension) and upward (low to high) relations.
 Note that vertices are related only to edges,
 regions are related only to faces, etc.
 
-A comparison of representations based on the choice
-of dimensions and adjacencies between
-dimensions to represent
-was published by Garimella \cite{garimella2002mesh}.
-
-For any given representation, the computation of $M^d_i\{M^q\}$
-can either be done efficiently using stored information
-or using an exhaustive search if less information is available.
-If a structure can compute $M^d_i\{M^q\}$, where dimensions
-$d$ and $q$ are explicitly represented, in constant time,
-we say that it is {\it complete} \cite{seol2006efficient}.
-Recall from Section \ref{sec:def_fem} that upward adjacencies
-are bound by a constant, so they are computable in
-constant-time if enough information is stored.
-
 Downward adjacencies not directly stored are derived
 locally by intersecting existing adjacencies.
 For example, the vertices of a triangle may be found
@@ -146,19 +214,6 @@ Given a vertex, one can retrieve adjacent edges, then
 for each edge retrieve adjacent faces, then take the
 union of these sets of faces, giving the set of unique
 faces adjacent to the edge.
-
-For general adaptivity,
-a complete mesh representation is required to preserve mesh
-validity and similarity to the model during edge
-collapsing and swapping without imposing additional
-restrictions on how coarse the mesh can be.
-
-For most applications, these structures
-must also allow the association of user data with any
-entities, which is further motivation for storing
-all entities, i.e. for a full representation.
-Therefore our structure of choice is a full
-one-level representation, which means it is also complete.
 
 \subsection{Object-Oriented Storage}
 \label{sec:sisc_oo}
@@ -516,6 +571,7 @@ and algorithms.
 \end{figure}
 
 \subsection{Adjacency Cache}
+\label{sec:adj_cache}
 
 The majority of adaptation time and memory is consumed by the
 derivation and storage of mesh adjacencies.
