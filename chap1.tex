@@ -370,6 +370,48 @@ Beyond that, it is convenient in any case to represent
 edges explicitly, given that many adaptive algorithms
 are based on edge lengths \cite{biswas1998tetrahedral}.
 
+\section{Simple Computer}
+
+Since the following sections will describe a variety
+of different computer hardware systems, it is useful to have a reference
+point of hardware to which they can be compared.
+We define a ``reference computer" as follows:
+
+\begin{enumerate}
+\item It has a single CPU, which contains a set
+of registers (places to store single values),
+and can perform a math operation with the inputs
+and outputs being registers.
+Accessing a register is instant, but there are
+only a dozen or so of them.
+\item It has memory which is used to store
+all the data required to solve the problem.
+The CPU can transfer data between registers
+and memory at a moderate cost.
+\item It has a disk which is used to store
+inputs and outputs of the overall program.
+The CPU can transfer data between memory
+and the disk, at a high cost.
+\item It has a user interface, in our case
+we will simply say a human operator has
+some way to receive data from and provide
+data to the CPU in real time.
+\item Only one of the above actions may be
+performed at one time.
+\item With the exception of a human choosing
+to provide data, all choice of actions is
+dictated by the CPU, which is in turn obeying
+the instructions of a stored program.
+\end{enumerate}
+
+We will not pay in-depth attention to the
+architecture of the cache system, because it
+is largely transparent to the program.
+In particular, the program cannot explicitly
+command the cache to behave in a certain way;
+it can only indirectly influence the performance
+of the cache in they way it transfers...
+
 \section{Heterogeneous Node Architecture}
 
 \subsection{Multi-core CPUs}
@@ -449,11 +491,16 @@ which will be used to construct near-future supercomputers in the United States.
 
 \section{Programming Environments}
 
-{\bf Define MPI, threads, CUDA terminology.}
-
 When writing programs for heterogeneous supercomputers,
 there are a few key programming environments which motivate
 choices about the implementation.
+
+\subsection{Operating System}
+
+Most early personal computers were only physically
+capable of doing one thing at a time.
+
+\subsection{MPI}
 
 Distributed memory computers have for the past two decades
 been programmed using the Message Passing Interface (MPI)
@@ -471,7 +518,19 @@ Section \ref{sec:mpi3} and show in Section \ref{sec:phasta_active}
 that one of the applications using tools developed
 in this thesis scales to 768K cores using only MPI \cite{rasquinCise2014}.
 
-Nevertheless
+MPI reflects in software the architecture of a distributed-memory
+machine: a set of compute nodes which execute in parallel
+and cooperate via a network.
+Each node has its own memory must explicitly send network messages to provide
+or query data stored in another node.
+An MPI rank is an operating system process; a software concept
+which encompasses a memory space and one or more threads of execution.
+
+\subsection{OpenMP}
+
+OpenMP is a programming environment mainly for multi-core CPUs.
+
+\subsection{CUDA}
 
 This reference describes the CUDA environment: \cite{nickolls2008scalable}.
 
