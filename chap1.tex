@@ -353,8 +353,8 @@ additions and removals, then we require that \emph{entity
 addition and removal be constant-time operations}.
 Section \ref{sec:cavity_sched} presents two alternatives
 to scheduling cavity operations, the latter of which
-allows us to use a structure which cannot add and remove
-single entities.
+allows changes to be grouped into batches, which allows
+the use of simpler data structures.
 
 For several reasons, it is preferable to modify a cavity
 by first constructing all new entities that fill the cavity,
@@ -391,13 +391,18 @@ classification, and it defines the groups of mesh entities
 to which boundary conditions are applied.
 
 The implementations of edge collapsing which preserve
-topological similarity have so far required knowledge
+topological similarity require knowledge
 of the classification for all mesh entities,
-hence requiring a complete topological representation \cite{seol2006efficient}
+hence requiring a complete (though not necessarily full)
+topological representation \cite{seol2006efficient}
 to safely coarsen a mesh.
+It would be possible to avoid storing some entities, so long
+as the classification of entities not stored could be inferred.
 Beyond that, it is convenient in any case to represent
 edges explicitly, given that many adaptive algorithms
 are based on edge lengths \cite{biswas1998tetrahedral}.
+The adaptive applications in this work all use representations
+that store all entities.
 
 \section{Simple Computer}
 
