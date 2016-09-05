@@ -12,7 +12,8 @@ indset_iters.png \
 mpi_indset.png \
 albany1.png \
 albany2.png \
-def_topo.png
+def_topo.png \
+zoo.png
 
 BIBS = \
 scorec-refs/scorec-refs.bib
