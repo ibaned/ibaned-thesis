@@ -94,12 +94,12 @@ not have constant degree of have ``null" values where non-stored entities
 are adjacent.
 Both would complicate all code that queries and manages
 downward adjacencies.
-\end{numerate}
+\end{enumerate}
 \item How to query information (such as classification) about a non-stored
 entity is unclear. FMDB took the approach of temporarily creating
-and storing those entities when queries were made \ref{seol2006efficient}.
+and storing those entities when queries were made \cite{seol2006efficient}.
 Celes, Paulino, and Espinha use a similar solution in their reduced
-representation \ref{celes2005compact}.
+representation \cite{celes2005compact}.
 This workaround is incompatible with portable execution, as GPUs
 would not allow creating entities individually in this manner.
 \end{enumerate}
