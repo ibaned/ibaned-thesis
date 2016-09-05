@@ -117,16 +117,26 @@ Region & A 3-dimensional entity \\
 Element & An entity not bounding another entity \\
 \end{tabular}
 
-\section{Definitions}
+\section{Mesh Definitions}
+
+We define here the basic concept of a \emph{mesh}
+(Section \ref{sec:def_mesh}), based on the general
+idea of a \emph{topological complex} (Section \ref{sec:def_complex})
+and focusing on its \emph{adjacency relations} (Section \ref{sec:def_adj}).
+Next we go on to specify the type of meshes we
+are dealing with (Section \ref{sec:def_fem}),
+and the unique way in which they are being modified,
+i.e. mesh \emph{adaptation} (Section \ref{sec:def_adapt}).
 
 {\bf All definitions before hardware are from SISC}
 
 \subsection{Topological Complex}
+\label{sec:def_complex}
 
 A point set is a subset of the points in some Cartesian
 space $\mathbb{R}^D$.
 
-A {\it topological complex} $T$ is a set of point sets
+A \emph{topological complex} $T$ is a set of point sets
 containing points in $\mathbb{R}^D$.
 Each point set $T^d_i$ in $T$ is an open subset of some
 $d$-dimensional manifold embedded in $\mathbb{R}^D$,
@@ -278,7 +288,8 @@ Finally, if there are multiple polytope types per dimension,
 such as having both triangles and quadrilaterals in 2D, then
 we say the mesh is {\it mixed}.
 
-\subsection{Mesh Construction and Modification}
+\subsection{Adaptation}
+\label{sec:def_adapt}
 
 There are two approaches to modifying the topology throughout
 a simulation.
@@ -290,9 +301,6 @@ Such local changes require adding and removing entities
 from the mesh within local portions of the domain.
 On the other hand, if the mesh is not changed during the
 simulation, we say that the mesh is {\it static}.
-
-\subsection{Adaptation}
-\label{sec:def_adapt}
 
 Adaptation refers to a process of modifying the mesh by applying
 mesh entity-level operations on mesh cavities.
