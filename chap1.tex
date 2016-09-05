@@ -37,12 +37,12 @@ most memory and processing power are called supercomputers.
 
 Supercomputers are expensive to acquire and even more
 expensive to operate in terms of electricity, cooling, and other
-maintenance, so their efficiency economic efficiency
-at producing accurate results is of critical importance.
+maintenance, so their ability to
+produce accurate results at the lowest cost
+is of critical importance.
 
-In the realm of PDE solutions, a discretization is an
-approximate mathematical representation of a solution,
-and many spatial discretizations are based on a mesh,
+When solving PDEs over general domains, it is common to
+employ equation discretization methods that operate on a mesh,
 which is more precisely defined in Section \ref{sec:def_mesh}.
 Chapter \ref{chap:struct} presents the full design
 and implementation of two new computer representations
@@ -72,9 +72,10 @@ are capable of working in parallel.
 The combination of the two forms of parallelism is what
 makes a supercomputer \emph{heterogeneous}.
 
-Designing programs for these supercomputers is a critical
+Designing programs for heterogeneous supercomputers is a critical
 challenge, because such programs must be able to precisely coordinate
-a complex hierarchy totalling millions of compute cores
+a complex hierarchy of memory and interaction methods executing on
+millions of compute cores
 in order to solve a given problem at minimal cost.
 Chapter \ref{chap:parallel} presents contributions to
 the design and implementation of parallel programs,
@@ -93,7 +94,7 @@ Throughout this thesis, we present two systems:
 the first only operates on some architectures and provides
 a wide array of adaptive functionality, while the second
 is portably performant across the major architectures
-and provides less adaptive functionality.
+and currently provides less adaptive functionality.
 
 Finally, Chapter \ref{chap:apps} presents several
 application programs which make use of the tools developed
@@ -101,6 +102,7 @@ here in order to solve a variety of engineering problems.
 
 \section{Nomenclature}
 
+{\bf TO BE EXPANDED, once most content is in place}
 {\bf Part of the nomenclature is attributed to SISC}
 
 \begin{tabular}{l|l}
