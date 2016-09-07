@@ -8,6 +8,7 @@
 \label{chap:intro}
 
 \section{Introduction}
+\label{sec:intro}
 
 A wide variety of aerospace, mechanical, and nuclear engineering
 problems require solving complex Partial Differential
@@ -414,7 +415,8 @@ are based on edge lengths \cite{biswas1998tetrahedral}.
 The adaptive applications in this work all use representations
 that store all entities.
 
-\section{Simple Computer}
+\section{Reference Computer}
+\label{sec:ref_comp}
 
 Since the following sections will describe a variety
 of different computer hardware systems, it is useful to have a reference
@@ -424,15 +426,15 @@ We define a ``reference computer" as follows:
 \begin{enumerate}
 \item It has a single CPU, which contains a set
 of registers (places to store single values),
-and can perform a math operation with the inputs
+and can perform operations with the inputs
 and outputs being registers.
 Accessing a register is instant, but there are
 only a dozen or so of them.
-\item It has memory which is used to store
+\item It has memory which is used to temporarily store
 all the data required to solve the problem.
 The CPU can transfer data between registers
 and memory at a moderate cost.
-\item It has a disk which is used to store
+\item It has a disk which is used to permanently store
 inputs and outputs of the overall program.
 The CPU can transfer data between memory
 and the disk, at a high cost.
@@ -440,23 +442,37 @@ and the disk, at a high cost.
 we will simply say a human operator has
 some way to receive data from and provide
 data to the CPU in real time.
+\item It has a network interface which transits
+data to or receives data from other computers.
 \item Only one of the above actions may be
 performed at one time.
-\item With the exception of a human choosing
+\item With the exception of a human or network choosing
 to provide data, all choice of actions is
 dictated by the CPU, which is in turn obeying
-the instructions of a stored program.
+the instructions of a single stored program.
 \end{enumerate}
 
-We will not pay in-depth attention to the
+We will also not pay much in-depth attention to the
 architecture of the cache system, because it
 is largely transparent to the program.
 In particular, the program cannot explicitly
 command the cache to behave in a certain way;
 it can only indirectly influence the performance
-of the cache in they way it transfers...
+of the cache in they way it transfers data to and
+from memory.
+The key performance principle regardless of cache design is
+to make sure the order in which values are stored
+in memory reflects the order in which they are accessed.
 
 \section{Heterogeneous Node Architecture}
+
+As mentioned in Section \ref{sec:intro}, a supercomputer is
+a networked collection of nodes, and the design of a single node
+is where much of their diversity has appeared in recent years.
+This Section describes the three key hardware component developments
+influencing this diversity.
+Any present-day supercomputer node is a combination components
+from each of these three categories.
 
 \subsection{Multi-core CPUs}
 
@@ -474,6 +490,14 @@ At the time of this writing, most consumer devices
 have two or four cores, and the high-end CPUs from
 which the majority of clusters and supercomputers are constructed
 contain about sixteen cores.
+
+A CPU core has its own set of registers, and more importantly
+it has the full capability to dictate transfers to memory,
+disks, the network, and the user interface.
+In comparison with the reference computer from Section \ref{sec:ref_comp},
+the key difference is that each core executes independently,
+and therefore two cores can execute \emph{different} actions
+at the \emph{same} time.
 
 \subsection{GPU Coprocessors}
 
@@ -511,9 +535,21 @@ the Titan supercomputer at Oak Ridge National Laboratory
 was equipped with over 14K NVidia GPUs \cite{bland2012titan},
 making it the world's most powerful in the year 2012.
 By this point, GPUs had thousands of ``cores" each.
-Although each GPU core remains very limited in comparison to a
-CPU core, their combination provides an order or magnitude
-more computing power than any CPU at the time.
+
+In comparison to multi-core CPUs and the reference computer
+in Section \ref{sec:ref_comp},
+a GPU is in many ways limited in comparison to a multi-core CPU.
+The GPU and its cores cannot directly access main memory,
+disks, networks, or user interfaces.
+Rather, GPUs have their own memory hardware, separate from that of the CPU,
+and this is the only memory or interface that GPU cores may access.
+Furthermore, the actions of the GPU are for the most part dictated
+by the CPU, including transfer of data from CPU to GPU memory.
+GPU cores all simultaneously execute a small program called a \emph{kernel},
+which is given to the GPU by the CPU.
+Despite these limitations, the sheer number of cores in a GPU
+combined with the efficiencies gained from lack of generality
+make it significantly more powerful than any normal CPU.
 
 \subsection{The Intel Xeon Phi}
 
@@ -533,6 +569,13 @@ Intel has since evolved their Xeon Phi co-processor into a full-fledged
 processor with nearly one hundred CPU cores \cite{jeffers2013intel},
 which will be used to construct near-future supercomputers in the United States.
 
+A Xeon Phi processor can for the most part be considered a CPU with
+many more cores than usual, with the additional benefit that they have
+performance properties close to those of a single GPU.
+Conversely, it may provide the hardware characteristic benefits of a GPU
+with the generality of a CPU, since all cores can access main memory,
+disks, and networks as described in Section \ref{sec:ref_comp}.
+
 \section{Programming Environments}
 
 When writing programs for heterogeneous supercomputers,
@@ -541,8 +584,38 @@ choices about the implementation.
 
 \subsection{Operating System}
 
-Most early personal computers were only physically
-capable of doing one thing at a time.
+Even when given hardware as simple the reference
+computer from Section \ref{sec:ref_comp}, one can emulate
+the presence of more hardware by using an \emph{operating system},
+which is a program that directly executes on the given computer
+and in turn allows the execution of multiple other programs
+simultaneously on that same computer.
+This was one of the main reasons for the development of operating
+systems; to enable multi-tasking on otherwise single-task hardware.
+The two operating system concepts most relevant to our work
+are the \emph{process} and \emph{thread}.
+An operating system process is an emulation of the reference computer:
+it has its own memory space, which emulates hardware memory,
+as well as access to disks, user interfaces, and networks,
+which the operating system manages such that the process
+appears to have unique access to these \emph{resources}.
+A process also contains one or more threads, which are
+software emulations of CPU cores.
+They have their own emulated registers, and can execute
+different actions at the same time.
+A process has a single associated program whose instructions
+the threads are following, although each thread may be
+following a different subset of the instructions depending
+on its own local state (registers and stack).
+Operating system threads all have access to all emulated process
+resources such as networks in the same way that each CPU core
+has access to all computer interfaces.
+
+Despite having great complexity in their own right, operating
+systems are fundamentally just sharing mechanisms, and
+increasing the number of threads and processes that share
+a fixed amount of hardware resources will degrade the emulated
+performance of all the active threads.
 
 \subsection{MPI}
 
