@@ -807,6 +807,34 @@ can be carried out effectively while adhering to this principle.
 
 \subsection{Kokkos}
 
+Kokkos is a C++ library developed at Sandia National Labs that provides
+a portable shared memory programming environment encompassing other
+environments such as OpenMP and CUDA \cite{edwards2013kokkos}.
+Kokkos maintains the parallel {\bf for} loop model of OpenMP while
+accounting for the separation of code and data that may occur if CUDA is used.
+Listing \ref{lst:kokkos_for} illustrates what the loop from Listing
+\ref{lst:for} looks like when implemented using Kokkos.
+
+\begin{lstlisting}[float,style=dan-style,caption=Kokkos {\bf for} loop,label=lst:kokkos_for]
+auto add = KOKKOS_LAMBDA(int i) {
+  b[i] = a[i] + 3.14159;
+}
+Kokkos::parallel_for(n, add);
+\end{lstlisting}
+
+The key here is that this code does not change when one moves
+from multi-core CPUs using OpenMP to GPUs using CUDA.
+Even for this simple example, the changes required would otherwise
+be significant (compare Listings \ref{lst:omp_for} and \ref{lst:cuda_for}).
+
+Kokkos also provides a data structure describing an array allocation
+with features for controlling allocation to GPU memory if necessary
+and explicit control over any transfers to the CPU.
+
+The Omega\_h code developed as part of this thesis uses Kokkos and
+MPI to achieve scalable and portable performance across a wide range
+of computer architectures.
+
 \section{Goals}
 \label{sec:intro_goals}
 
