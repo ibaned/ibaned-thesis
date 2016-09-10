@@ -677,6 +677,7 @@ In software terminology, MPI is implemented as a library, which means it
 is simply a set of functions that can be called from a program.
 
 \subsection{OpenMP}
+\label{sec:openmp}
 
 OpenMP is a programming environment mainly for multi-core CPUs.
 In the same way that MPI is a software reflection of distributed memory,
@@ -750,6 +751,7 @@ They establish independence between iterations, which ensure independence
 between threads regardless of the scheduling of iterations to threads.
 
 \subsection{CUDA}
+\label{sec:cuda}
 
 CUDA is NVidia's programming environment for their large family of programmable GPUs \cite{nickolls2008scalable}.
 Like OpenMP's parallel {\bf for} concept, CUDA's programming model is based on parallel execution
@@ -806,6 +808,7 @@ we show in this thesis that very complex unstructured operations
 can be carried out effectively while adhering to this principle.
 
 \subsection{Kokkos}
+\label{sec:kokkos}
 
 Kokkos is a C++ library developed at Sandia National Labs that provides
 a portable shared memory programming environment encompassing other
@@ -830,40 +833,6 @@ be significant (compare Listings \ref{lst:omp_for} and \ref{lst:cuda_for}).
 Kokkos also provides a data structure describing an array allocation
 with features for controlling allocation to GPU memory if necessary
 and explicit control over any transfers to the CPU.
-
-The Omega\_h code developed as part of this thesis uses Kokkos and
-MPI to achieve scalable and portable performance across a wide range
-of computer architectures.
-
-\section{Goals}
-\label{sec:intro_goals}
-
-{\bf These goals are from the SISC paper in review, will
-need to be attributed}
-
-An unstructured mesh simulation code relies heavily on
-multiple core capabilities to deal with the mesh,
-and the range of features available at this level constrain
-the capabilities of the simulation as a whole.
-As such, the long-term goal towards which this thesis
-contributes is the development of a mesh handling system
-with the following capabilities:
-
-\begin{enumerate}
-\item The flexibility to adapt to evolving meshes
-\item The ability to represent any of the conforming meshes typically
-used by Finite Element (FE) and Finite Volume (FV) methods
-\item Low memory use
-\item High locality of storage
-\item Highly scalable implementation for distributed memory computers
-\item The ability to parallelize work inside heterogeneous
-supercomputer nodes
-\end{enumerate}
-
-The first goal is the most consequential; supporting adaptivity
-is the reason for much of the complexity in the structure
-and its difference compared to many non-adaptive mesh structures
-(see Section \ref{sec:def_adapt} for further discussion).
 
 \section{Overview of Software}
 
@@ -935,13 +904,13 @@ Omega\_h is a single C++ library which was designed from the beginning
 with the restrictions and potential of GPU programming in mind.
 It aims to provide as much of the core functionality of PUMI as
 is feasible in a portably performant way, which currently
-amounts to adapting triangle and tetrahedral meshes to anisotropic
+amounts to adapting triangle and tetrahedral meshes using anisotropic
 metrics.
 Omega\_h represents the first such portably performant code capable
 of mesh adaptation, and is a major contribution of this thesis.
-Its fundamental approach to on-node parallelism is
-presented in Section \ref{sec:parallel_for}, and techniques
-used to maintain deterministic execution are presented
+It uses the Kokkos library to achieve portable on-node parallelism
+as described in Section \ref{sec:kokkos}, and techniques
+it uses to produce deterministic results are presented
 in Section \ref{sec:determinism}.
 Its data structure will be described in Section \ref{sec:omega_h-struct}.
 Its implementation of mesh adaption will be discussed mainly

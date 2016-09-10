@@ -15,6 +15,46 @@ mesh parts across distributed memory spaces as described in
 Chapter \ref{chap:parallel}, the result of which is a pair of fully parallel
 mesh data structures.
 
+\section{Goals}
+\label{sec:struct_goals}
+
+{\bf These goals are from the SISC paper in review, will
+need to be attributed}
+
+An unstructured mesh simulation code relies heavily on
+multiple core capabilities to deal with the mesh,
+and the range of features available at this level constrain
+the capabilities of the simulation as a whole.
+As such, the long-term goal towards which this thesis
+contributes is the development of a mesh data structure
+with the following capabilities:
+
+\begin{enumerate}
+\item The flexibility to adapt to evolving meshes
+\item The ability to represent any of the conforming meshes typically
+used by Finite Element (FE) and Finite Volume (FV) methods
+\item Low memory use
+\item High locality of storage
+\item Highly scalable implementation for distributed memory computers
+\item The ability to parallelize work inside heterogeneous
+supercomputer nodes
+\end{enumerate}
+
+The first goal is the most consequential.
+If adaptivity is implemented as a series of requests to
+add and remove mesh entities, then a much more complex structure is required
+(see Section \ref{sec:def_adapt} for further discussion).
+Such a structure is described in Section \ref{sec:sisc}.
+However, this approach tends to conflict with our sixth goal regarding
+on-node parallelism.
+Therefore we also present an alternative
+approach in which the additions and removals required for adaptivity
+are accumulated into batches to be applied all at once
+(see Section \ref{sec:indset}), which allows us to use a less complex structure
+as presented in Section \ref{sec:omega_h-struct} while adhering to the
+principles of on-node programming established in Sections
+\ref{sec:openmp} and \ref{sec:cuda}.
+
 \section{Related Work}
 
 {\bf SISC attribution.}
@@ -136,12 +176,6 @@ was published by Garimella \cite{garimella2002mesh}.
 The choices we made in our structures are described separately
 for each data structure,
 in Sections \ref{sec:mds_adj} and \ref{sec:adj_cache}.
-
-\section{Two Paradigms, Two Structures}
-\label{sec:two_codes}
-
-{\bf A lead-in describing the two structures and their difference
-in abilities.}
 
 \section{MDS Data Structure}
 \label{sec:sisc}
