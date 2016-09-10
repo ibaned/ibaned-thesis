@@ -500,6 +500,7 @@ and therefore two cores can execute \emph{different} actions
 at the \emph{same} time.
 
 \subsection{GPU Coprocessors}
+\label{sec:def_gpu}
 
 For the past two decades, many personal computers came
 equipped with pieces of specialized hardware called
@@ -539,17 +540,30 @@ By this point, GPUs had thousands of ``cores" each.
 In comparison to multi-core CPUs and the reference computer
 in Section \ref{sec:ref_comp},
 a GPU is in many ways limited in comparison to a multi-core CPU.
-The GPU and its cores cannot directly access main memory,
+The GPU and its cores cannot directly access CPU memory,
 disks, networks, or user interfaces.
 Rather, GPUs have their own memory hardware, separate from that of the CPU,
-and this is the only memory or interface that GPU cores may access.
-Furthermore, the actions of the GPU are for the most part dictated
-by the CPU, including transfer of data from CPU to GPU memory.
-GPU cores all simultaneously execute a small program called a \emph{kernel},
+and roughly equal in size.
+GPU cores can only execute a small program called a \emph{kernel},
 which is given to the GPU by the CPU.
+Since the GPU accepts a different instruction set than the CPU,
+kernel code must be compiled specifically for the GPU.
+Other actions of the GPU are dictated at a high level
+by the CPU, including transfer of data from CPU to GPU memory.
+Due to the lack of other access, CPU-GPU data transfer is required
+for network communication or disk file access.
+To make matters worse, such data transfer is slow (low bandwidth)
+compared to the rate at which the GPU can process data,
+meaning that without careful implementation, one can spend
+the majority of computer time simply waiting for data transfers
+\cite{gregg2011data}.
+
 Despite these limitations, the sheer number of cores in a GPU
-combined with the efficiencies gained from lack of generality
-make it significantly more powerful than any normal CPU.
+combined with the efficiencies gained in exchange for lack of generality
+means that GPUs can theoretically outperform CPUs by an order of
+magnitude, and more energy efficiently.
+This motivates researchers to re-design algorithms such that
+their practical performance meets this theoretical promise.
 
 \subsection{The Intel Xeon Phi}
 
@@ -590,8 +604,6 @@ the presence of more hardware by using an \emph{operating system},
 which is a program that directly executes on the given computer
 and in turn allows the execution of multiple other programs
 simultaneously on that same computer.
-This was one of the main reasons for the development of operating
-systems; to enable multi-tasking on otherwise single-task hardware.
 The two operating system concepts most relevant to our work
 are the \emph{process} and \emph{thread}.
 An operating system process is an emulation of the reference computer:
@@ -607,15 +619,26 @@ A process has a single associated program whose instructions
 the threads are following, although each thread may be
 following a different subset of the instructions depending
 on its own local state (registers and stack).
-Operating system threads all have access to all emulated process
-resources such as networks in the same way that each CPU core
-has access to all computer interfaces.
+Operating system threads all have access to emulated process
+resources such as networks in the same way that CPU cores
+all have access to computer interfaces.
 
 Despite having great complexity in their own right, operating
-systems are fundamentally just sharing mechanisms, and
-increasing the number of threads and processes that share
+systems are fundamentally just sharing mechanisms.
+Increasing the number of threads and processes that share
 a fixed amount of hardware resources will degrade the emulated
-performance of all the active threads.
+performance of all the active threads as they will each be
+provided with a smaller fraction of the hardware resources.
+
+If one instead intends to devote all the hardware of a machine
+to a single program, then it is natural to align the operating
+system constructs with their physical counterparts.
+This means binding an operating system process to a CPU, such
+that its memory space maps to the CPU's entire available memory,
+and binding operating system threads to CPU cores, such that
+the amount of parallelism and the amount of memory sharing
+perceived at the software level both
+match the amount supported at the hardware level.
 
 \subsection{MPI}
 
@@ -640,16 +663,149 @@ machine: a set of compute nodes which execute in parallel
 and cooperate via a network.
 Each node has its own memory must explicitly send network messages to provide
 or query data stored in another node.
-An MPI rank is an operating system process; a software concept
-which encompasses a memory space and one or more threads of execution.
+An MPI rank is an operating system process, and MPI provides a
+consistent interface over the various operating system network interfaces.
+Whereas operating system networking uses complex addresses and protocols
+for generality, MPI maintains a concept of a group of $P$ ranks which are
+cooperating and may address one another by a consecutive integer from
+$0$ to $(P-1)$.
+MPI provides many complex algorithms for coordinating such groups of ranks,
+as well as a simplified method of transmitting data that allows programs
+to focus on the contents of the data as opposed to the details of what
+protocol may be used on the network.
+In software terminology, MPI is implemented as a library, which means it
+is simply a set of functions that can be called from a program.
 
 \subsection{OpenMP}
 
 OpenMP is a programming environment mainly for multi-core CPUs.
+In the same way that MPI is a software reflection of distributed memory,
+OpenMP is a software reflection of shared memory.
+It is based on the concept of a single operating system process
+that contains $T$ operating system threads which are cooperating.
+Since memory is shared within an operating system process, OpenMP
+does not provide message-passing functionaliy the way MPI does.
+What OpenMP does provide is the concept of a parallel {\bf for} loop,
+which is a key abstraction for shared memory programming.
+In structured serial programming, there is the concept of a {\bf for} loop.
+Listing \ref{lst:for} illustrates a {\bf for} loop in the C++ language,
+which adds a constant to the entries of an array {\tt a} and stores
+the resulting values in the array {\tt b}.
+This is done for a total of $n$ entries.
+As written, a single thread does this work one entry after another.
+
+\begin{lstlisting}[float,style=dan-style,caption=Serial {\bf for} loop,label=lst:for]
+for (int i = 0; i < n; ++i) {
+  b[i] = a[i] + 3.14159;
+}
+\end{lstlisting}
+
+Unlike MPI, OpenMP is directive-based, meaning that it is integrated
+directly into a programming language compiler in order to introduce
+new language notation.
+As Listing \ref{lst:omp_for} illustrates, this allows simple annotation
+of the loop from Listing \ref{lst:for} which turns it into a parallel {\bf for} loop.
+What now occurs is that all of the cooperating threads in OpenMP will share
+the work of this loop.
+Given $T$ cooperating threads, each thread will do the work for approximately
+$(n/T)$ entries of the array, and OpenMP is responsible for the scheduling of
+which entries each thread works on.
+Assuming all threads are supported by proper CPU cores, the time to complete this
+work should be $O(n/T)$, whereas the serial loop would have completed in $O(n)$ time.
+
+\begin{lstlisting}[float,style=dan-style,caption=OpenMP parallel {\bf for} loop,label=lst:omp_for]
+#pragma omp parallel for
+for (int i = 0; i < n; ++i) {
+  b[i] = a[i] + 3.14159;
+}
+\end{lstlisting}
+
+Like any form of parallelism, this places restrictions on what serial
+constructs may be parallelized.
+For example, even a simple sum operation as shown in Listing \ref{lst:sum_for}
+could not be parallelized in the same simple manner, because the {\tt sum} variable
+is being read from and written to by multiple threads without the necessary coordination.
+Such a situation is referred to as a \emph{race condition}, because depending on the
+order in which different threads perform actions with respect to one another (which is indeterminate),
+incorrect results may be produced.
+
+\begin{lstlisting}[float,style=dan-style,caption=Dependent {\bf for} loop,label=lst:sum_for]
+for (int i = 0; i < n; ++i) {
+  sum = sum + a[i];
+}
+\end{lstlisting}
+
+We refer to the execution of the body of the {\bf for} loop for a single
+value of {\tt i} as an \emph{iteration}.
+In order to avoid race conditions, we introduce the following two principles of
+array-based parallel {\bf for} programming:
+
+\begin{enumerate}
+\item No array should be both read from and written to during a loop.
+\item No array entry should be written to by more than one iteration.
+\end{enumerate}
+
+These principles are sufficient, though not necessary, for avoiding race conditions.
+They establish independence between iterations, which ensure independence
+between threads regardless of the scheduling of iterations to threads.
 
 \subsection{CUDA}
 
-This reference describes the CUDA environment: \cite{nickolls2008scalable}.
+CUDA is NVidia's programming environment for their large family of programmable GPUs \cite{nickolls2008scalable}.
+Like OpenMP's parallel {\bf for} concept, CUDA's programming model is based on parallel execution
+of kernels, which are almost the same as parallel {\bf for} loop iterations.
+Listing \ref{lst:cuda_for} shows how one might transform Listing \ref{lst:for} into
+the CUDA programming model.
+Like OpenMP, CUDA is integrated into the compiler in order to introduce its own
+non-standard language notation.
+The loop iteration becomes its own function which must be properly annotated
+to indicate it is a kernel.
+
+\begin{lstlisting}[float,style=dan-style,caption=CUDA {\bf for} loop,label=lst:cuda_for]
+__global__ add(double* a, double* b) {
+  int i = blockIdx.x;
+  b[i] = a[i] + 3.14159;
+}
+add<< n, 1 >>(a, b);
+\end{lstlisting}
+
+The limitations of GPUs described in Section \ref{sec:def_gpu} make their
+way into the design of CUDA and software that uses it.
+Annotations required on CUDA functions because the code in them
+must be compiled specifically for the GPU.
+CUDA also provides the functions with which the CPU controls GPU memory
+allocations.
+In Listing \ref{lst:cuda_for}, for example, both arrays {\tt a} and {\tt b}
+need to be explicitly allocated in GPU memory.
+As Section \ref{sec:def_gpu} mentions, CPU-GPU data transfer is slow and
+should be avoided.
+Also, for all practical purposes, kernel code should not allocate or
+deallocate memory.
+Although limited support for this exists, it should be avoided for best
+performance.
+This leads to the following principles of GPU programming:
+
+\begin{enumerate}
+\item Organize data in large allocations, such that the number of allocations
+is not proportional to the size of the data. This allows the CPU to manage
+allocations efficiently.
+\item Allocate all data on the GPU, and only transfer it to the CPU
+for network and disk operations.
+\item A kernel should do a small, constant amount of work using a
+small, constant amount of memory.
+\end{enumerate}
+
+The first and third principles have a serious impact on data structure
+design, ruling out the many-small-objects approach.
+Any data structures used locally at the kernel level should be designed such
+that their size is known at compile time.
+The second principle is essentially the most aggressive approach to avoid
+CPU-GPU data transfer, and is motivated by the high cost of such data transfer.
+Although it can be argued this is too restrictive,
+we show in this thesis that very complex unstructured operations
+can be carried out effectively while adhering to this principle.
+
+\subsection{Kokkos}
 
 \section{Goals}
 \label{sec:intro_goals}

@@ -24,22 +24,29 @@
 %Dan: color is used for notes to self while writing
 \usepackage{color}
 %Dan: for figures !
-\usepackage[]{graphicx}
+\usepackage[draft]{graphicx}
 %Dan: for math !
 \usepackage{amsfonts}
 %Dan: for algorithms !
 %Dan: these two by default define the same symbols...
 % \usepackage{algpseudocode}
 \usepackage{algorithm2e}
-%Dan: for Seegyoung's drawings....
+%Dan: for Seegyoung's drawings (from TOMS paper)
 \usepackage{tikz}
 \usetikzlibrary{decorations.pathmorphing}
 \usetikzlibrary{arrows}
 \usetikzlibrary{shapes.geometric}
+%Dan: for code listings
+\usepackage{listings}
+\lstdefinestyle{dan-style}{
+  basicstyle=\ttfamily,
+  language=C++,
+  columns=fullflexible,
+  keepspaces=true
+}
 
 \begin{document}
 
-%\include{rpititle-mas}   % titlepage material for Master's thesis or project
 \include{title}   % titlepage material for PhD thesis
 \include{ack}  % include for acknowledgements
 \include{rpiabs} % abstract
