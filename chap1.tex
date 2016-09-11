@@ -415,6 +415,34 @@ are based on edge lengths \cite{biswas1998tetrahedral}.
 The adaptive applications in this work all use representations
 that store all entities.
 
+\subsection{Metric Field}
+\label{sec:def_metric}
+
+\subsection{Element Quality}
+\label{sec:def_quality}
+
+Many researchers use a quality measure known as the mean ratio
+to evaluate tetrahedra and triangles
+\cite{liu1994relationship,loseille2015parallel,compere2010mesh,
+li20053d}.
+In Equation \ref{eq:tet_mean_ratio}, we define the mean ratio
+in an equivalent but slightly different form than presented by other
+authors.
+This is to clearly show that the mean ratio may be interpreted
+as comparing a tetrahedron's volume and the volume of
+an equilateral tetrahedron with the same root-mean-squared edge length.
+
+\begin{equation} \label{eq:tet_mean_ratio}
+Q_K = \left(\frac{V_K}{\gamma l_{\text{RMS}}^3}\right)^{\frac23},\,
+l_{RMS}=\left(\sum_{i=1}^6 \left(l_{K,i}\right)^2\right)^\frac12, \,
+\gamma = \frac{1}{\sqrt{72}}
+\end{equation}
+
+In Equation \ref{eq:tet_mean_ratio},
+$V_K$ is the tetrahedron volume, $l_{K,i}$ is the
+length of edge $i$ of the tetrahedron, and $\gamma$ is the volume
+of an equilateral tetrahedron with unit edge length.
+
 \section{Reference Computer}
 \label{sec:ref_comp}
 

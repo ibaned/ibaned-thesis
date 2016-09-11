@@ -8,4 +8,60 @@
 %\addcontentsline{toc}{chapter}{APPENDICES}             %toc entry  or:
 \addtocontents{toc}{\parindent0pt\vskip12pt APPENDICES} %toc entry, no page #
 
-\chapter{EXAMPLE APPENDIX}
+\chapter{Theoretical Aspects}
+
+\section{Upward Adjacency Bounds}
+
+If geometric aspects are not taken into account, there
+is limit on the number of simplices that may share a vertex.
+For example, one can mesh a disk by separating it into arbitrarily
+thin slices, each of which becomes a triangle.
+Therefore, our proof of upper bounds on simplices sharing a vertex
+must be based on an assumed geometric restriction.
+We will begin with the most straightforward restriction, that
+of solid angles, and correlate it to the mean ratio quality measure
+defined by Equation \ref{eq:tet_mean_ratio} from Section \ref{sec:def_quality}.
+
+\begin{equation}
+\phi = \arccos\left(\frac{\cos\theta - \cos^2\theta}{\sin^2\theta}\right)
+\end{equation}
+
+\begin{equation}
+\mathbf{\Omega} = 3\phi - \pi
+\end{equation}
+
+\begin{equation} \label{eq:solid_angle_degree}
+n = \left\lfloor \frac{4\pi}{\mathbf{\Omega}} \right\rfloor
+\end{equation}
+
+\begin{equation} \label{eq:surf_tri_height}
+h = \frac{\sqrt{3}}{2}l = \sqrt{3}\sin\left(\frac{\theta}{2}\right)
+\end{equation}
+
+\begin{equation} \label{eq:surf_tri_inradius}
+r = \frac{h}{3} = \frac{1}{\sqrt{3}}\sin\left(\frac{\theta}{2}\right)
+\end{equation}
+
+\begin{equation} \label{eq:surf_tri_circumradius}
+R = 2r = \frac{2}{\sqrt{3}} \sin\left(\frac{\theta}{2}\right)
+\end{equation}
+
+\begin{equation} \label{eq:surf_tri_area}
+A = \frac{\sqrt{3}}{4}l^2
+\end{equation}
+
+\begin{equation} \label{eq:tet_height}
+H = \sqrt{1-R^2}
+\end{equation}
+
+\begin{equation} \label{eq:tet_volume}
+V = \frac13 A H
+\end{equation}
+
+\begin{equation} \label{eq:msl}
+l_{\text{MS}} = \frac16(3l^2 + 3) = \frac12(l^2 + 1)
+\end{equation}
+
+\begin{equation} \label{angle_quality}
+\mathcal{Q} = \left(\frac{V^2}{\gamma^2 l_{\text{MS}}^3}\right)^{\frac13}
+\end{equation}
