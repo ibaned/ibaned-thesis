@@ -418,6 +418,66 @@ that store all entities.
 \subsection{Metric Field}
 \label{sec:def_metric}
 
+The most common way in which one describes the desired effects on
+the mesh to an adaptation program is via a metric field
+\cite{loseille2015parallel,compere2010mesh,li20053d}.
+From a continuous perspective, the metric field is a tensor
+$\mathcal{M}$ which varies over physical space.
+This tensor describes a metric because at any given point
+$\mathbf{x}$ in space, one can choose a direction expressed
+as a unit vector $\mathbf{u}$, then the product
+$\mathbf{u}^T\mathcal{M}(\mathbf{x})\mathbf{u}$ replaces the inner
+product $\mathbf{u}^T\mathbf{u}$ for measuring distance along
+the given direction.
+We require the metric tensor to be a real symmetric positive-definite
+$d\times d$ matrix for spatial dimension $d$, which means it
+can be diagonalized by an orthogonal matrix and has all
+positive eigenvalues, as expressed in Equation \ref{eq:metric_decomp}.
+
+\begin{equation} \label{eq:metric_decomp}
+\mathcal{M} = R^T\Lambda R,\, R^T R = I,\, \Lambda = \text{diag}(\lambda_1,\dots,\lambda_d),\,
+\forall i\in [1,d]: \lambda_i > 0
+\end{equation}
+
+The matrix $R$ can be viewed as describing a rotation,
+while the diagonal matrix $\Lambda$ scales a vector by a positive
+amount along each coordinate axis.
+One can then consider the matrix $Q$ as
+defined by Equation \ref{eq:metric_transform} to be defining
+an affine transformation (rotation followed by scaling) that
+is applied to vectors before their inner product is taken,
+as illustrated in Equation \ref{eq:metric_space_product}.
+
+\begin{equation} \label{eq:metric_transform}
+Q = \Lambda^{\frac12} R,\,
+\Lambda^{\frac12} = \text{diag}(\sqrt{\lambda_1},\dots,\sqrt{\lambda_d})
+\end{equation}
+
+\begin{equation} \label{eq:metric_space_product}
+\mathbf{u}^T \mathcal{M}\mathbf{v} =
+\mathbf{u}^T R^T\Lambda R\mathbf{v} =
+\mathbf{u}^T R^T\Lambda^{\frac12} \Lambda^{\frac12}R\mathbf{v} =
+\mathbf{u}^T Q^T Q\mathbf{v} =
+(Q\mathbf{u})^T (Q\mathbf{v}) =
+\tilde{\mathbf{u}}^T \tilde{\mathbf{v}}
+\end{equation}
+
+Viewed in this way, the metric tensor is actually defining,
+at each point in space, an affine transformation that should
+be applied to vectors before computing local spatial qualities.
+For us, it is sufficient to consider how the metric tensor
+alters length along a direction $\mathbf{u}$ (Equation \ref{eq:metric_length}),
+as well as volume (Equation \ref{eq:metric_volume}).
+We use a tilde to denote quantities ``in metric space" (post-transformation).
+
+\begin{equation} \label{eq:metric_length}
+\tilde{l} = l \cdot \sqrt{\mathbf{u}^T\mathcal{M}\mathbf{u}}
+\end{equation}
+
+\begin{equation} \label{eq:metric_volume}
+\tilde{V} = V \cdot \sqrt{\det(\mathcal{M})}
+\end{equation}
+
 \subsection{Element Quality}
 \label{sec:def_quality}
 
@@ -433,7 +493,7 @@ as comparing a tetrahedron's volume and the volume of
 an equilateral tetrahedron with the same root-mean-squared edge length.
 
 \begin{equation} \label{eq:tet_mean_ratio}
-Q_K = \left(\frac{V_K}{\gamma l_{\text{RMS}}^3}\right)^{\frac23},\,
+\eta_K = \left(\frac{V_K}{\gamma l_{\text{RMS}}^3}\right)^{\frac23},\,
 l_{RMS}=\left(\sum_{i=1}^6 \left(l_{K,i}\right)^2\right)^\frac12, \,
 \gamma = \frac{1}{\sqrt{72}}
 \end{equation}
