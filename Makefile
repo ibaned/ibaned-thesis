@@ -21,9 +21,9 @@ scorec-refs/scorec-refs.bib
 
 SRCS = \
 $(MAIN) \
+title.tex \
 rpiabs.tex \
 ack.tex \
-rpiapp.tex \
 rpibib.tex \
 chap1.tex \
 chap2.tex \
@@ -31,7 +31,7 @@ chap3.tex \
 chap4.tex \
 chap5.tex \
 chap6.tex \
-title.tex \
+appendix.tex \
 $(FIGS) \
 $(BIBS)
 
