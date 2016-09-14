@@ -175,7 +175,7 @@ dimensions to represent
 was published by Garimella \cite{garimella2002mesh}.
 The choices we made in our structures are described separately
 for each data structure,
-in Sections \ref{sec:mds_adj} and \ref{sec:adj_cache}.
+in Sections \ref{sec:mds_adj} and \ref{sec:omega_h-struct}.
 
 \section{MDS Data Structure}
 \label{sec:sisc}
@@ -450,12 +450,8 @@ virtual address space.
 \begin{figure}
 \begin{center}
 \includegraphics[width=0.6\textwidth]{arraylist.png}
-\caption{(left) A linked list in object form, each node containing
-a memory address pointer to the next node.
-(right) The same linked list packed into an array.
-The data contained inside each node is the array index of the next node.
-Underneath each node, its own index is indicated.
-The letters serve to indicate corresponding nodes before and after.}
+\caption{(left) A linked list in object form.
+(right) The same linked list packed into an array.}
 \label{fig:arraylist}
 \end{center}
 \end{figure}
@@ -618,6 +614,18 @@ cost of reconstruction.
 This is the main design difference in Omega\_h: the mesh
 structure is a static read-only topological structure.
 
+\begin{figure}
+\begin{center}
+\includegraphics[width=0.15\textwidth]{up_down_mesh.png}
+\includegraphics[width=0.3\textwidth]{down.png}
+\includegraphics[width=0.45\textwidth]{up.png}
+\caption{(left) an example 4-vertex 2-triangle mesh
+(middle) the downward adjacency array
+(right) the upward adjacency array}
+\label{fig:osh_up_down}
+\end{center}
+\end{figure}
+
 This static array structure is similar to those
 of the MOAB mesh database \cite{tautges2004moab},
 and also of several solvers which implement their own structures.
@@ -625,15 +633,15 @@ We assume for simplicity that either all elements are tetrahedra
 or they are all triangles (see Section \ref{sec:sisc_mstruct} for
 the complexity associated with mixed meshes).
 This allows us to store downward adjacencies in a single array
-that can be thought of as two-dimensional {\bf (FIGURE!!)}.
-Upward adjacencies are stored in the widely known compressed row format,
-used for example in the METIS interface \cite{METIS}
-{\bf (FIGURE!!)}.
-We also store a full mesh representation \cite{beall1997general}, meaning
-that all faces and edges are stored.
-We need at least the boundary faces and edges to robustly preserve
-topology, and storing all mesh entities simplifies data structures
-and algorithms.
+that can be thought of as two-dimensional
+(see Figure \ref{fig:osh_up_down}(middle)).
+Upward adjacencies (and all complex graphs in Omega\_h, for that matter)
+are stored in the widely known compressed row format,
+used for example in the METIS graph partitioner interface \cite{METIS}.
+This consists of two arrays, one containing the destinations
+of all graph edges, sorted by the source of the edge.
+The second array contains offsets indicating where in the first
+array the edges going out from a given graph node are stored.
 
 In MDS, if a user requests an adjacency other than those
 which are stored as per Figure \ref{fig:topo}(right),
@@ -655,7 +663,8 @@ amounts of time (see Section \ref{sec:adj_perf}).
 This leads us to the following key properties of the Omega\_h structure:
 \begin{enumerate}
 \item The mesh structure is a set of adjacency structures between
-pairs of dimensions. Downward adjacencies 
+pairs of dimensions. Each adjacency is stored in one of the two
+formats shown in Figure \ref{fig:osh_up_down}.
 \end{enumerate}
 
 \begin{figure}
@@ -672,7 +681,7 @@ derivation and storage of mesh adjacencies.
 To mitigate the runtime cost, our mesh structure acts as an adjacency cache,
 which derives new adjacencies when they are requested and stores
 them in case of later requests.
-Figure \ref{fig:adjs} shows the adjacencies that we start with and some
+Figure \ref{fig:adjs_osh} shows the adjacencies that we start with and some
 that are derived.
 By default, all entities are defined by their downward adjacency to mesh vertices.
 This is the only adjacency data that mesh adaptation code has to rebuild

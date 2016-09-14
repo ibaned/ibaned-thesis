@@ -2,6 +2,9 @@ MAIN_BASE = ibanez_thesis
 MAIN = $(MAIN_BASE).tex
 
 FIGS = \
+up_down_mesh.png \
+up.png \
+down.png \
 adjs_osh.png \
 adjs_mds.png \
 full_rep.png \
