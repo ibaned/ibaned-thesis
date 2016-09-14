@@ -573,40 +573,99 @@ are stored.
 {\bf a bit more intro describing the difference
 versus MDS}
 
-Among the many restrictions of GPU programming
-is that memory allocation within the GPU threads is strongly
-discouraged, or is not possible.
-This implies that allocations must be made large enough
-that a single CPU thread can handle their allocation and de-allocation.
-Combine this with the GPU parallelism model of having each
-thread handle a simple task corresponding to an array index, and
-it is clear that arrays are the optimal choice of data structure.
+Omega\_h is designed for portable performance across
+all the different hardware covered in Section \ref{sec:node_hw}.
+As such it makes a few key decisions differently from MDS,
+which affect much of its resulting structure and logic.
+Apart from the focus on GPU compatibility, when designing
+Omega\_h we often prefer to use more memory as opposed
+to more compute time when such a trade-off is available.
+Finally, Omega\_h is focused strictly on simplex mesh
+adaptivity, unlike PUMI which aims also to represent
+meshes containing prismatic boundary layers {\bf (CITE?)}
+or hexahedra.
 
-{\bf also need to mention that contention free list
-heads and growth prevent us from using MDS structure
-with on-node threading}
+Recall from Section \ref{sec:cuda} that for effective
+performance on GPUs data must be consolidated into
+a few large arrays.
+Both MDS and Omega\_h do this, and for the latter it is
+a matter of strict necessity.
 
-Our implementation uses array structures similar to those
-of the original MOAB mesh database \cite{tautges2004moab},
+However, in MDS, the usage of the structure is clearly in terms
+of requesting the creation or destruction of a single entity at
+a time.
+The clear benefit of this is ease of programming, but the drawback
+is the inability to parallelize access to a single MDS data structure
+(the free list, growth mechanism, and upward lists would become
+points of contention).
+For PUMI that is not a serious issue, because even with the use of
+threads there will be at least a few hundred elements per thread
+in typical PUMI use cases.
+That means it is acceptable to have one MDS data structure per thread.
+There are three reasons why this approach does not work on a GPU:
+\begin{enumerate}
+\item The GPU does not maintain persistent per-thread state from
+one loop to another
+\item The GPU has more parallelism, closer to a dozen or even
+a single mesh element per compute core.
+\end{enumerate}
+For these reasons, Omega\_h takes a different approach:
+its mesh data structure will efficiently represent a static
+(unchanging) mesh topology, and the methods in Section \ref{sec:omega_h-adapt}
+will construct a whole new mesh structure from the current
+one, incorporating many changes at once to amortize the
+cost of reconstruction.
+This is the main design difference in Omega\_h: the mesh
+structure is a static read-only topological structure.
+
+This static array structure is similar to those
+of the MOAB mesh database \cite{tautges2004moab},
 and also of several solvers which implement their own structures.
-We assume that either all elements are tetrahedra or they are all triangles.
+We assume for simplicity that either all elements are tetrahedra
+or they are all triangles (see Section \ref{sec:sisc_mstruct} for
+the complexity associated with mixed meshes).
 This allows us to store downward adjacencies in a single array
-that can be thought of as two-dimensional.
+that can be thought of as two-dimensional {\bf (FIGURE!!)}.
 Upward adjacencies are stored in the widely known compressed row format,
-used for example in the METIS interface \cite{METIS}.
-We do store a full mesh representation \cite{beall1997general}, meaning
-that all faces and edges are also stored.
+used for example in the METIS interface \cite{METIS}
+{\bf (FIGURE!!)}.
+We also store a full mesh representation \cite{beall1997general}, meaning
+that all faces and edges are stored.
 We need at least the boundary faces and edges to robustly preserve
 topology, and storing all mesh entities simplifies data structures
 and algorithms.
 
-\begin{figure}[t]\vspace*{4pt}
-\caption{{\bf THIS NEEDS TO BE REDONE} Permanent (solid arrow) and on-demand (dashed arrow) adjacencies}\vspace*{-6pt}
-\label{fig:adjs}
-\end{figure}
+In MDS, if a user requests an adjacency other than those
+which are stored as per Figure \ref{fig:topo}(right),
+it is computed for the given entity the user identifies.
+As mentioned in Section \ref{sec:mds_adj}, this computation
+may involve complex set intersections or unions, and the
+upward derivations in particular are implemented with
+heavy use of memory allocation.
+Per Section \ref{sec:cuda}, we cannot allow such frequent
+and small allocations on GPUs, and in principle we should
+avoid doing a lot of work in a single GPU kernel, so it
+is preferable to have all the needed adjacency information stored in
+a convenient manner prior to entering a GPU kernel.
+Even in the MDS case, the user may request the same non-stored
+adjacency information for a single entity multiple times
+in different contexts, and re-computing this can use significant
+amounts of time (see Section \ref{sec:adj_perf}).
 
-\subsection{Adjacency Cache}
-\label{sec:adj_cache}
+This leads us to the following key properties of the Omega\_h structure:
+\begin{enumerate}
+\item The mesh structure is a set of adjacency structures between
+pairs of dimensions. Downward adjacencies 
+\end{enumerate}
+
+\begin{figure}
+\begin{center}
+\includegraphics[width=0.15\textwidth]{adjs_osh.png}
+\caption{The permanent one-level downward adjacencies
+kept by Omega\_h}
+\label{fig:adjs_osh}
+\end{center}
+\end{figure}
 
 The majority of adaptation time and memory is consumed by the
 derivation and storage of mesh adjacencies.
@@ -644,6 +703,7 @@ desired vertices.
 {\bf Query times, modification times, etc. for both structures.}
 
 \subsection{Adjacency Query Performance}
+\label{sec:adj_perf}
 
 To substantiate our claims of $O(1)$ adjacency queries and
 give an example of typical query performance, we create two
