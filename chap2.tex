@@ -18,8 +18,7 @@ mesh data structures.
 \section{Goals}
 \label{sec:struct_goals}
 
-{\bf These goals are from the SISC paper in review, will
-need to be attributed}
+{\bf SISC attribution}
 
 An unstructured mesh simulation code relies heavily on
 multiple core capabilities to deal with the mesh,
@@ -56,8 +55,6 @@ principles of on-node programming established in Sections
 \ref{sec:openmp} and \ref{sec:cuda}.
 
 \section{Related Work}
-
-{\bf SISC attribution.}
 
 There are several other implementations of mesh data structures
 which offer various subsets of the features described herein:
@@ -137,7 +134,7 @@ downward adjacencies.
 \end{enumerate}
 \item How to query information (such as classification) about a non-stored
 entity is unclear. FMDB took the approach of temporarily creating
-and storing those entities when queries were made \cite{seol2006efficient}.
+and storing those entities when queries were made \cite{seol2005fmdb}.
 Celes, Paulino, and Espinha use a similar solution in their reduced
 representation \cite{celes2005compact}.
 This workaround is incompatible with portable execution, as GPUs
@@ -180,8 +177,6 @@ in Sections \ref{sec:mds_adj} and \ref{sec:omega_h-struct}.
 \section{MDS Data Structure}
 \label{sec:sisc}
 
-{\bf SISC attribution}
-
 The MDS structure is built around the following key characteristics:
 
 \begin{enumerate}
@@ -217,22 +212,35 @@ adjacency relations.
 \begin{figure}
 \begin{center}
 \includegraphics[width=0.53\textwidth]{full_rep.png}
-\quad
-\includegraphics[width=0.15\textwidth]{adjs_mds.png}
-\caption{(left) a geometric representation of one-level
-relations among a subset of the entities that bound a tetrahedron.
-(right) simpler depiction of one-level relations between dimensions}
+\caption{A geometric representation of one-level
+relations among a subset of the entities that bound a tetrahedron.}
 \label{fig:mds_topo}
 \end{center}
 \end{figure}
 
-Figure \ref{fig:mds_topo} illustrates the relationships
+\begin{figure}
+\begin{center}
+\includegraphics[width=0.8\textwidth]{adjs_mds.png}
+\caption{Single-entity adjacency derivations in MDS.}
+\label{fig:adjs_mds}
+\end{center}
+\end{figure}
+
+Figure \ref{fig:mds_topo} illustrates geometrically the relationships
 stored in a full one-level representation.
 Each arrow representing an adjacency relation (a.k.a. entity use)
 is bi-directional to indicate that we store both the
 downward (high to low dimension) and upward (low to high) relations.
 Note that vertices are related only to edges,
 regions are related only to faces, etc.
+
+MDS stores these one-level adjacencies directly
+and updates them as needed during entity addition and removals,
+so we can call them the ``permanent" adjacencies.
+In order to fulfil requests for any adjacency information regarding a single
+mesh entity at runtime,
+MDS it carries out derivations based on the permanent adjacency information
+as shown in Figure \ref{fig:adjs_mds}.
 
 Downward adjacencies not directly stored are derived
 locally by intersecting existing adjacencies.
@@ -249,6 +257,9 @@ Given a vertex, one can retrieve adjacent edges, then
 for each edge retrieve adjacent faces, then take the
 union of these sets of faces, giving the set of unique
 faces adjacent to the edge.
+
+These derivations are based on the algorithms described
+in detail in \cite{seol2005fmdb}.
 
 \subsection{Object-Oriented Storage}
 \label{sec:sisc_oo}
@@ -564,11 +575,6 @@ are stored.
 \section{Omega\_h Data Structure}
 \label{sec:omega_h-struct}
 
-{\bf this is from the full-paper IMR submission}
-
-{\bf a bit more intro describing the difference
-versus MDS}
-
 Omega\_h is designed for portable performance across
 all the different hardware covered in Section \ref{sec:node_hw}.
 As such it makes a few key decisions differently from MDS,
@@ -578,8 +584,10 @@ Omega\_h we often prefer to use more memory as opposed
 to more compute time when such a trade-off is available.
 Finally, Omega\_h is focused strictly on simplex mesh
 adaptivity, unlike PUMI which aims also to represent
-meshes containing prismatic boundary layers {\bf (CITE?)}
-or hexahedra.
+meshes containing prismatic boundary layers \cite{ovcharenko2013parallel}
+or hexahedra \cite{seol2006efficient}.
+
+\subsection{Static Mesh}
 
 Recall from Section \ref{sec:cuda} that for effective
 performance on GPUs data must be consolidated into
@@ -614,6 +622,8 @@ cost of reconstruction.
 This is the main design difference in Omega\_h: the mesh
 structure is a static read-only topological structure.
 
+\subsection{Adjacency Arrays}
+
 \begin{figure}
 \begin{center}
 \includegraphics[width=0.15\textwidth]{up_down_mesh.png}
@@ -643,25 +653,72 @@ of all graph edges, sorted by the source of the edge.
 The second array contains offsets indicating where in the first
 array the edges going out from a given graph node are stored.
 
+\subsection{Alignment Information}
+\label{sec:osh_align}
+
+Alongside either of these adjacency representations, Omega\_h
+also stores an array of useful alignment information.
+A high-dimensional entity will use a low-dimensional entity
+as part of its boundary. However, since that low-dimensional
+entity is shared with other high-dimensional entities, in general
+it will not be aligned according to the canonical orders
+described in the high-dimensional entity's topological
+template (see Section \ref{sec:topo_template}).
+For example, a face between two regions cannot have its normal
+point into both regions.
+Therefore it will be ``flipped" with respect to the canonical
+boundary face of one of these regions.
+
+An alignment array has one 8-bit entry for each entity use, and encodes
+data about how the entity being used lines up with the entity using it.
+Although 8 bits is the smallest value that current computers allow one
+to store, we only 6 of these bits to store the following three things:
+\begin{enumerate}
+\item Downward ordering (3 bits): what is the canonical order of the
+low-dimensional entity in the high-dimensional template.
+\item Rotation (2 bits): how many times to rotate the low-dimensional
+entity before it lines up with the canonical boundary
+entity of the template.
+\item Flip (1 bit): whether the low-dimensional entity also
+needs to be flipped before it can line up with the canonical
+boundary entity.
+\end{enumerate}
+
+This alignment information, if stored, can speed up a wide variety
+of algorithms.
+It is also typically non-trivial to compute, but can be easier
+to construct at the same time as an adjacency is constructed.
+For example, downward ordering is easy to construct as one
+is constructing an upward adjacency based on a downward one.
+Therefore the adjacency construction algorithms are the optimal
+location to be computing and storing such information
+(more on this in Section \ref{sec:adj_cache}).
+Because they occupy only 8 bits per entity use while the
+existing arrays occupy at least 32 bits per use, this additional
+information consumes at most 25\% more memory, which is affordable.
+
+\subsection{Adjacency Cache}
+\label{sec:adj_cache}
+
 In MDS, if a user requests an adjacency other than those
-which are stored as per Figure \ref{fig:mds_topo}(right),
-it is computed for the given entity the user identifies.
+which are stored as per Figure \ref{fig:adjs_mds},
+it is computed for the single entity the user specifies.
 As mentioned in Section \ref{sec:mds_adj}, this computation
 may involve complex set intersections or unions, and the
-upward derivations in particular are implemented with
+upward derivations in particular are typically implemented with
 heavy use of memory allocation.
 Per Section \ref{sec:cuda}, we cannot allow such frequent
-and small allocations on GPUs, and in principle we should
-avoid doing a lot of work in a single GPU kernel, so it
-is preferable to have all the needed adjacency information stored in
+and small allocations on GPUs.
+In addition, we should avoid doing a lot of work in a single GPU kernel,
+so it is preferable to have all the needed adjacency information stored in
 a convenient manner prior to entering a GPU kernel.
 Even in the MDS case, the user may request the same non-stored
-adjacency information for a single entity multiple times
+adjacency information multiple times
 in different contexts, and re-computing this can use significant
 amounts of time (see Section \ref{sec:adj_perf}).
 
 In profiling the execution of Omega\_h mesh adaptation, we find
-the majority of adaptation time and memory is consumed by the
+the majority of time and memory is consumed by the
 derivation and storage of mesh adjacencies.
 To mitigate the runtime cost, our mesh structure acts as an adjacency cache,
 which derives new adjacencies when they are requested and stores
@@ -670,15 +727,7 @@ Figure \ref{fig:adjs_osh} shows the adjacencies that we start with
 and how the others are derived.
 The permanent adjacencies (those which are provided upon creation
 of the mesh and uniquely define topology) are the one-level downward
-adjacencies, i.e. the downward portion of Figure \ref{fig:mds_topo}(right).
-We use two forms of adjacency inference:
-\begin{enumerate}
-\item Inversion: an upward adjacency is derived from is corresponding downward
-adjacency. This reduces to a low-degree graph inversion problem, which we
-solve either by sorting graph edges by their destination graph node or using
-atomic operations to associate graph edges with their destination graph nodes.
-\item Transiting: {\bf TODO: describe this}
-\end{enumerate}
+adjacencies, i.e. the downward portion of Figure \ref{fig:adjs_mds}.
 
 \begin{figure}
 \begin{center}
@@ -688,27 +737,42 @@ atomic operations to associate graph edges with their destination graph nodes.
 \end{center}
 \end{figure}
 
-This leads us to the following key properties of the Omega\_h structure:
+We use two forms of adjacency inference:
 \begin{enumerate}
-\item The mesh structure is a set of adjacency structures between
-pairs of dimensions. Each adjacency is stored in one of the two
-formats shown in Figure \ref{fig:osh_up_down}.
-\item The structure is created by setting the 
+\item Inversion: an upward adjacency is derived from is corresponding downward
+adjacency. This reduces to a low-degree graph inversion problem, which we
+solve by using atomic operations to associate graph edges with their
+destination graph nodes.
+{\bf (maybe include the inversion algorithm? In the appendix?)}
+\item Transiting: Similar to the intersection process described in Section
+\ref{sec:mds_adj} to derive downward adjacencies, we can combine the
+downward adjacencies from dimension $p$ to dimension $(q+1)$ and
+from $(q+1)$ to $q$ into a single adjacency from $p$ to $q$.
+By using the alignment information stored in each downward adjacency,
+we can avoid having to do any kind of set intersection, because we
+can map the $(q+1)$-dimensional entities onto the $p$-dimensional template
+and the template has all adjacency information stored {\it a priori}.
 \end{enumerate}
 
-{\bf TODO: describe why using one-level is better than going to vertices}
-
-\subsection{Alignment Codes}
+Note that the set of permanent adjacencies in Omega\_h is not technically
+complete, because adjacencies cannot be efficiently derived for
+single entities at a time.
+However, because Omega\_h does derivations on a full-mesh basis,
+it can use the inversion algorithm to compute
+all upward relations based on all downward relations in $O(n)$
+time, whereas there is no $O(1)$ equivalent operation for a
+single entity.
+Thus Omega\_h obeys a relaxed definition of completeness that
+requires $O(n)$ full-mesh derivation operations as opposed
+to $O(1)$ single-entity derivation operations.
 
 \section{Data Structure Performance}
-
-{\bf Query times, modification times, etc. for both structures.}
 
 \subsection{Adjacency Query Performance}
 \label{sec:adj_perf}
 
-To substantiate our claims of $O(1)$ adjacency queries and
-give an example of typical query performance, we create two
+To substantiate our claims that MDS supports $O(1)$ adjacency queries and
+give an example of its typical query performance, we create two
 uniform meshes at different resolutions, having approximately
 100K and 200K elements, respectively.
 We then time, for each pair of dimensions, how long it takes
@@ -767,20 +831,27 @@ dimension      & 3 & 45.6 & 27.8 &   4.5 &       \\
 \end{center}
 \end{table}
 
+Performing a corresponding study for Omega\_h is not quite
+trivial.
 Because Omega\_h uses an adjacency cache, the runtime cost
 of querying a particular adjacency depends on which adjacencies
 are already cached at the moment.
-In the trivial case, that adjacency is already cached and
+In the absolute best case, that adjacency is already cached and
 need only be read directly from memory.
-This trivial case is illustrated in Table \ref{tab:osh_walk_100},
+This best case scenario is illustrated in Table \ref{tab:osh_walk_100},
 showing the time required to simply read and traverse cached adjacency
 information from memory, for all entities of a given dimension,
 using the same 100K mesh as Table \ref{tab:mds_adj_100}.
-Table \ref{tab:osh_adj_100} then presents incremental construction
+This data is presented as a lower bound for traversal cost, given
+that Omega\_h has optimal structures for fast traversal and reading.
+Table \ref{tab:osh_adj_100} presents the more useful incremental construction
 times, i.e. the time required to construct an adjacency
 (for all entities of the relevant dimension)
 assuming any pre-requisite adjacencies used in the construction
 have already been cached.
+Values from Table \ref{tab:osh_adj_100} can be used in conjunction
+with the diagram in Figure \ref{fig:adjs_osh} to determine
+Omega\_h performance for a particular series of queries.
 
 \begin{table}
 \caption{Omega\_h traversal timings (in milliseconds) for 100K tet mesh}

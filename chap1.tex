@@ -318,6 +318,32 @@ Finally, if there are multiple polytope types per dimension,
 such as having both triangles and quadrilaterals in 2D, then
 we say the mesh is {\it mixed}.
 
+\subsubsection{Topological Template}
+\label{sec:topo_template}
+
+When dealing with stored mesh topology and attempting to describe
+the relationships between adjacent entities, one needs some frame
+of reference to begin with.
+This takes the form of a \emph{topological template}
+\cite{seol2005fmdb, karamete2016novel} which describes,
+for a single polytope, a canonical numbering of its boundary entities.
+For example, the vertices of a tetrahedron are numbered such that
+the triple product $(x_1-x_0)\times(x_2-x_0)\cdot(x_3-x_0)$ yields
+a positive value, where $x_i$ is the coordinate of vertex $i$.
+Furthermore, the triangles bounding a tetrahedron have a canonical
+ordering and orientation, for example the canonical second face of tetrahedron
+$(a,b,c,d)$ can be defined as the triangle $(a,b,d)$.
+Although these decisions are arbitrary, it is necessary to choose
+such a template for each topological type in order to have
+a frame of reference when programming operations that act on the boundary
+of an entity.
+It can also be useful to choose orderings to have certain special
+properties that ease the programming of certain algorithms, for
+example orienting all faces of an element such that the normal of
+the face points outwards from the element.
+See Section \ref{sec:osh_align} for an example of how this
+information is used.
+
 \subsection{Adaptation}
 \label{sec:def_adapt}
 
