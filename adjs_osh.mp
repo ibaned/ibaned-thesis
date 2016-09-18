@@ -41,7 +41,6 @@ drawarrow (10,-60){dir 75}..(60,-10){dir 15} dashed evenly;
 
 label.lft(btex from etex, (-15,-25));
 label.lft(btex dimension etex, (-15,-35));
-
 label.top(btex to dimension etex, (30,15));
 
 fill unitsquare scaled 10 shifted (100,10);
