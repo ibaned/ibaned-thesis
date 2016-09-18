@@ -660,27 +660,12 @@ adjacency information for a single entity multiple times
 in different contexts, and re-computing this can use significant
 amounts of time (see Section \ref{sec:adj_perf}).
 
-This leads us to the following key properties of the Omega\_h structure:
-\begin{enumerate}
-\item The mesh structure is a set of adjacency structures between
-pairs of dimensions. Each adjacency is stored in one of the two
-formats shown in Figure \ref{fig:osh_up_down}.
-\end{enumerate}
-
-\begin{figure}
-\begin{center}
-\includegraphics[width=0.15\textwidth]{adjs_osh.png}
-\caption{The permanent one-level downward adjacencies
-kept by Omega\_h}
-\label{fig:adjs_osh}
-\end{center}
-\end{figure}
-
-The majority of adaptation time and memory is consumed by the
+In profiling the execution of Omega\_h mesh adaptation, we find
+the majority of adaptation time and memory is consumed by the
 derivation and storage of mesh adjacencies.
 To mitigate the runtime cost, our mesh structure acts as an adjacency cache,
 which derives new adjacencies when they are requested and stores
-them in case of later requests.
+them so they are available for later requests.
 Figure \ref{fig:adjs_osh} shows the adjacencies that we start with and some
 that are derived.
 By default, all entities are defined by their downward adjacency to mesh vertices.
@@ -702,6 +687,23 @@ adjacent to the first vertex and check whether any of them have all the
 desired vertices.
 \item Transiting: {\bf TODO: describe this}
 \end{enumerate}
+
+This leads us to the following key properties of the Omega\_h structure:
+\begin{enumerate}
+\item The mesh structure is a set of adjacency structures between
+pairs of dimensions. Each adjacency is stored in one of the two
+formats shown in Figure \ref{fig:osh_up_down}.
+\item The structure is created by setting the 
+\end{enumerate}
+
+\begin{figure}
+\begin{center}
+\includegraphics[width=0.15\textwidth]{adjs_osh.png}
+\caption{The permanent one-level downward adjacencies
+kept by Omega\_h}
+\label{fig:adjs_osh}
+\end{center}
+\end{figure}
 
 {\bf TODO: describe why using one-level is better than going to vertices}
 

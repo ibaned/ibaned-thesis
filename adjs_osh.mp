@@ -3,21 +3,41 @@ outputtemplate := "%j.%o";
 prologues := 3;
 hppp := 0.25;
 vppp := 0.25;
+input TEX;
 
 beginfig(1);
-path box;
-box := (-30,-10)--(30,-10)--(30,10)--(-30,10)--cycle;
-draw box;
-label(btex regions etex, (0,0));
-draw box shifted (0,-50);
-label(btex faces etex, (0,-50));
-draw box shifted (0,-100);
-label(btex edges etex, (0,-100));
-draw box shifted (0,-150);
-label(btex vertices etex, (0,-150));
-drawarrow ((0,0)+(-10,-10))--((0,-50)+(-10,10));
-drawarrow ((0,-50)+(-10,-10))--((0,-100)+(-10,10));
-drawarrow ((0,-100)+(-10,-10))--((0,-150)+(-10,10));
+for i=0 upto 1:
+  pair c;
+  c := (i*20 + 5, -((i+2)*20 + 5));
+  drawarrow (c+(0,15))--(c+(0,5));
+  drawarrow (c+(15,0))--(c+(5,0));
+endfor;
+for i=0 upto 3:
+  label(TEX("$" & decimal(i) & "$"), (i*20 + 5, 8));
+  label(TEX("$" & decimal(i) & "$"), (-8, -(i*20 + 5)));
+  for j=(i+1) upto 3:
+    draw unitsquare scaled 10 shifted (j*20, -(i*20 + 10));
+    fill unitsquare scaled 10 shifted (j*20, -(i*20 + 10)) withcolor (white*0.7);
+    draw unitsquare scaled 10 shifted (i*20, -(j*20 + 10));
+    fill unitsquare scaled 10 shifted (i*20, -(j*20 + 10)) withcolor (white*0.7);
+  endfor;
+endfor;
+for i=0 upto 2:
+  fill unitsquare scaled 10 shifted (i*20, -((i+1)*20 + 10)) withcolor black;
+endfor;
+for i=0 upto 2:
+  pair c;
+  c := (i*20 + 5, -((i+1)*20 + 5));
+  drawarrow (c+(5,5))--(c+(15,15)) dashed evenly;
+endfor;
+for i=0 upto 1:
+  pair c;
+  c := (i*20 + 5, -((i+2)*20 + 5));
+  drawarrow (c+(5,5))--(c+(35,35)) dashed evenly;
+endfor;
+drawarrow (0,-30){dir 260}..(0,-60){dir 280};
+drawarrow (20,-65)--(10,-65);
+drawarrow (10,-60){dir 75}..(60,-10){dir 15} dashed evenly;
 endfig;
 
 end.
