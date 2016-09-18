@@ -222,11 +222,11 @@ adjacency relations.
 \caption{(left) a geometric representation of one-level
 relations among a subset of the entities that bound a tetrahedron.
 (right) simpler depiction of one-level relations between dimensions}
-\label{fig:topo}
+\label{fig:mds_topo}
 \end{center}
 \end{figure}
 
-Figure \ref{fig:topo} illustrates the relationships
+Figure \ref{fig:mds_topo} illustrates the relationships
 stored in a full one-level representation.
 Each arrow representing an adjacency relation (a.k.a. entity use)
 is bi-directional to indicate that we store both the
@@ -644,7 +644,7 @@ The second array contains offsets indicating where in the first
 array the edges going out from a given graph node are stored.
 
 In MDS, if a user requests an adjacency other than those
-which are stored as per Figure \ref{fig:topo}(right),
+which are stored as per Figure \ref{fig:mds_topo}(right),
 it is computed for the given entity the user identifies.
 As mentioned in Section \ref{sec:mds_adj}, this computation
 may involve complex set intersections or unions, and the
@@ -666,27 +666,27 @@ derivation and storage of mesh adjacencies.
 To mitigate the runtime cost, our mesh structure acts as an adjacency cache,
 which derives new adjacencies when they are requested and stores
 them so they are available for later requests.
-Figure \ref{fig:adjs_osh} shows the adjacencies that we start with and some
-that are derived.
-By default, all entities are defined by their downward adjacency to mesh vertices.
-This is the only adjacency data that mesh adaptation code has to rebuild
-directly.
-Other adjacencies are inferred from the vertex adjacencies.
-
+Figure \ref{fig:adjs_osh} shows the adjacencies that we start with
+and how the others are derived.
+The permanent adjacencies (those which are provided upon creation
+of the mesh and uniquely define topology) are the one-level downward
+adjacencies, i.e. the downward portion of Figure \ref{fig:mds_topo}(right).
 We use two forms of adjacency inference:
 \begin{enumerate}
 \item Inversion: an upward adjacency is derived from is corresponding downward
 adjacency. This reduces to a low-degree graph inversion problem, which we
 solve either by sorting graph edges by their destination graph node or using
 atomic operations to associate graph edges with their destination graph nodes.
-\item Reflection: a downward adjacency from dimension $a$ to dimension $b$
-is derived by combining the adjacencies from $a$ to vertices and from
-vertices back to $b$.
-Seeking a subset of the vertices of $a$, we explore all $b$-dimension entities
-adjacent to the first vertex and check whether any of them have all the
-desired vertices.
 \item Transiting: {\bf TODO: describe this}
 \end{enumerate}
+
+\begin{figure}
+\begin{center}
+\includegraphics[width=0.15\textwidth]{adjs_osh.png}
+\caption{Full-mesh adjacency derivations in Omega\_h}
+\label{fig:adjs_osh}
+\end{center}
+\end{figure}
 
 This leads us to the following key properties of the Omega\_h structure:
 \begin{enumerate}
@@ -695,15 +695,6 @@ pairs of dimensions. Each adjacency is stored in one of the two
 formats shown in Figure \ref{fig:osh_up_down}.
 \item The structure is created by setting the 
 \end{enumerate}
-
-\begin{figure}
-\begin{center}
-\includegraphics[width=0.15\textwidth]{adjs_osh.png}
-\caption{The permanent one-level downward adjacencies
-kept by Omega\_h}
-\label{fig:adjs_osh}
-\end{center}
-\end{figure}
 
 {\bf TODO: describe why using one-level is better than going to vertices}
 

@@ -38,6 +38,24 @@ endfor;
 drawarrow (0,-30){dir 260}..(0,-60){dir 280};
 drawarrow (20,-65)--(10,-65);
 drawarrow (10,-60){dir 75}..(60,-10){dir 15} dashed evenly;
+
+label.lft(btex from etex, (-15,-25));
+label.lft(btex dimension etex, (-15,-35));
+
+label.top(btex to dimension etex, (30,15));
+
+fill unitsquare scaled 10 shifted (100,10);
+label.rt(btex permanent adjacency etex, (110,15));
+draw unitsquare scaled 10 shifted (100,-10);
+fill unitsquare scaled 10 shifted (100,-10) withcolor (white * 0.7);
+label.rt(btex cached adjacency etex, (110,-5));
+drawarrow (100,-20)--(120,-20) dashed evenly;
+label.rt(btex inversion etex, (120,-20));
+draw unitsquare scaled 10 shifted (100,-50);
+fill unitsquare scaled 10 shifted (100,-50) withcolor (white * 0.7);
+drawarrow (105,-30)--(105,-40);
+drawarrow (120,-45)--(110,-45);
+label.rt(btex transit etex, (120,-45));
 endfig;
 
 end.
