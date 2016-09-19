@@ -603,7 +603,8 @@ creating a miniature parallel system on a single chip
 \cite{hennessy2011computer}.
 At the time of this writing, most consumer devices
 have two or four cores, and the high-end CPUs from
-which the majority of clusters and supercomputers are constructed
+which the majority of clusters and previous generation
+supercomputers are constructed
 contain about sixteen cores.
 
 A CPU core has its own set of registers, and more importantly
@@ -634,7 +635,7 @@ environment called BrookGPU \cite{buck2004brook}, which
 enabled researchers to more easily use GPUs to solve new problems
 and was subsequently adopted by AMD.
 Usage spread from the graphics community to the closely
-related scientific community.
+related scientific computing community.
 GPUs were an affordable personal solution for researchers
 to access substantial computing power.
 The interest soon motivated NVidia to release a programming
@@ -676,9 +677,9 @@ the majority of computer time simply waiting for data transfers
 Despite these limitations, the sheer number of cores in a GPU
 combined with the efficiencies gained in exchange for lack of generality
 means that GPUs can theoretically outperform CPUs by an order of
-magnitude, and more energy efficiently.
+magnitude, and should be substantially more energy efficient.
 This motivates researchers to re-design algorithms such that
-their practical performance meets this theoretical promise.
+their practical performance can approach this theoretical promise.
 
 \subsection{The Intel Xeon Phi}
 
@@ -760,7 +761,7 @@ match the amount supported at the hardware level.
 Distributed memory computers have for the past two decades
 been programmed using the Message Passing Interface (MPI)
 \cite{hempel1994mpi,walker1996mpi}.
-This interface remains the only reliable and portable way to construct
+This interface remains the most reliable and portable way to construct
 programs for all distributed memory supercomputers,
 and is thus central to any scalable program.
 Although its early versions (version 2.0 and earlier) had
