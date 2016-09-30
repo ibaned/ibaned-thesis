@@ -504,6 +504,14 @@ We use a tilde to denote quantities ``in metric space" (post-transformation).
 \tilde{V} = V \cdot \sqrt{\det(\mathcal{M})}
 \end{equation}
 
+Note that for many applications, a metric which is isotropic
+may be sufficient, meaning that the entire tensor may be represented
+by a single scalar $\lambda$, or for convenience a single
+desired length value $h=1/\sqrt{\lambda}$.
+It is useful for an adaptation code to consider this special case
+separately because storage and algorithmic complexity are greatly
+reduced (see Section \ref{sec:sf}).
+
 \subsection{Element Quality}
 \label{sec:def_quality}
 
