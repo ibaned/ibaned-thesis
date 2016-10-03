@@ -2,6 +2,8 @@ MAIN_BASE = ibanez_thesis
 MAIN = $(MAIN_BASE).tex
 
 FIGS = \
+swap.png \
+collapse.png \
 90deg_interp.png \
 log_interp.png \
 max_tet_deg.png \

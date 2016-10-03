@@ -175,6 +175,32 @@ having too low quality.
 
 \subsection{Coarsening}
 
+Like other adaptation libraries, MeshAdapt implements
+coarsening via edge collapses.
+Figure \ref{fig:collapse} shows a typical edge collapse
+in a tetrahedral mesh for reference.
+One vertex in the mesh is ``moved" onto another vertex which is adjacent
+via a mesh edge, collapsing this edge and all its adjacent
+faces and regions.
+
+\begin{figure}
+\begin{center}
+\includegraphics[width=0.8\textwidth]{collapse.png}
+\caption{Edge collapse in tetrahedral mesh}
+\label{fig:collapse}
+\end{center}
+\end{figure}
+
+\subsection{Shape Correction}
+
+\begin{figure}
+\begin{center}
+\includegraphics[width=0.8\textwidth]{swap.png}
+\caption{Edge swap in tetrahedral mesh}
+\label{fig:collapse}
+\end{center}
+\end{figure}
+
 \section{Omega\_h Methods}
 \label{sec:omega_h-adapt}
 
@@ -259,7 +285,7 @@ very high levels of anisotropy.
 
 \begin{figure}
 \begin{center}
-\includegraphics[width=0.8\textwidth]{90deg_interp.png}
+\includegraphics[width=0.6\textwidth]{90deg_interp.png}
 \caption{MeshAdapt interpolation depends on eigenvector signs}
 \label{fig:90deg_interp}
 \end{center}
@@ -267,7 +293,7 @@ very high levels of anisotropy.
 
 \begin{figure}
 \begin{center}
-\includegraphics[width=0.8\textwidth]{log_interp.png}
+\includegraphics[width=0.95\textwidth]{log_interp.png}
 \caption{Log-Euclidean versus Power interpolation
 at 1:1000 anisotropy
 \cite{michal2012anisotropic}}
