@@ -203,6 +203,7 @@ length will be lost.
 For this reason, alternative interpolation methods have been developed
 focusing on getting desired results in the case of high anisotropy.
 Some of the most relevant are as follows:
+
 \begin{enumerate}
 \item MeshAdapt works with an internal representation consisting
 of the orthogonal matrix $R$ and the vector of desired lengths
@@ -231,21 +232,52 @@ would fail.
 \item The overall method gives results which depend too much on the
 details of how the tensor was decomposed.
 If we have two metrics which are $90^{\circ}$ away from each other
-as shown in Figure ??,
+as shown in Figure \ref{fig:90deg_interp},
 their interpolated result depends heavily on the signs of the eigenvectors
 chosen for $R$.
 \item This method stores 12 components per vertex on a 3D mesh, whereas
 the alternatives below store only 6.
-\endif{enumerate}
-\item Omega\_h's way (linearization is the inverse,
-as indicated by Alauzet), describe symmetric storage.
-\item linear in square root, suggested as best by Alauzet.
-Indicate expense of eigendecomposition.
-\item linear in logarithm, suggested best by (cite Loseille and Todd Michal)
-and supported by (cite Alejandro Mota).
+\end{enumerate}
+\item Omega\_h computes the inverse of the metric tensors, then
+interpolates those linearly, and inverts the result.
+This is a method proposed by Alauzet and Frey as a compromise between
+the anisotropic fidelity and high runtime costs of the following two methods
+\cite{alauzet2003estimateur}.
+\item The highest fidelity interpolation suggested by Alauzet and Frey is
+the Power method which linearly interpolate $\mathcal{M}^{-1/2}$,
+which equals $\mathcal{M}$ replacing each eigenvalue $\lambda$
+with $(1/\sqrt{\lambda})$.
+This requires the additional expense of computing an eigendecomposition.
+\item An even better fidelity interpolation suggested by Loseille and
+L{\"o}hner \cite{loseille20093d} and later confirmed by
+Michal and Krakos \cite{michal2012anisotropic} is the Log-Euclidean
+method which linearly interpolates $\log(\mathcal{M})$, which equals
+$\mathcal{M}$ replacing the eigenvalues $\lambda$ with $\log(\lambda)$.
+Figure \ref{fig:log_interp} shows how this method better preserves
+very high levels of anisotropy.
 \end{enumerate}
 
-Indicate last two may be better and are future work.
+\begin{figure}
+\begin{center}
+\includegraphics[width=0.8\textwidth]{90deg_interp.png}
+\caption{MeshAdapt interpolation depends on eigenvector signs}
+\label{fig:90deg_interp}
+\end{center}
+\end{figure}
+
+\begin{figure}
+\begin{center}
+\includegraphics[width=0.8\textwidth]{log_interp.png}
+\caption{Log-Euclidean versus Power interpolation
+at 1:1000 anisotropy
+\cite{michal2012anisotropic}}
+\label{fig:log_interp}
+\end{center}
+\end{figure}
+
+To date the former two methods have proved sufficient for varying
+degrees of anisotropy, yet we consider the implementation of one
+of the latter two methods as an area of immediate future work.
 
 \subsection{Identity Size Field}
 
