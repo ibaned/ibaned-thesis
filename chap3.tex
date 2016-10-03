@@ -116,6 +116,8 @@ the use of mesh adaptation to respond to moving objects
 \section{MeshAdapt Methods}
 \label{sec:ma_methods}
 
+\subsection{Template Refinement}
+
 The MeshAdapt library uses edge-based refinement templates for its refinement step.
 The way these work is that all edges whose metric length exceeds some threshold
 $l_{\text{up}} > 1$ are marked for refinement.
@@ -159,7 +161,7 @@ of modifying any aspect of refinement.
 \item Due to the simultaneous nature of the operation and the difficulty
 of predicting the outcome, it is prohibitively difficult to reject
 a local portion of the refinement based on criteria such as new elements
-being too low quality.
+having too low quality.
 \end{enumerate}
 
 \begin{figure}
@@ -170,6 +172,8 @@ being too low quality.
 \label{fig:schonhardt}
 \end{center}
 \end{figure}
+
+\subsection{Coarsening}
 
 \section{Omega\_h Methods}
 \label{sec:omega_h-adapt}
@@ -182,16 +186,62 @@ quality restrictions.
 
 \subsection{Metric Storage and Interpolation}
 
-Storage format is closely tied to interpolation scheme.
-Describe:
+The metric tensor field introduced in Section \ref{sec:def_metric}
+is typically provided as a set of values defined at mesh vertices.
+This leads to an important question about how to compute metric
+tensor values at other points in the mesh, i.e. how to interpolate
+the metric tensor.
+We can illustrate the issues involved with the simplest interpolation
+case, that of deriving a metric tensor for the center of a mesh
+edge given the two metric tensors at its endpoints.
+Unfortunately, linear interpolation of the components of the
+tensor $\mathcal{M}$ itself has the undesirable property that
+interpolating between two highly anisotropic metrics of even
+slightly different orientations will tend to produce isotropic
+results with very small desired lengths, i.e. the longer desired
+length will be lost.
+For this reason, alternative interpolation methods have been developed
+focusing on getting desired results in the case of high anisotropy.
+Some of the most relevant are as follows:
 \begin{enumerate}
-\item MeshAdapt's way (eigendecomposed, rotation gets
-linear plus gram-schmidt)
+\item MeshAdapt works with an internal representation consisting
+of the orthogonal matrix $R$ and the vector of desired lengths
+$\mathbf{h} = (h_1, h_2, h_3)^T$ which form the metric tensor:
+\begin{equation}
+\mathcal{M} = R^T \begin{bmatrix}
+1 / h_1 & 0 & 0 \\
+0 & 1 / h_2 & 0 \\
+0 & 0 & 1 / h_3 \\
+\end{bmatrix} R
+\end{equation}
+Each of these is then interpolated separately.
+The vector $\mathbf{h}$ is linearly interpolated, while the
+matrix $R$ is first linearly interpolated, and then re-orthogonalized
+using the Gram-Schmidt process.
+The benefit of this is that anisotropy is fully preserved due to the
+separate interpolation of lengths.
+However, there are three main drawbacks to this method:
+\begin{enumerate}
+\item The interpolation of $R$ is fragile, because if the linearly
+interpolated value is rank-deficient then re-orthogonalization
+will fail. This can happen, for example, if the two input $R$ matrices
+represent rotations that are $180^{\circ}$ away from each other.
+Even though these represent exactly the same metric tensor, interpolation
+would fail.
+\item The overall method gives results which depend too much on the
+details of how the tensor was decomposed.
+If we have two metrics which are $90^{\circ}$ away from each other
+as shown in Figure ??,
+their interpolated result depends heavily on the signs of the eigenvectors
+chosen for $R$.
+\item This method stores 12 components per vertex on a 3D mesh, whereas
+the alternatives below store only 6.
+\endif{enumerate}
 \item Omega\_h's way (linearization is the inverse,
 as indicated by Alauzet), describe symmetric storage.
 \item linear in square root, suggested as best by Alauzet.
 Indicate expense of eigendecomposition.
-\item linear in logarithm, suggested best by (cite Todd Michal)
+\item linear in logarithm, suggested best by (cite Loseille and Todd Michal)
 and supported by (cite Alejandro Mota).
 \end{enumerate}
 
