@@ -166,7 +166,7 @@ having too low quality.
 
 \begin{figure}
 \begin{center}
-\includegraphics[width=0.25\textwidth]{schonhardt.png}
+\includegraphics[width=0.2\textwidth]{schonhardt.png}
 \caption{Sch{\"o}nhardt's irreducible polyhedron
 \cite{Schonhardt1928}}
 \label{fig:schonhardt}
@@ -182,12 +182,56 @@ in a tetrahedral mesh for reference.
 One vertex in the mesh is ``moved" onto another vertex which is adjacent
 via a mesh edge, collapsing this edge and all its adjacent
 faces and regions.
+For programming purposes, when dealing with sets of entities we
+can call those being removed the ``collapsing" set and those being
+conceptually elongated to fill the cavity as the set to ``keep".
+In practice all old entities are removed and the set of entities to keep
+is rebuilt with modified connectivity (where they were adjacent to the
+collapsed vertex, now they are adjacent to the kept vertex, etc).
 
 \begin{figure}
 \begin{center}
-\includegraphics[width=0.8\textwidth]{collapse.png}
-\caption{Edge collapse in tetrahedral mesh}
+\includegraphics[width=0.6\textwidth]{collapse.png}
+\caption{Edge collapse in tetrahedral mesh
+\cite{lu2011developments}}
 \label{fig:collapse}
+\end{center}
+\end{figure}
+
+Edge collapsing is an operation which, if not properly controlled,
+can invalidate the mesh topologically or undo its topological similarity
+to a CAD model.
+MeshAdapt uses a set of checks which is somewhat expensive to compute
+but is quite topologically robust:
+
+\begin{enumerate}
+\item The vertex being collapsed must have the same classification as
+the edge being collapsed. This preserves similarity to the CAD model by
+preventing collapses from the boundary into the interior.
+\item If there exists a ring of three edges including the collapsing edge
+(Figure \ref{fig:edge_ring}),
+then those three edges must bound a single triangle in the mesh.
+This prevents collapsing an empty hole in the mesh to zero volume,
+see Figure \ref{fig:circle_hole}.
+In addition, the non-collapsing edge adjacent to the collapsing vertex must have the same
+classification as this triangle.
+This prevents collapsing a cavity on a curved boundary down to zero volume
+(see Figure \ref{fig:surf_collapse}), which would require re-classifying
+entities on the cavity boundary (which breaks parallelism guarantees), and
+create no elements in the new cavity (which is problematic for solution transfer).
+\item Analogous to the edge ring check, in 3D we check for two triangles which
+share a non-collapsing edge and whose remaining two vertices are the endpoints
+of the collapsing edge.
+The two triangles and the collapsing edge must bound a single tetrahedron,
+and the triangle adjacent to the collapsing vertex must have the same classification
+as this tetrahedron.
+\end{enumerate}
+
+\begin{figure}
+\begin{center}
+\includegraphics[width=0.6\textwidth]{edge_ring.png}
+\caption{Edge ring condition check during edge collapse}
+\label{fig:edge_ring}
 \end{center}
 \end{figure}
 
@@ -195,9 +239,19 @@ faces and regions.
 
 \begin{figure}
 \begin{center}
-\includegraphics[width=0.8\textwidth]{swap.png}
-\caption{Edge swap in tetrahedral mesh}
-\label{fig:collapse}
+\includegraphics[width=0.6\textwidth]{swap.png}
+\caption{Edge swap in tetrahedral mesh
+\cite{lu2011developments}}
+\label{fig:swap}
+\end{center}
+\end{figure}
+
+\begin{figure}
+\begin{center}
+\includegraphics[width=0.6\textwidth]{split_collapse.png}
+\caption{Double-split + collapse compound operator
+\cite{li2003mesh}}
+\label{fig:compound}
 \end{center}
 \end{figure}
 
