@@ -870,17 +870,23 @@ for (int i = 0; i < n; ++i) {
 
 We refer to the execution of the body of the {\bf for} loop for a single
 value of {\tt i} as an \emph{iteration}.
-In order to avoid race conditions, we introduce the following two principles of
-array-based parallel {\bf for} programming:
+In order to avoid race conditions, we introduce the following principles of
+array-based parallel {\bf for} loop programming:
 
 \begin{enumerate}
-\item No array should be both read from and written to during a loop.
+\item Avoid writing to and reading from the same array in the same loop.
 \item No array entry should be written to by more than one iteration.
+\item If an array entry must be read from and written to, it must only
+be accessed by a single iteration of the loop.
+\item If the above rules must still be violated, it must be done via
+atomic operations.
 \end{enumerate}
 
-These principles are sufficient, though not necessary, for avoiding race conditions.
-They establish independence between iterations, which ensure independence
-between threads regardless of the scheduling of iterations to threads.
+Atomic operations exist to cover limited cases of multiple writes the same
+entry by different threads or loop iterations.
+For example, an atomic addition operation allows multiple iterations to
+add values to the same array entry, with the guaranteed outcome that
+after all iterations have executed, the correct sum appears at this entry.
 
 \subsection{CUDA}
 \label{sec:cuda}
