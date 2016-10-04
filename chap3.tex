@@ -239,7 +239,7 @@ this check on its own can prevent most topological invalidities, except
 those in Figure \ref{fig:circle_hole} and Figure \ref{fig:surf_collapse}.
 \end{enumerate}
 
-The edge and face ring conditions are more complete versions of those proposed
+The edge and face ring conditions are more complete versions of those described
 by Garimella \cite{garimella1999anisotropic}.
 Most of the expense of checking these conditions is in the search procedure
 to identify edge rings and face rings, as the naive approach costs $n^2$
@@ -276,6 +276,62 @@ capability to reduce the comparison cost to $n\log(n)$.
 
 \subsection{Shape Correction}
 
+Shape correction, otherwise known in the literature as ``sliver removal",
+is one of the most important open problems in tetrahedral meshing.
+When meshing a planar domain with triangles, techniques such as
+Delaunay refinement can guarantee triangles of a certain quality,
+where quality can be measured by angles at corners or the
+mean ratio (see Appendix \ref{app:vert_up_deg} for the relationship
+between these measures).
+However, when meshing a volumetric domain with tetrahedra, there
+are no known methods to provably guarantee element quality (dihedral angles
+or the mean ratio).
+What is typically done is to carry out a method which satisfies
+edge length criteria and at a minimum produces positive-volume
+tetrahedra.
+Following this, heuristic methods (sliver removal) are carried out
+to attempt to remove tetrahedra with quality below a constant user-defined
+threshold.
+
+Despite these methods being heuristic, their combination can often
+give very good results in practice.
+The most aggressive approaches
+\cite{klingner2008aggressive,dassi2016tetrahedral}
+can usually bring tetrahedral dihedral angles into
+the range $[30^\circ,130^\circ]$, which is sufficient for
+most simulation purposes.
+However, these aggressive approaches may be either too expensive
+for use in mesh adaptation (which is executed within a
+performance-critical simulation), or they may modify the mesh
+too much (a large movement of all the nodes in the mesh would
+change the physical distribution of the fields defined by values
+at the nodes).
+
+Mesh adaptation has the advantage of being provided with an input
+mesh, and therefore one can in theory reject any operation which
+would decrease the quality of the mesh lower than it was on input.
+In this sense, mesh adaptation can guarantee quality at least as good
+as the input.
+We will see this approach taken to some degree in the Omega\_h methods
+described in Section \ref{sec:omega_h-adapt}.
+The danger of rejecting operations based on quality is that
+if too many operations are rejected then edge lengths will
+not conform well enough to the metric field.
+However, recently researchers are having increasing success with
+careful rejection of operations and are able to avoid using
+sliver removal techniques \cite{loseille20093d,michal2012anisotropic}.
+Attempting to reproduce their results is an area of immediate future work.
+
+Typically, mesh adaptation libraries implement a balance
+between prevention of quality degradation and repairing
+quality that has been degraded.
+The repair process uses a subset of the known sliver removal
+techniques, with a focus on being able to repair the average
+sliver using minimal computational resources.
+Li describes a fairly comprehensive set of sliver removal
+heuristics implemented in an earlier version of MeshAdapt
+\cite{li2003mesh}.
+
 \begin{figure}
 \begin{center}
 \includegraphics[width=0.6\textwidth]{swap.png}
@@ -299,6 +355,12 @@ capability to reduce the comparison cost to $n\log(n)$.
 
 Focuses on serial aspects, i.e. single splits and
 quality restrictions.
+
+\subsection{Refinement}
+
+\subsection{Coarsening}
+
+\subsection{Shape Correction}
 
 \section{Size Field Algorithms}
 \label{sec:sf}
