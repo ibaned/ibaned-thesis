@@ -211,8 +211,12 @@ preventing collapses from the boundary into the interior.
 \item If there exists a ring of three edges including the collapsing edge
 (Figure \ref{fig:edge_ring}),
 then those three edges must bound a single triangle in the mesh.
-This prevents collapsing an empty hole in the mesh to zero volume,
-see Figure \ref{fig:circle_hole}.
+This prevents collapsing an empty hole in the mesh to zero volume as in
+Figure \ref{fig:circle_hole}.
+While some \cite{beall1997general} consider Figure \ref{fig:circle_hole}
+a valid operation, current mesh data structures assume an entity is uniquely
+defined by its set of bounding entities, which precludes the two overlapping
+mesh edges that Figure \ref{fig:circle_hole} produces.
 In addition, the non-collapsing edge adjacent to the collapsing vertex must have the same
 classification as this triangle.
 This prevents collapsing a cavity on a curved boundary down to zero volume
@@ -221,17 +225,44 @@ entities on the cavity boundary (which breaks parallelism guarantees), and
 create no elements in the new cavity (which is problematic for solution transfer).
 \item Analogous to the edge ring check, in 3D we check for two triangles which
 share a non-collapsing edge and whose remaining two vertices are the endpoints
-of the collapsing edge.
+of the collapsing edge (a ``face ring").
 The two triangles and the collapsing edge must bound a single tetrahedron,
 and the triangle adjacent to the collapsing vertex must have the same classification
 as this tetrahedron.
+\item All the resulting tetrahedra must have positive volume.
+In the 2D planar case, triangle normals should all be positive in the Z axis.
+A relaxed version of this can be used to adapt triangulations of 2D surfaces
+embedded in 3D, by requiring that the normals of new triangles be sufficiently
+close to the normals of old triangles.
+For straight-sided simplices in an equal-dimensional space (i.e. triangles in 2D),
+this check on its own can prevent most topological invalidities, except
+those in Figure \ref{fig:circle_hole} and Figure \ref{fig:surf_collapse}.
 \end{enumerate}
+
+The edge and face ring conditions are more complete versions of those proposed
+by Garimella \cite{garimella1999anisotropic}.
+Most of the expense of checking these conditions is in the search procedure
+to identify edge rings and face rings, as the naive approach costs $n^2$
+comparisons where $n$ is the number of edges (or faces) adjacent to one vertex.
+For typical tetrahedral meshes there may be 36 or more faces adjacent to a vertex,
+meaning close to 1000 comparisons would be needed.
+We can reduce the cost by using a set structure to store the $n$ vertices (or edges)
+that may complete a ring from one endpoint, and use its $\log(n)$ membership check
+capability to reduce the comparison cost to $n\log(n)$.
 
 \begin{figure}
 \begin{center}
 \includegraphics[width=0.6\textwidth]{edge_ring.png}
 \caption{Edge ring condition check during edge collapse}
 \label{fig:edge_ring}
+\end{center}
+\end{figure}
+
+\begin{figure}
+\begin{center}
+\includegraphics[width=0.6\textwidth]{circle_hole.png}
+\caption{Illegal collapse of a CAD hole represented by a periodic boundary}
+\label{fig:circle_hole}
 \end{center}
 \end{figure}
 
