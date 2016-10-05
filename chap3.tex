@@ -117,6 +117,7 @@ the use of mesh adaptation to respond to moving objects
 \label{sec:ma_methods}
 
 \subsection{Template Refinement}
+\label{sec:ma_refine}
 
 The MeshAdapt library uses edge-based refinement templates for its refinement step.
 The way these work is that all edges whose metric length exceeds some threshold
@@ -174,6 +175,7 @@ having too low quality.
 \end{figure}
 
 \subsection{Coarsening}
+\label{sec:ma_coarsen}
 
 Like other adaptation libraries, MeshAdapt implements
 coarsening via edge collapses.
@@ -218,11 +220,11 @@ a valid operation, current mesh data structures assume an entity is uniquely
 defined by its set of bounding entities, which precludes the two overlapping
 mesh edges that Figure \ref{fig:circle_hole} produces.
 In addition, the non-collapsing edge adjacent to the collapsing vertex must have the same
-classification as this triangle.
+classification as the triangle.
 This prevents collapsing a cavity on a curved boundary down to zero volume
 (see Figure \ref{fig:surf_collapse}), which would require re-classifying
 entities on the cavity boundary (which breaks parallelism guarantees), and
-create no elements in the new cavity (which is problematic for solution transfer).
+creates no elements in the new cavity (which is problematic for solution transfer).
 \item Analogous to the edge ring check, in 3D we check for two triangles which
 share a non-collapsing edge and whose remaining two vertices are the endpoints
 of the collapsing edge (a ``face ring").
@@ -235,7 +237,7 @@ A relaxed version of this can be used to adapt triangulations of 2D surfaces
 embedded in 3D, by requiring that the normals of new triangles be sufficiently
 close to the normals of old triangles.
 For straight-sided simplices in an equal-dimensional space (i.e. triangles in 2D),
-this check on its own can prevent most topological invalidities, except
+this check on its own can prevent some topological invalidities, except
 those in Figure \ref{fig:circle_hole} and Figure \ref{fig:surf_collapse}.
 \end{enumerate}
 
@@ -252,7 +254,7 @@ capability to reduce the comparison cost to $n\log(n)$.
 
 \begin{figure}
 \begin{center}
-\includegraphics[width=0.6\textwidth]{edge_ring.png}
+\includegraphics[width=0.5\textwidth]{edge_ring.png}
 \caption{Edge ring condition check during edge collapse}
 \label{fig:edge_ring}
 \end{center}
@@ -260,7 +262,7 @@ capability to reduce the comparison cost to $n\log(n)$.
 
 \begin{figure}
 \begin{center}
-\includegraphics[width=0.45\textwidth]{circle_hole.png}
+\includegraphics[width=0.4\textwidth]{circle_hole.png}
 \caption{Illegal collapse of a CAD hole represented by a periodic boundary}
 \label{fig:circle_hole}
 \end{center}
@@ -268,13 +270,27 @@ capability to reduce the comparison cost to $n\log(n)$.
 
 \begin{figure}
 \begin{center}
-\includegraphics[width=0.3\textwidth]{surf_collapse.png}
+\includegraphics[width=0.2\textwidth]{surf_collapse.png}
 \caption{Illegal collapse with no new elements and re-classification}
 \label{fig:surf_collapse}
 \end{center}
 \end{figure}
 
+Finally, when applying a series of edge collapses to a mesh, one
+must additionally filter the set of edges targeted for collapse
+until it forms an independent set, in order to avoid a pathological
+sequence of edge collapses reducing large portions of the mesh
+down to a single edge.
+We resolve this by visiting vertices which are marked for collapse
+and unmarking them so long as each edge that needs collapsing
+still keeps one adjacent marked vertex.
+Similar methods of establishing an independent set were
+in use in early versions of MeshAdapt \cite{de1999parallel}
+and continue to be used by other adaptation codes
+\cite{michal2012anisotropic}.
+
 \subsection{Shape Correction}
+\label{sec:ma_shape}
 
 Shape correction, otherwise known in the literature as ``sliver removal",
 is one of the most important open problems in tetrahedral meshing.
@@ -337,7 +353,7 @@ The current version uses a similar approach, based on a
 taxonomy of tetrahedra with mean ratio low quality value.
 The taxonomy can be described in terms of some boundary
 entity being too close to another boundary entity
-of the tetrahedron, as shown in Figure \ref{fig:slivers}.
+of the tetrahedron:
 \begin{enumerate}
 \item In the first case, we have two vertices being too
 close, which is really just an edge being too short.
@@ -361,7 +377,7 @@ as shown in Figure \ref{fig:compound}.
 
 \begin{figure}
 \begin{center}
-\includegraphics[width=0.6\textwidth]{split_collapse.png}
+\includegraphics[width=0.8\textwidth]{split_collapse.png}
 \caption{Double-split + collapse compound operator
 \cite{li2003mesh}}
 \label{fig:compound}
@@ -372,7 +388,7 @@ as shown in Figure \ref{fig:compound}.
 
 \begin{figure}
 \begin{center}
-\includegraphics[width=0.6\textwidth]{swap.png}
+\includegraphics[width=0.5\textwidth]{swap.png}
 \caption{Edge swap in tetrahedral mesh
 \cite{lu2011developments}}
 \label{fig:swap}
@@ -412,15 +428,76 @@ that triangle can be ignored.
 Otherwise, the lower of the two qualities is stored in association
 with the unique triangle, to avoid later re-computation.
 
+\subsection{Overall Steps}
+
+Listing \ref{lst:ma} shows an abbreviated version of the C++
+code for MeshAdapt's main function.
+The central loop executes a fixed number of iterations.
+At each iteration, we first coarsen as described
+in Section \ref{sec:ma_coarsen}, followed by refinement
+as described in Section \ref{sec:ma_refine}.
+We perform coarsening before refinement because this
+should reduce the peak memory usage between the two
+operations.
+Shape correction is performed after the main loop
+has completed, using the algorithm in Section \ref{sec:ma_shape}.
+The functions whose names end in \texttt{Balance} execute
+parallel load balancing.
+We treat mesh elements as the units being balanced,
+and assign weights to them based on the metric space
+volume defined by Equation \ref{eq:metric_volume}.
+Either graph partitioners \cite{devine2002zoltan} or
+diffusive partitioning methods \cite{SmithParma2015}
+may be used at each step.
+
+\begin{lstlisting}[float,style=dan-style,caption=MeshAdapt main function,label=lst:ma]
+void adapt(Input* in) {
+  Adapt* a = new Adapt(in);
+  preBalance(a);
+  for (int i = 0; i < in->maximumIterations; ++i) {
+    coarsen(a);
+    midBalance(a);
+    refine(a);
+  }
+  fixElementShapes(a);
+  postBalance(a);
+  delete a;
+  delete in;
+}
+\end{lstlisting}
+
 \section{Omega\_h Methods}
 \label{sec:omega_h-adapt}
 
-Focuses on serial aspects, i.e. single splits and
-quality restrictions.
+The Omega\_h code aims to provide MeshAdapt-like functionality
+on a wide variety of computing hardware.
+Due to the restrictions introduced by parallelism, Omega\_h
+initially chose a simpler set of algorithms to reduce the
+cost of redesigning each algorithm for portability.
+Once the algorithms were redesigned, they actually demonstrated
+an equivalent and in some cases better level of robustness,
+meaning we can get more portable and performant results
+with simpler operations.
 
 \subsection{Refinement}
 
+Instead of using template-based refinement, Omega\_h
+uses single edge splits, meaning a single edge is
+bisected and adjacent elements are bisected
+at a single operation.
+Unlike the simultaneous execution that is possible
+with template-based refinement, only edge
+splits whose cavities do not overlap can be
+applied simultaneously (see Section \ref{sec:indset}
+for how such splits are selected).
+Several researchers have similarly had success
+using only single edge splits rather than
+template-based refinement
+\cite{compere2010mesh,loseille20093d,michal2012anisotropic}.
+
 \subsection{Coarsening}
+
+Like MeshAdapt, Omega
 
 \subsection{Shape Correction}
 
