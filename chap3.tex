@@ -327,10 +327,48 @@ between prevention of quality degradation and repairing
 quality that has been degraded.
 The repair process uses a subset of the known sliver removal
 techniques, with a focus on being able to repair the average
-sliver using minimal computational resources.
+sliver using minimal computational resources, while resorting
+to more expensive techniques when the cheaper ones fail.
+
 Li describes a fairly comprehensive set of sliver removal
 heuristics implemented in an earlier version of MeshAdapt
 \cite{li2003mesh}.
+The current version uses a similar approach, based on a
+taxonomy of tetrahedra with mean ratio low quality value.
+The taxonomy can be described in terms of some boundary
+entity being too close to another boundary entity
+of the tetrahedron, as shown in Figure \ref{fig:slivers}.
+\begin{enumerate}
+\item In the first case, we have two vertices being too
+close, which is really just an edge being too short.
+If quality is low in metric space, this is a case
+of an edge which should have collapsed but didn't.
+We attempt to more aggressively collapse it by trying
+to collapse each edge adjacent to either endpoint vertex.
+\item In the second case, we have a vertex being too close
+to its opposing triangle face.
+Here we try to execute an edge swap (see Figure \ref{fig:swap})
+on each of the three edges bounding the opposing triangle face.
+(The work of Li suggests that a face split and collapse operation
+should also be attempted as future work).
+\item In the third case, we have the classic sliver tetrahedron
+which has two opposing edges being too close to one another.
+We first attempt to perform an edge swap on each of the two
+opposing edges.
+If that fails, we attempt a double split collapse operation
+as shown in Figure \ref{fig:compound}.
+\end{enumerate}
+
+\begin{figure}
+\begin{center}
+\includegraphics[width=0.6\textwidth]{split_collapse.png}
+\caption{Double-split + collapse compound operator
+\cite{li2003mesh}}
+\label{fig:compound}
+\end{center}
+\end{figure}
+
+\subsubsection{Edge Swap}
 
 \begin{figure}
 \begin{center}
@@ -341,14 +379,38 @@ heuristics implemented in an earlier version of MeshAdapt
 \end{center}
 \end{figure}
 
-\begin{figure}
-\begin{center}
-\includegraphics[width=0.6\textwidth]{split_collapse.png}
-\caption{Double-split + collapse compound operator
-\cite{li2003mesh}}
-\label{fig:compound}
-\end{center}
-\end{figure}
+The edge swap operation deserves a detailed consideration due
+to its complexity.
+Its goal is to remove the elements adjacent to an edge and
+replace them with a new set of elements such that the edge
+is not recreated.
+In the tetrahedral case, this essentially reduces to the problem
+of forming an output triangular mesh based on the ``ring" vertices
+(those vertices which are opposite to the central edge across
+an input triangle), as Figure \ref{fig:swap} illustrates.
+Furthermore, since this operation is used almost exclusively
+for the purpose of repairing quality degradation (sliver removal),
+what we are interested in is finding the triangular mesh of the
+ring such that the resulting tetrahedral mesh of the cavity
+contains elements above a certain quality.
+The quality to beat is usually the lowest quality input
+tetrahedron, i.e. we want to at least improve the minimum quality.
+
+A naive search of the space of possible triangular meshes
+can be quite expensive, so we use an optimized algorithm
+described by Freitag and Ollivier-Gooch \cite{freitag1997tetrahedral}.
+The algorithm consists of limiting oneself to rings of a
+certain number of vertices (in our case, not attempting
+rings that have more than 7 vertices), and storing integer
+tables describing all possible trianglulations of such rings.
+The triangulations are described in terms of unique triangles
+(two triangulations may share the same triangle).
+Because the qualities of the two adjacent tetrahedra adjacent
+to such a triangle are uniquely defined, then if either quality
+is below the target threshold, all triangulations that include
+that triangle can be ignored.
+Otherwise, the lower of the two qualities is stored in association
+with the unique triangle, to avoid later re-computation.
 
 \section{Omega\_h Methods}
 \label{sec:omega_h-adapt}
