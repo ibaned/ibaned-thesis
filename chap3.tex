@@ -374,6 +374,13 @@ opposing edges.
 If that fails, we attempt a double split collapse operation
 as shown in Figure \ref{fig:compound}.
 \end{enumerate}
+Each of the above attempted operations is judged in terms of quality.
+If the minimum quality of any element in the cavity after a modification
+exceeds minimum quality of any element in the cavity before the
+modification, then we say the quality has locally improved.
+In most cases, one of the above attempts succeeds.
+However, it is possible in practice for none to succeed, in which
+case MeshAdapt will leave the sliver as-is.
 
 \begin{figure}
 \begin{center}
@@ -385,6 +392,7 @@ as shown in Figure \ref{fig:compound}.
 \end{figure}
 
 \subsubsection{Edge Swap}
+\label{sec:swap}
 
 \begin{figure}
 \begin{center}
@@ -480,6 +488,7 @@ meaning we can get more portable and performant results
 with simpler operations.
 
 \subsection{Refinement}
+\label{sec:osh_refine}
 
 Instead of using template-based refinement, Omega\_h
 uses single edge splits, meaning a single edge is
@@ -494,12 +503,149 @@ Several researchers have similarly had success
 using only single edge splits rather than
 template-based refinement
 \cite{compere2010mesh,loseille20093d,michal2012anisotropic}.
+Like MeshAdapt, Omega\_h marks all edges whose
+metric length exceeds some threshold (typically $4/3$) as candidates
+for edge splits.
+However, Omega\_h unmarks any edges whose splitting
+would produce elements of low mean ratio quality (typically less than $20\%$).
 
 \subsection{Coarsening}
+\label{sec:osh_coarsen}
 
-Like MeshAdapt, Omega
+Like MeshAdapt, Omega\_h uses single edge collapses
+for mesh coarsening.
+Since all operations in Omega\_h use the quality-driven
+independent set system described in Section \ref{sec:indset},
+that explicitly takes care of the need for an independent
+set of collapsing vertices.
+Edge collapses have some confusion in what their ``key" entity is,
+because in reality it is the combination of an edge and one
+of its endpoint vertices that defines a collapse.
+We first mark all edges whose metric length is beneath
+some threshold (typically $2/3$) as candidates to collapse
+via either endpoint.
+Then, for all such edges, collapses via both endpoints are evaluated
+using almost all of the checks described in Section \ref{sec:ma_coarsen}.
+In particular, Omega\_h saves time by skipping the full edge ring and face
+ring checks, replacing them with a requirement that each $d$-dimensional simplex
+adjacent to the collapsing edge must be classified on the same geometry
+as its $(d-1)$-dimensional side adjacent to the collapsing vertex.
+
+In other words, Omega\_h checks for the problematic case shown in Figure
+\ref{fig:surf_collapse}, but not for the case in Figure \ref{fig:circle_hole}.
+As a result, Omega\_h requires that the input mesh, model or metric be
+constructed such that the case in Figure \ref{fig:circle_hole} doesn't arise.
+The simple way to ensure this is to mesh ``holes" in the geometry.
+For Omega\_h's first target applications,
+this makes sense because the interaction of both the fluid and the structure
+is of interest.
+Barring that solution, one can topologically break up periodic geometry
+or use curvature-targeted metrics to ensure a periodic geometry is approximated
+with more than three edges.
+
+We mark candidate collapses using two boolean flags per edge, one for each
+endpoint.
+In addition to unmarking collapses that would violate the above topological
+and classification checks, we also require the output elements to be
+above some quality threshold.
+Once all collapses that violate the checks mentioned above are unmarked,
+we move the focus of the problem from edges to vertices.
+To do this, every vertex chooses the highest-quality candidate edge collapse
+for which it is an endpoint, and that collapse is the one it will
+represent, all others for which it is an endpoint are discarded.
+Now the independent set selection in Section \ref{sec:indset} is used
+with vertices as the keys and their selected collapse's qualities as the
+values.
+The selected independent set of vertices is then collapsed, along each
+vertex's chosen edge.
 
 \subsection{Shape Correction}
+\label{sec:osh_shape}
+
+Omega\_h uses simpler and yet possibly more effective shape correction logic.
+We have found that it is beneficial to consider a wider portion of the
+mesh surrounding a sliver when attempting to remove said sliver, rather
+than being overly concerned with the particular shape of said sliver.
+Omega\_h has a user-defined parameter for how many layers of elements
+around a sliver will be considered.
+In this case, layers are defined by elements adjacent to one another
+across faces, simply because this graph is much cheaper to compute
+than that of elements adjacent via vertices.
+For every sliver, elements that are at most the specified distance
+via face adjacency are marked as being involved in sliver removal.
+Then we do one of two things:
+\begin{enumerate}
+\item Mark all edges of all considered elements as candidates for edge swaps.
+For each such edge we compute the best possible edge swap operation
+using the optimizations described in Section \ref{sec:swap},
+and give those quality values to the method in Section \ref{sec:indset} to
+select a set of edge swaps to perform.
+Only edge swaps which locally improve the quality in their cavity are accepted.
+\item Mark all vertices of all considered elements as candidates for collapsing.
+For each of these vertices, we consider collapsing it along any adjacent edge.
+This is just a marking process, after which the procedure in Section \ref{sec:osh_coarsen}
+is carried out, with the only difference being that for a collapse to be accepted,
+the quality in the cavity must locally improve, instead of being above a
+constant threshold.
+\end{enumerate}
+Note that although these algorithms describe using layers around a sliver,
+they remain cheap because the layers need only be marked, after which only
+small cavities around the marked elements are considered.
+The full set of elements marked around a sliver is never collected or examined
+as a whole in any way.
+The marking itself can be done in a local iterative fashion, each step adding
+marks to all face-adjacent elements of currently marked elements.
+
+Unlike MeshAdapt, Omega\_h requires that all elements be above a certain
+mean ratio quality, and will continue to attempt shape correction until
+this goal is satisfied.
+So far, we have been able to achieve minimum mean ratios between $20\%$
+and $30\%$ for all mesh elements in a variety of cases.
+
+\subsection{Overall Steps}
+\label{sec:osh}
+
+Listing \ref{lst:osh} shows an abbreviated version of the C++ code for
+Omega\_h's main function.
+The ordering of these operations was selected for the most part to minimize
+the amount of work done, not to optimize memory usage or metric conformity.
+First, refinement as described in Section \ref{sec:osh_refine} is done
+until no more modifications are accepted.
+Next, the same is done for coarsening as per \ref{sec:osh_coarsen}.
+Finally, while the lowest element quality in the mesh is below some
+threshold, we attempt to apply edge swaps and edge collapses as
+per \ref{sec:osh_shape}.
+Notice that edge swaps are strongly preferred, in fact edge
+collapses as a quality repair solution are only attempted when
+quality remains below the threshold and no legal edge swaps
+would improve quality.
+
+The parameter \texttt{qual\_floor} represents the quality that
+we would prefer elements to always exceed during all parts of
+adaptation.
+There is an exception for the case when the input mesh is
+already worse than that, hence the logic for computing
+\texttt{allow\_qual}, which is the quality actually enforced
+on modification operations.
+The parameter \texttt{qual\_ceil} is the quality we would prefer
+elements exceed \emph{after} mesh adaptation, and hence is the
+target for shape correction operations.
+
+\begin{lstlisting}[float,style=dan-style,caption=Omega\_h main function,label=lst:osh]
+bool adapt(Mesh* mesh, Real qual_floor, Real qual_ceil, Real len_floor,
+    Real len_ceil, Int nlayers) {
+  auto input_qual = mesh->min_quality();
+  auto allow_qual = min2(qual_floor, input_qual);
+  while (refine_by_size(mesh, len_ceil, allow_qual));
+  while (coarsen_by_size(mesh, len_floor, allow_qual));
+  while (mesh->min_quality() < qual_ceil) {
+    if (swap_edges(mesh, qual_ceil, nlayers)) continue;
+    if (coarsen_slivers(mesh, qual_ceil, nlayers)) continue;
+    break;
+  }
+  return true;
+}
+\end{lstlisting}
 
 \section{Size Field Algorithms}
 \label{sec:sf}
