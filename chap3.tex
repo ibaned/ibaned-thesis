@@ -650,7 +650,8 @@ bool adapt(Mesh* mesh, Real qual_floor, Real qual_ceil, Real len_floor,
 \section{Size Field Algorithms}
 \label{sec:sf}
 
-\subsection{Metric Storage and Interpolation}
+\subsection{Metric Interpolation and Storage}
+\label{sec:metric_interp}
 
 The metric tensor field introduced in Section \ref{sec:def_metric}
 is typically provided as a set of values defined at mesh vertices.
@@ -676,15 +677,15 @@ of the orthogonal matrix $R$ and the vector of desired lengths
 $\mathbf{h} = (h_1, h_2, h_3)^T$ which form the metric tensor:
 \begin{equation}
 \mathcal{M} = R^T \begin{bmatrix}
-1 / h_1 & 0 & 0 \\
-0 & 1 / h_2 & 0 \\
-0 & 0 & 1 / h_3 \\
+1 / h_1^2 & 0 & 0 \\
+0 & 1 / h_2^2 & 0 \\
+0 & 0 & 1 / h_3^2 \\
 \end{bmatrix} R
 \end{equation}
 Each of these is then interpolated separately.
 The vector $\mathbf{h}$ is linearly interpolated, while the
 matrix $R$ is first linearly interpolated, and then re-orthogonalized
-using the Gram-Schmidt process.
+using the Gram-Schmidt process \cite{trefethen1997numerical}.
 The benefit of this is that anisotropy is fully preserved due to the
 separate interpolation of lengths.
 However, there are three main drawbacks to this method:
@@ -744,7 +745,86 @@ To date the former two methods have proved sufficient for certain
 degrees of anisotropy, yet we consider the implementation of one
 of the latter two methods as an area of immediate future work.
 
-\subsection{Identity Size Field}
+\subsection{Identity Metric Field}
+\label{sec:ident_metric}
+
+For any simplex element, there exists a single metric tensor
+such that all its edges are unit length in metric space, which
+implies it is equilateral and has a perfect mean ratio quality
+in metric space.
+To find this metric, consider that each edge $i$ of the simplex
+forms a single scalar constraint:
+
+\begin{equation}
+1 = \sqrt{\mathbf{v}_i^T \mathcal{M} \mathbf{v}_i}
+\end{equation}
+
+Where $\mathbf{v}_i$ is the real space vector along edge $i$.
+Also note that the metric tensor $\mathcal{M}$ has exactly as
+many independent scalars as the simplex has edges
+($3$ in 2D, $6$ in 3D).
+The constraint can be converted into a scalar equation
+for the independent variables:
+
+\begin{gather*}
+1^2 = \left(\sqrt{\mathbf{v}_i^T \mathcal{M} \mathbf{v}_i}\right)^2 \\
+1 = \mathbf{v}_i^T \mathcal{M} \mathbf{v}_i \\
+1 = \begin{bmatrix} x_i & y_i & z_i \end{bmatrix}
+\begin{bmatrix}
+a & d & f \\
+d & b & e \\
+f & e & c \\
+\end{bmatrix}
+\begin{bmatrix}
+x_i \\
+y_i \\
+z_i \\
+\end{bmatrix} \\
+1 = ax_i^2 + by_i^2 + cz_i^2 + 2dx_iy_i + 2ey_iz_i + 2fx_iz_i
+\end{gather*}
+
+This leads to a linear system, which following our 3D example
+is a $6\times 6$ system:
+
+\begin{equation}
+\begin{bmatrix}
+x_1^2 & y_1^2 & z_1^2 & 2x_1y_1 & 2y_1z_1 & 2x_1z_1 \\
+x_2^2 & y_2^2 & z_2^2 & 2x_2y_2 & 2y_2z_2 & 2x_2z_2 \\
+x_3^2 & y_3^2 & z_3^2 & 2x_3y_3 & 2y_3z_3 & 2x_3z_3 \\
+x_4^2 & y_4^2 & z_4^2 & 2x_4y_4 & 2y_4z_4 & 2x_4z_4 \\
+x_5^2 & y_5^2 & z_5^2 & 2x_5y_5 & 2y_5z_5 & 2x_5z_5 \\
+x_6^2 & y_6^2 & z_6^2 & 2x_6y_6 & 2y_6z_6 & 2x_6z_6 \\
+\end{bmatrix}
+\begin{bmatrix}
+a \\ b \\ c \\ d \\ e \\ f
+\end{bmatrix}
+\begin{bmatrix}
+1 \\ 1 \\ 1 \\ 1 \\ 1 \\ 1
+\end{bmatrix}
+\end{equation}
+
+Where $y_3$ is the $y$ component of the length of edge 3,
+and so on.
+The matrix and right hand side are formed based on the element
+and the linear system is solved via QR decomposition
+\cite{trefethen1997numerical}, giving us what we call
+the ``identity" metric tensor for an element.
+This derivation can be repeated for triangles in 2D, giving
+a $3\time 3$ system for the symmetric tensor components.
+
+In order to compute metric tensors at vertices,
+We need to conceptually average the identity values obtained
+at adjacent elements.
+First, we transform the element metric tensors into their
+``linear" form, which is one of the forms described
+in Section \ref{sec:metric_interp} used for metric interpolation
+(for example, Omega\_h uses the matrix inverse).
+Then we take at each vertex the average of these linear
+tensors at adjacent elements.
+Applying the inverse ``de-linearizing" transformation to the resulting tensor
+retries the metric tensor at the vertex.
+
+\subsection{Identity Isotropic Size}
 
 \subsection{Targeting an Element Count}
 
