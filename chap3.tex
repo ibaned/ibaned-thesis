@@ -189,7 +189,7 @@ can call those being removed the ``collapsing" set and those being
 conceptually elongated to fill the cavity as the set to ``keep".
 In practice all old entities are removed and the set of entities to keep
 is rebuilt with modified connectivity (where they were adjacent to the
-collapsed vertex, now they are adjacent to the kept vertex, etc).
+collapsed vertex, now they are adjacent to the kept vertex).
 
 \begin{figure}
 \begin{center}
@@ -244,13 +244,13 @@ those in Figure \ref{fig:circle_hole} and Figure \ref{fig:surf_collapse}.
 The edge and face ring conditions are more complete versions of those described
 by Garimella \cite{garimella1999anisotropic}.
 Most of the expense of checking these conditions is in the search procedure
-to identify edge rings and face rings, as the naive approach costs $n^2$
+to identify edge rings and face rings, as the naive approach costs $O(n^2)$
 comparisons where $n$ is the number of edges (or faces) adjacent to one vertex.
 For typical tetrahedral meshes there may be 36 or more faces adjacent to a vertex,
 meaning close to 1000 comparisons would be needed.
 We can reduce the cost by using a set structure to store the $n$ vertices (or edges)
-that may complete a ring from one endpoint, and use its $\log(n)$ membership check
-capability to reduce the comparison cost to $n\log(n)$.
+that may complete a ring from one endpoint, and use its $O(\log(n))$ membership check
+capability to reduce the comparison cost to $O(n\log(n))$.
 
 \begin{figure}
 \begin{center}
