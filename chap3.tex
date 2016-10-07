@@ -745,8 +745,22 @@ To date the former two methods have proved sufficient for certain
 degrees of anisotropy, yet we consider the implementation of one
 of the latter two methods as an area of immediate future work.
 
-\subsection{Identity Metric Field}
+\subsection{Implied Metric Field}
 \label{sec:ident_metric}
+
+It is often useful to develop an ``implied" metric field
+\cite{michal2012anisotropic}.
+Given a mesh, the implied metric field is the one which the mesh
+currently satisfies.
+Since there often does not exist a metric field which is exactly
+satisfied, the computed field is an approximation of the field
+which is most closely satisfied by the existing mesh.
+An implied metric field can be used to maintain a mesh's
+initial gradation while responding only to mesh motion.
+More importantly, it can be combined with the user's desired
+metric field to produce one or more intermediate metric fields
+which are more suitable for mesh adaptation
+(for example, gradually interpolating from one to the other).
 
 For any simplex element, there exists a single metric tensor
 such that all its edges are unit length in metric space, which
@@ -824,9 +838,27 @@ tensors at adjacent elements.
 Applying the inverse ``de-linearizing" transformation to the resulting tensor
 retries the metric tensor at the vertex.
 
-\subsection{Identity Isotropic Size}
+\subsection{Implied Isotropic Size}
+\label{sec:ident_size}
+
+If we are doing isotropic adaptation, we can follow a
+similar procedure to that in Section \ref{sec:ident_metric} for metric tensors,
+by identifying a desired edge length for each element and averaging
+this value to vertices.
+This is different from the typical approach of averaging the lengths of edges
+adjacent to a vertex, because only considering edges adjacent to the vertex
+can produce inaccurate results at corners of even simple meshes, where the
+axis-aligned edges are considered but diagonal edges are ignored.
+Unlike metric tensors, there rarely exists a single desired length which is
+satisfied by all edges of an element.
+The approximation we use is the root-mean-square of the element's current
+edge lengths ($l_{\text{RMS}}$) defined in Equations \ref{eq:tet_mean_ratio}
+and \ref{eq:tri_mean_ratio}.
+This is done for consistency with our method of predicting output element counts,
+described in Section \ref{sec:elem_count}.
 
 \subsection{Targeting an Element Count}
+\label{sec:elem_count}
 
 \section{Solution Transfer in a Cavity}
 
