@@ -821,13 +821,13 @@ Where $y_3$ is the $y$ component of the length of edge 3,
 and so on.
 The matrix and right hand side are formed based on the element
 and the linear system is solved via QR decomposition
-\cite{trefethen1997numerical}, giving us what we call
-the ``identity" metric tensor for an element.
+\cite{trefethen1997numerical}, giving us
+the implied metric tensor for an element.
 This derivation can be repeated for triangles in 2D, giving
 a $3\time 3$ system for the symmetric tensor components.
 
 In order to compute metric tensors at vertices,
-We need to conceptually average the identity values obtained
+We need to conceptually average the implied values obtained
 at adjacent elements.
 First, we transform the element metric tensors into their
 ``linear" form, which is one of the forms described
@@ -859,6 +859,81 @@ described in Section \ref{sec:elem_count}.
 
 \subsection{Targeting an Element Count}
 \label{sec:elem_count}
+
+For users developing a desired metric field, it can be useful
+to have the ability to scale their desired metric field such
+that the resulting adapted mesh will have a certain desired number
+of elements.
+This is due to the limited amount of memory on computer systems;
+simulations making use of supercomputers will typically approach
+the limit of memory when storing their mesh.
+Therefore, it is preferable to limit resolution and execute correctly
+rather than exceed the memory limit in an attempt to reach high resolution.
+Together with re-partitioning onto a larger amount of hardware memory,
+metric field scaling should provide better control of parallel adaptive
+workflows.
+
+Pain, Umpleby, de Oliveira, and Goddard describe one such method for
+predicting the number of elements produced and accordingly adjusting
+the metric field \cite{pain2001tetrahedral}.
+They begin with the assumption that after mesh adaptation all elements
+will have metric volume $\gamma_K$, where $\gamma_K$ is the volume of
+a perfectly equilateral tetrahedron with unit edge lengths.
+This leads to their volumetric prediction of the new element count
+$E_\text{new}$ based on the old elements $[1,E_\text{old}]$:
+
+\begin{equation}
+E_{\text{new}} = \frac{\sum_{e=1}^{E_{\text{old}}} \tilde{V}_e}{\gamma_K}
+\end{equation}
+
+Where $\tilde{V}_e$ is the volume of element $e$ in metric space,
+as we defined in Equation \ref{eq:metric_volume}.
+They then seek a scalar $\beta$ such that the scaled size field
+$\beta\mathcal{M}$ will produce the desired number of elements
+$E_\text{des}$.
+They arrive at the following:
+
+\begin{equation}
+\beta = \left(\frac{\gamma_K\theta E_{\text{des}}}
+{\sum_e^{E_{\text{old}}} \sqrt{\det(\mathcal{M}_e)}V_e}\right)^{2/3}
+\end{equation}
+
+Where $\theta$ is a correction factor which they state should
+be set to approximately $0.85$.
+We claim this correction factor is compensating for the invalidity
+of the equilateral-volume assumption.
+It is impossible to mesh Euclidean space with equilateral tetrahedra,
+and should likewise be difficult in metric space.
+We propose using the mean ratios of input elements (in metric space)
+as an indication of how far typical element volumes would deviate
+from the equilateral volume (recall the interpretation of the
+mean ratio from Section \ref{sec:def_quality}).
+Instead of summing metric space volumes $\tilde{V}_e$, we sum
+the volumes that current elements would have if they were
+made equilateral while their root-mean-squared edge length was preserved.
+This makes them more comparable to the idealized equilateral
+elements being assumed on output:
+
+\begin{equation}
+E_{\text{new}} = \frac{\sum_{e=1}^{E_{\text{old}}}
+\gamma_K \tilde{l}_{e,\text{RMS}}^3}{\gamma_K}
+ = \sum_{e=1}^{E_{\text{old}}} \tilde{l}_{e,\text{RMS}}^3 \\
+\end{equation}
+
+This leads to a simpler conclusion: the number of elements that
+input element $e$ will become after adaptation is approximately
+$\tilde{l}_{e,\text{RMS}}^d$
+(see Equations \ref{eq:tet_mean_ratio} and \ref{eq:tri_mean_ratio}
+for a definition).
+This can be used to compute a new metric scaling factor:
+
+\begin{equation}
+\beta = \left(\frac{E_{\text{des}}}
+{\sum_e^{E_{\text{old}}} \tilde{l}_{e,\text{RMS}}^d}\right)^{2/3}
+\end{equation}
+
+And can also be used to compute element weights to estimate
+future memory usage for load balancing purposes.
 
 \section{Solution Transfer in a Cavity}
 
