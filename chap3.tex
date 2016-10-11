@@ -1046,18 +1046,18 @@ E_{\text{new}} = \frac{\sum_{e=1}^{E_{\text{old}}}
 
 This leads to a simpler conclusion: the number of elements that
 input element $e$ will become after adaptation is approximately
-$\tilde{l}_{e,\text{RMS}}^d$, i.e. its root-mean-squared edge length
+$\tilde{l}_{e,\text{RMS}}^d$, i.e. its root-mean-squared metric edge length
 raised to the power that represents area in 2D or volume in 3D.
 See Equations \ref{eq:tet_mean_ratio} and \ref{eq:tri_mean_ratio}
 for a definition or root-mean-squared metric length.
 This can be used to compute a new metric scaling factor:
 
-\begin{equation}
+\begin{equation} \label{eq:my_metric_scalar}
 \beta = \left(\frac{E_{\text{des}}}
 {\sum_e^{E_{\text{old}}} \tilde{l}_{e,\text{RMS}}^d}\right)^{2/3}
 \end{equation}
 
-And can also be used to compute element weights to estimate
+Equation \ref{eq:my_metric_scalar} can also be used to compute element weights to estimate
 future memory usage for load balancing purposes.
 
 \section{Solution Transfer in a Cavity}
