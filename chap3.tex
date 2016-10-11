@@ -864,7 +864,8 @@ at 1:1000 anisotropy \cite{michal2012anisotropic}}
 \end{figure}
 
 To date the former two methods have proved sufficient for certain
-degrees of anisotropy, yet we consider the implementation of one
+degrees of anisotropy.
+We consider the implementation of one
 of the latter two methods as an area of immediate future work.
 
 \subsection{Implied Metric Field}
@@ -1002,7 +1003,8 @@ They begin with the assumption that after mesh adaptation all elements
 will have metric volume $\gamma_K$, where $\gamma_K$ is the volume of
 a perfectly equilateral tetrahedron with unit edge lengths.
 This leads to their volumetric prediction of the new element count
-$E_\text{new}$ based on the old elements $[1,E_\text{old}]$:
+$E_\text{new}$ based on the old elements which are here
+numbered from $1$ to $E_\text{old}$:
 
 \begin{equation}
 E_{\text{new}} = \frac{\sum_{e=1}^{E_{\text{old}}} \tilde{V}_e}{\gamma_K}
@@ -1044,9 +1046,10 @@ E_{\text{new}} = \frac{\sum_{e=1}^{E_{\text{old}}}
 
 This leads to a simpler conclusion: the number of elements that
 input element $e$ will become after adaptation is approximately
-$\tilde{l}_{e,\text{RMS}}^d$
-(see Equations \ref{eq:tet_mean_ratio} and \ref{eq:tri_mean_ratio}
-for a definition).
+$\tilde{l}_{e,\text{RMS}}^d$, i.e. its root-mean-squared edge length
+raised to the power that represents area in 2D or volume in 3D.
+See Equations \ref{eq:tet_mean_ratio} and \ref{eq:tri_mean_ratio}
+for a definition or root-mean-squared metric length.
 This can be used to compute a new metric scaling factor:
 
 \begin{equation}
