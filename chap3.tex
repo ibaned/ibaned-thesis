@@ -592,7 +592,25 @@ Like MeshAdapt, Omega\_h marks all edges whose
 metric length exceeds some threshold (typically $\sqrt{2}$) as candidates
 for edge splits.
 
-However, Omega\_h unmarks any edges whose splitting
+Omega\_h uses a more accurate formula to measure
+edges when determining whether to split or collapse them.
+This formula, shown as Equation \ref{eq:metric_length2}
+is suggested by Loseille and L{\"o}hner \cite{loseille20093d} and
+is based on the assumption that the desired length varies
+geometrically along the edge ($h(t)=h_a^{1-t}h_b^t$ where $h_a$ and $h_b$
+are the desired lengths at the endpoints).
+This assumption is consistent with the Log-Euclidean interpolation method we
+use for the metric tensor (see Section \ref{sec:metric_interp}).
+
+\begin{equation} \label{eq:metric_length2}
+\tilde{l} =
+\frac{\tilde{l}_a - \tilde{l}_b}{\log\left(\tilde{l}_a / \tilde{l}_b\right)}
+\quad
+\tilde{l}_a = \frac{l}{h_a},\quad
+\tilde{l}_b = \frac{l}{h_b}
+\end{equation}
+
+Omega\_h then unmarks any edges whose splitting
 would produce elements of low mean ratio quality (typically less than $20\%$).
 There is a trade-off here between two desired outcomes.
 On the one hand, when mesh adaptation is used to control discretization
@@ -607,11 +625,14 @@ and driving numerical conditioning of the physical simulation to unwanted extrem
 Since computers use finite precision arithmetic, there are cases in practice
 where the resulting element volumes are indistinguishable from zero to the computer.
 In Omega\_h, we choose to avoid immediate refinement that would violate
-quality criteria under the assumption that subsequent
-operations (including other refinements) will improve the situation
+quality criteria under the assumption, that in most cases, subsequent
+operations (including other edge splits) will improve the situation
 sufficiently that the deferred refinement will eventually be accepted.
-We have also confirmed that this does occur by observing the maximum
-metric edge length for all test cases to date.
+This is especially important when using single edge splits instead of
+applying refinement templates, because the order in which edges are split
+strongly affects the resulting quality.
+We have confirmed that at the end of adaptation we do meet the desired
+upper bound on metric edge length in the cases considered to date.
 
 \subsection{Coarsening}
 \label{sec:osh_coarsen}
@@ -827,8 +848,8 @@ chosen for $R$.
 \item This method stores 12 components per vertex on a 3D mesh, whereas
 the alternatives below store only 6.
 \end{enumerate}
-\item Omega\_h computes the inverse of the metric tensors, then
-interpolates those linearly, and inverts the result.
+\item One can instead compute the inverse of the metric tensors, then
+interpolate those linearly and invert the result.
 This is a method proposed by Alauzet and Frey as a compromise between
 the anisotropic fidelity and high runtime costs of the following two methods
 \cite{alauzet2003estimateur}.
@@ -844,6 +865,7 @@ method which linearly interpolates $\log(\mathcal{M})$, which equals
 $\mathcal{M}$ replacing the eigenvalues $\lambda$ with $\log(\lambda)$.
 Figure \ref{fig:log_interp} shows how this method better preserves
 very high levels of anisotropy.
+This is the method now used by Omega\_h.
 \end{enumerate}
 
 \begin{figure}
