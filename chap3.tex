@@ -107,10 +107,10 @@ and there are many properties which they are not guaranteed to
 achieve.
 The most successful set of cavity operators are those
 which operate on simplex meshes, due ultimately to the
-fact that a simplex is the simplest polytope of a given dimension,
-and that more complex polytopes require exponentially more
-complex considerations.
-In our work, we separate cavity operators into three categories:
+fact that a simplex is the simplest polytope of a given dimension
+and that, conversely, more complex polytopes provide fewer
+valid configurations.
+In our work, we separate cavity operators into several categories:
 \begin{enumerate}
 \item Refinement: create a strictly more detailed discretization
 than the input. Guaranteed not to invert elements, but not to
@@ -125,6 +125,8 @@ modifies connectivity to improve minimum element quality.
 There is no known method guaranteed to raise all elements to a quality
 that is useful for simulation and adaptation, but heuristic
 methods can achieve great results in practice \cite{klingner2008aggressive}.
+\item Snapping: procedures intended to improve the discrete
+mesh approximation of a continuous curved boundary.
 \end{enumerate}
 
 \section{Related Work}
@@ -134,8 +136,8 @@ library developed at RPI.
 One of the earliest publications by De Cougny and Shephard
 \cite{de1999parallel} outlines the three basic steps and goes into some detail
 on a use of independent sets for coarsening purposes
-(an idea that we extend significantly in Section \ref{sec:indset}.
-Later, much work was done by Li on anisotropy using the metric
+(an idea that we extend significantly in Section \ref{sec:indset}).
+Later, substantial extensions were introduced by Li on anisotropy using the metric
 tensor and the selection of operators for shape correction
 \cite{li20053d,li2003mesh}.
 Our implementations of tetrahedral edge swaps make use
@@ -236,9 +238,9 @@ collapsed vertex, now they are adjacent to the kept vertex).
 
 Edge collapsing is an operation which, if not properly controlled,
 can invalidate the mesh topologically or undo its topological similarity
-to a CAD model.
+to a CAD model \cite{schroeder1990combined}.
 MeshAdapt uses a set of checks which is somewhat expensive to compute
-but is quite topologically robust:
+but is topologically robust:
 
 \begin{enumerate}
 \item The vertex being collapsed must have the same classification as
