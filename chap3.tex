@@ -642,13 +642,13 @@ In other words, Omega\_h checks for the problematic case shown in Figure
 \ref{fig:surf_collapse}, but not for the case in Figure \ref{fig:circle_hole}.
 As a result, Omega\_h requires that the input mesh, model or metric be
 constructed such that the case in Figure \ref{fig:circle_hole} doesn't arise.
-The simple way to ensure this is to mesh ``holes" in the geometry.
+One simple way to ensure this is to mesh ``holes" in the geometry.
 For Omega\_h's first target applications,
 this makes sense because the interaction of both the fluid and the structure
 is of interest.
-Barring that solution, one can topologically break up periodic geometry
-or use curvature-targeted metrics to ensure a periodic geometry is approximated
-with more than three edges.
+Barring that solution, one can topologically break up periodic geometry,
+for example a periodic CAD edge becomes three or more edges,
+which is quite reasonable in the vast majority of cases.
 
 Finally, Omega\_h applies the same quality restriction to coarsening
 that it applies to refinement, i.e. changes are not accepted if they produce elements
@@ -712,6 +712,17 @@ mean ratio quality, and will continue to attempt shape correction until
 this goal is satisfied.
 So far, we have been able to achieve minimum mean ratios between $20\%$
 and $30\%$ for all mesh elements in a variety of cases.
+
+However, in general there are known examples where minimum quality cannot be improved
+above an arbitrary bound, for example if the CAD model being approximated has
+an arbitrarily small angle, elements adjacent to that angle will be limited
+in quality.
+Such forced angles have already begun to arise dynamically in
+deforming simulations, for example in Figure \ref{fig:tpp}.
+This is a well-researched problem in mesh generation, and the literature
+still suggests that we identify such ``forced" bad quality elements and treat them
+differently from elements which have a chance of being improved \cite{engwirda2016conforming}.
+Implementing such identification and isolation is considered future work.
 
 \subsection{Overall Steps}
 \label{sec:osh}
