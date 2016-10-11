@@ -9,8 +9,11 @@
 
 \section{In Context}
 
-The mesh adaptation methods in this work are both
+The mesh adaptation methods in this work are
 conformal, general, and cavity-based.
+
+\subsection {Conformal and General}
+
 They are conformal in the sense that the boundaries of all
 elements (Section \ref{sec:def_complex}) are composed
 of the set of entities expected by that element's
@@ -38,28 +41,59 @@ no more than one level of refinement is allowed between adjacent
 elements.
 The more important limitation is due to non-conforming methods
 typically being parent-child methods, which fundamentally limits
-them to the topology of the coarse input mesh.
+them to the topology (and geometry) of the coarse input mesh.
 If this input mesh is more fine than necessary in some areas,
 it cannot be coarsened.
 If moving objects or object deformation cause input elements
 to become highly compressed or even inverted, parent-child
 refinement can never correct or prevent this.
+New node placement when refining along a curved boundaries poses
+a similar issue to that of physical deformation.
 For these reasons we take a general approach, employing
 coarsening, swapping, and possibly other operations which are
 able to coarsen beyond the input mesh and correct low-quality
 elements in the input mesh.
 
+\subsection{Cavity-Based}
+
 We restrict ourselves to local cavity operations as well,
 meaning that the transformation from input to output meshes
 can be expressed as a series of cavity modifications, each
-of which can in turn be expressed as a the removal of
+of which can in turn be expressed as the removal of
 a small number of mesh entities followed by the addition
 of a small number of mesh entities.
-In this case small means a number which can be bounded
-by a constant and is not affected by the total number
-of mesh entities.
 
-The benefits of using local cavity operations are:
+In general, a cavity can be defined as a manifold sub-domain
+of the mesh defined by a set of elements from the original
+input mesh.
+A cavity undergoes a modification, which changes the discretization
+(set of mesh entities) of its interior but leaves its ``boundary" unchanged.
+In order to allow changing the discretization of the overall
+mesh boundary (i.e. the geometric model boundary)
+we use a relaxed definition of a cavity boundary
+(shown in Figure \ref{fig:cavity_boundary}) which only includes
+entities that are also adjacent to elements outside the cavity.
+This is the minimum requirement for the method to be conformal:
+it must preserve the topology of this relaxed boundary.
+For efficient parallel execution, we also require that attributes
+of those boundary entities remain unchanged (this includes
+geometric classification, hence Figure \ref{fig:surf_collapse}).
+This allows two cavities to be modified simultaneously by two
+threads or processes, so long as the cavities do not overlap
+(i.e. they do not share elements).
+They may be adjacent (share a subset of their boundaries) and
+need not coordinate because nothing about the shared boundary
+will be changed by either one.
+
+\begin{figure}
+\begin{center}
+\includegraphics[width=0.6\textwidth]{cavity_boundary.png}
+\caption{Relaxed definition of cavity boundary excludes geometric boundary}
+\label{fig:cavity_boundary}
+\end{center}
+\end{figure}
+
+Some benefits of using local cavity operations are:
 \begin{enumerate}
 \item It allows more straightforward and reliable parallelization of
 mesh adaptation (see Section \ref{sec:cavity_sched}).
