@@ -386,7 +386,7 @@ Li describes a fairly comprehensive set of sliver removal
 heuristics implemented in an earlier version of MeshAdapt
 \cite{li2003mesh}.
 The current version uses a similar approach, based on a
-taxonomy of tetrahedra with mean ratio low quality value.
+taxonomy of sliver tetrahedra.
 The taxonomy can be described in terms of some boundary
 entity being too close to another boundary entity
 of the tetrahedron:
@@ -518,10 +518,59 @@ on a wide variety of computing hardware.
 Due to the restrictions introduced by parallelism, Omega\_h
 initially chose a simpler set of algorithms to reduce the
 cost of redesigning each algorithm for portability.
-Once the algorithms were redesigned, they actually demonstrated
-an equivalent and in some cases better level of robustness,
-meaning we can get more portable and performant results
-with simpler operations.
+
+There are several key characteristics of MeshAdapt's design
+which need to be changed in order to execute efficiently with
+high degrees of shared memory parallelism (e.g. on GPUs):
+\begin{enumerate}
+\item The assumption of a persistent thread which can maintain
+substantial amounts of local data (e.g. a data structure
+representing a mesh partition) and act on that data in serial
+is invalid for GPUs, because the increased degree of parallelism
+requires lowering the per-thread overhead in memory use and computation.
+Shared memory parallelism is better expressed at the loop level
+(see Section \ref{sec:openmp}), and per-thread data should be avoided.
+This means data storage concerns (data structures) move up to
+the process level (in terms of software) and up to the
+node level (in terms of hardware).
+\item Modification of the mesh cannot be based on a local \emph{series}
+of single entity additions and removals that are immediately
+applied to the mesh, because this
+introduces increasing contention on the mesh data structure
+as the number of threads increase.
+Most other research in shared-memory parallelization of mesh modification
+has focused either on methods which assume the degree of parallelism
+is somewhat small \cite{remacle2015two} (as it is in CPUs) or
+methods which use entity-level non-deterministic mutual exclusion
+mechanisms \cite{navarro2011parallel}.
+We instead propose a deterministic independent set selection system
+in Section \ref{sec:indset} that allows us to go from one
+simple static structure to another
+(the data structure is described in Section \ref{sec:osh_static}).
+\item The operations that are performed in parallel should
+avoid making use of dynamic local memory allocation
+(see Section \ref{sec:cuda}).
+For example, when threads need access to variable-length adjacency
+data such as upward adjacencies, it is better for them to
+cooperate and form a single data structure representing said
+information for all entities, instead of having each thread
+recompute its portion on demand during a higher-level operation.
+\end{enumerate}
+Altogether, this results in the need to write the entire program
+in an array-based and loop-based style and requires algorithms that
+are intuitively expressed in that style.
+
+We have designed such alternative algorithms for performing mesh
+adaptation, and so far they have demonstrated
+equivalent and in some cases higher quality results
+for simplex mesh adaptation.
+Additional efforts are still underway to examine algorithmic details,
+and additional test cases are being developed in collaboration with
+other research groups to better qualify mesh adaptation methods
+independent of parallelization.
+
+The following sections describe the algorithms implemented
+in Omega\_h in contrast to those of MeshAdapt.
 
 \subsection{Refinement}
 \label{sec:osh_refine}
