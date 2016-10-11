@@ -1,0 +1,4 @@
+conference location
+book publisher location
+
+all months and years (day for conference)
