@@ -1079,17 +1079,162 @@ This can be used to compute a new metric scaling factor:
 {\sum_e^{E_{\text{old}}} \tilde{l}_{e,\text{RMS}}^d}\right)^{2/3}
 \end{equation}
 
-Equation \ref{eq:my_metric_scalar} can also be used to compute element weights to estimate
-future memory usage for load balancing purposes.
+Equation \ref{eq:my_metric_scalar} can also be used to compute element weights
+to estimate future memory usage for load balancing purposes.
 
 \section{Solution Transfer in a Cavity}
 
-Emphasize numerical / performance advantage
-over full-mesh methods.
-Results can be included for each particular
-method if it warrants one.
+When using mesh adaptation within the context of a simulation,
+one needs to maintain the simulation fields defined on the input mesh,
+and return similar fields defined on the adapted.
+Compared to full re-meshing methods, cavity-based adaptation has the
+advantage that field transfer can be localized to cavities, meaning
+that fields are only altered where the mesh topology was altered and
+that transfer algorithms need only consider this local problem
+as opposed to solving complex least-squares fits over the entire meshes.
 
 \subsection{Conserving Integral Quantities}
+
+In order to develop an adaptive Lagrangian hydrodynamics application
+(see Section \ref{sec:alexa}), it helps to have transfer algorithms
+which conserve certain integral quantities.
+In particular, our two goals were:
+\begin{enumerate}
+\item Conserve the mass of each contiguous object in the simulation.
+An object may be a fluid body or a solid mass.
+Mass is stored as a scalar value at each element.
+The algorithm we developed is described in Section \ref{sec:conserve_mass}.
+\item Conserve the total momentum of the simulation system.
+This is done by using a special algorithm to transfer velocities
+(which are stored as vectors at mesh vertices) such that combined
+with the above mass transfer they result in momentum conservation.
+This algorithm is described in Section \ref{sec:conserve_momentum}.
+\end{enumerate}
+In both these cases, the additional goal beyond conservation is
+the preservation of the variation or distribution of these fields,
+as much as possible within the bounds of conservation.
+In the context of these algorithms it is useful to define the terms
+``donor" and ``target", which indicate the state of the cavity before
+and after the mesh is modified, respectively.
+
+\subsubsection{Element-Centered Mass-Like Quantities}
+\label{sec:conserve_mass}
+
+The integral conservation requirement for mass can be expressed
+in terms of a density field $\rho$, which has donor ($\rho_D$)
+and target ($\rho_T$) forms.
+Our goal is to find a target density $\rho_T$ such that Equation
+\ref{eq:conserve_density} is satisfied,
+where $\Omega_D$ is the domain of the donor cavity and
+$\Omega_T$ is the domain of the target cavity.
+
+\begin{equation} \label{eq:conserve_density}
+\int_{\Omega_T} \rho_T \dd V = \int_{\Omega_D} \rho_D \dd V
+\end{equation}
+
+Our discretization of density is such that it has a constant
+value in the domain of each element, and is discontinuous between
+elements.
+We call this space of functions piecewise constants.
+The value of density in an element multiplied by the element's
+volume is the element mass.
+We define two sets of elements: the donor elements $E_D$ and
+the target elements $E_T$.
+Then discrete conservation is simply an equality of sums,
+and the goal is to find target element masses $m_a$.
+
+\begin{equation}
+\sum_{a \in E_T} m_a = \sum_{b \in E_D} m_b
+\end{equation}
+
+To choose target masses that preserve the density distribution well,
+we begin with related work
+\cite{jiao2004common,farrell2009conservative} which suggests that
+computing the geometric intersections of input and output elements
+allows the formulation of good conservative transfer algorithms.
+Their method is based on an assumption that donor and target domains
+are equal ($\Omega_T=\Omega_D$), and formulating the problem as a
+weighted residual of Equation \ref{eq:conserve_density}:
+
+\begin{equation}
+\forall w \in H: \int_{\Omega_T} w \rho_T \dd V = \int_{\Omega_D} w \rho_D \dd V
+\end{equation}
+
+Where $H$ is the space of weighting functions, and following
+\cite{jiao2004common} we choose $H$ to be the basis function space of the target mesh,
+meaning the space of piecewise constant functions on the target mesh.
+This just means $H$ can be used to single out each target element,
+giving the relationship:
+
+\begin{equation}
+\forall a \in E_T: \int_{\Omega_a} \rho_T \dd V = \int_{\Omega_D \cap \Omega_a} \rho_D \dd V
+= \sum_{b \in E_D} \int_{\Omega_b \cap \Omega_a} \rho_D \dd V
+\end{equation}
+
+Where $\Omega_a$ is the domain of element $a$, and the intersection of the
+domains of two elements $a$ and $b$ is written $\Omega_a \cap \Omega_b$.
+Knowing that $\rho_D$ is constant in $\Omega_b$, we get a simple
+sum of intersection volumes:
+
+\begin{equation} \label{eq:same_domain_mass}
+\forall a \in E_T: \int_{\Omega_a} \rho_T \dd V = m_a
+= \sum_{b \in E_D} V(\Omega_b \cap \Omega_a) m_b
+\end{equation}
+
+Where $V(\Omega_b \cap \Omega_a)$ is the volume of the intersection of elements $a$ and $b$.
+
+However, Equation \ref{eq:same_domain_mass} is based on the assumption
+that the domains of donor and target cavities are the same, and that
+there are not multiple objects requiring separate mass conservation.
+In the single object case, adaptation at the boundary of the object may
+produce different target and donor domains.
+We augment Equation \ref{eq:same_domain_mass} with a correction term
+to account for the fact that not all of $\Omega_D$ intersects with $\Omega_T$:
+
+\begin{equation} \label{eq:conserve_mass}
+\forall a \in E_T: m_a
+= \sum_{b \in E_D} \frac{V(\Omega_b \cap \Omega_a)}
+{\sum_{c \in E_T} V(\Omega_b \cap \Omega_c)} m_b
+\end{equation}
+
+We can confirm the correctness of Equation \ref{eq:conserve_mass} by
+summing all target masses:
+
+\begin{gather*}
+\sum_{a \in E_T} m_a
+= \sum_{a \in E_T} \sum_{b \in E_D} \frac{V(\Omega_b \cap \Omega_a)}
+{\sum_{c \in E_T} V(\Omega_b \cap \Omega_c)} m_b \\
+\sum_{a \in E_T} m_a
+= \sum_{b \in E_D} \sum_{a \in E_T} \frac{V(\Omega_b \cap \Omega_a)}
+{\sum_{c \in E_T} V(\Omega_b \cap \Omega_c)} m_b \\
+\sum_{a \in E_T} m_a
+= \sum_{b \in E_D} \frac{\sum_{a \in E_T} V(\Omega_b \cap \Omega_a)}
+{\sum_{c \in E_T} V(\Omega_b \cap \Omega_c)} m_b \\
+\sum_{a \in E_T} m_a
+= \sum_{b \in E_D} m_b \\
+\end{gather*}
+
+Equation \ref{eq:conserve_mass} can thus conserve mass between
+two cavities which may not have the same volume, so long as every
+donor element has a non-null intersection with the target cavity
+(the sum in the denominator).
+This requirement is satisfied for edge collapses (see Figure
+\ref{fig:collapse}) and edge swaps (see Figure \ref{fig:swap}),
+because in both cases it is true that
+all donor elements are adjacent to at least one face of
+the relaxed cavity boundary (see Figure \ref{fig:cavity_boundary}),
+and each face of the relaxed boundary is also adjacent to
+a donor element.
+If all donor and target elements have non-zero volume, then
+each donor element will overlap with at least one target element
+via this boundary face relationship.
+
+Note that in the case of an edge split, every donor element
+becomes two target elements of equal volume, so we simply
+assign half the donor element mass to each.
+
+\subsubsection{Momentum-Conserving Nodal Velocities}
+\label{sec:conserve_momentum}
 
 \section{Serial Adaptation Performance}
 
