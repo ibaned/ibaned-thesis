@@ -1182,6 +1182,10 @@ sum of intersection volumes:
 \end{equation}
 
 Where $V(\Omega_b \cap \Omega_a)$ is the volume of the intersection of elements $a$ and $b$.
+In order to compute this volume, we use the algorithms
+proposed by Powell and Abel \cite{powell2015exact} to first compute the polyhedron
+which is the intersection of the two element simplices, then compute
+its volume.
 
 However, Equation \ref{eq:same_domain_mass} is based on the assumption
 that the domains of donor and target cavities are the same, and that
