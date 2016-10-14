@@ -55,6 +55,7 @@ able to coarsen beyond the input mesh and correct low-quality
 elements in the input mesh.
 
 \subsection{Cavity-Based}
+\label{sec:cavity}
 
 We restrict ourselves to local cavity operations as well,
 meaning that the transformation from input to output meshes
@@ -1095,10 +1096,10 @@ as opposed to solving complex least-squares fits over the entire meshes.
 
 \subsection{Conserving Integral Quantities}
 
-In order to develop an adaptive Lagrangian hydrodynamics application
-(see Section \ref{sec:alexa}), it helps to have transfer algorithms
+In order to develop the adaptive Lagrangian hydrodynamics application Alexa
+using Omega\_h (see Section \ref{sec:alexa}), we need transfer algorithms
 which conserve certain integral quantities.
-In particular, our two goals were:
+In particular, our two goals are:
 \begin{enumerate}
 \item Conserve the mass of each contiguous object in the simulation.
 An object may be a fluid body or a solid mass.
@@ -1156,7 +1157,7 @@ Their method is based on an assumption that donor and target domains
 are equal ($\Omega_T=\Omega_D$), and formulating the problem as a
 weighted residual of Equation \ref{eq:conserve_density}:
 
-\begin{equation}
+\begin{equation} \label{eq:weighted_residual}
 \forall w \in H: \int_{\Omega_T} w \rho_T \dd V = \int_{\Omega_D} w \rho_D \dd V
 \end{equation}
 
@@ -1167,7 +1168,8 @@ This just means $H$ can be used to single out each target element,
 giving the relationship:
 
 \begin{equation}
-\forall a \in E_T: \int_{\Omega_a} \rho_T \dd V = \int_{\Omega_D \cap \Omega_a} \rho_D \dd V
+\forall a \in E_T: \int_{\Omega_a} \rho_T \dd V
+= \int_{\Omega_D \cap \Omega_a} \rho_D \dd V
 = \sum_{b \in E_D} \int_{\Omega_b \cap \Omega_a} \rho_D \dd V
 \end{equation}
 
@@ -1239,6 +1241,139 @@ assign half the donor element mass to each.
 
 \subsubsection{Momentum-Conserving Nodal Velocities}
 \label{sec:conserve_momentum}
+
+In the Alexa element formulation, velocity is what we will
+call a piecewise linear function.
+Its values are stored at vertices, and the value at any point
+inside the element is a weighted sum of that element's vertex values,
+where the weights are the barycentric coordinates of the point
+in the element.
+
+The most important transfer done for piecewise linear fields is that during
+refinement, new vertices will receive values via interpolation.
+For the refinement operation, this transfer is exact because
+it preserves the value of the field at all points in space.
+For any other modifications (those that do not create
+new vertices) we would typically leave the values at vertices unchanged,
+accepting the small perturbations introduced by changes
+to the element connectivity.
+
+However, in the case of momentum conservation, we find a need
+to modify the vertex velocity values in order to prevent
+changing element connectivity from destroying or creating momentum.
+The main difficulty here is that the way cavities for edge
+collapses and swaps are defined, \emph{there are no vertices on
+the interior}.
+Recall from Section \ref{sec:cavity} that we require modifications
+leave their boundaries unchanged, making it impossible to alter
+vertex values without changing the cavity definition.
+This leads us to expand our cavity definition for collapses
+and swaps, as shown in Figure \ref{fig:buffer_cavity}.
+By pushing the boundary outwards by one layer of elements,
+we bring the original boundary vertices into the interior
+which allows us to modify their values.
+In exchange for this, we pay a high price in the complexity
+of parallelizing this method, because the selection of independent
+sets must now prevent cavities within distance three of
+one another from modifying simultaneously (see Section \ref{sec:indset}).
+This in turn requires that we increase the amount of ghosting
+to three layers during the selection procedure
+(see Section \ref{sec:indset_ghost}).
+
+\begin{figure}
+\begin{center}
+\includegraphics[width=0.6\textwidth]{buffer_cavity.png}
+\caption{Cavity with buffer layer and associated notation}
+\label{fig:buffer_cavity}
+\end{center}
+\end{figure}
+
+Because piecewise linear functions are continuous, we cannot
+use discontinuity to isolate the cavity as we did in Section
+\ref{sec:conserve_mass}.
+Instead, we must explicitly require that the new boundary vertices
+$\mathcal{N}_F$ remain fixed.
+This means the weighted residual technique from Equation
+\ref{eq:weighted_residual} is no longer applicable.
+
+The momentum field is the product of the velocity field
+and the density field, which in our case is stored as masses
+at elements.
+The integral of momentum over the domain of an element $e$
+can be written as a discrete sum:
+
+\begin{equation} \label{eq:element_momentum}
+\mathbf{p}_{e} = m_e \frac1{d+1}\sum_{a \in \mathcal{N}(e)} v_a
+\end{equation}
+
+Where $\mathcal{N}(e)$ is the set of vertices of $e$ and
+$d$ is the dimensionality of $e$ (assumed to be a simplex),
+with vertex velocity values $v_a$.
+We begin by leaving the velocity values unchanged between
+donor and target, and compute the momentum integrals
+over both donor and target cavities.
+
+\begin{gather} \label{eq:sum_over_elems}
+\mathbf{p}_T = \sum_{e \in E_T} m_e \frac1{d+1}\sum_{a \in \mathcal{N}(e)} v_a \\
+\mathbf{p}_D = \sum_{e \in E_D} m_e \frac1{d+1}\sum_{a \in \mathcal{N}(e)} v_a
+\end{gather}
+
+Note that the sum in Equation \ref{eq:sum_over_elems} can be rearranged
+to sum over vertices first:
+
+\begin{equation} \label{eq:sum_over_verts}
+\mathbf{p}_T = \sum_{a \in \mathcal{N}_T} v_a \frac1{d+1} \sum_{e \in E(a)} m_e
+\end{equation}
+
+Where $\mathcal{N}_T$ is the set of vertices in the target cavity and
+$E(a)$ is the set of elements adjacent to vertex $a$.
+Our momentum conservation method will begin by computing the
+momentum loss $(\mathbf{p}_D - \mathbf{p}_T)$, then
+we use Equation \ref{eq:sum_over_verts} as the basis for
+altering vertex velocities such that each vertex contributes
+an equal amount of momentum to the cavity, using these
+contributions to correct for momentum loss.
+In particular, for a target vertex $a$ the adjusted velocity
+$\tilde{v}_a$ is given by Equation \ref{eq:new_velocity}.
+
+\begin{equation} \label{eq:new_velocity}
+\forall a \in \mathcal{N}_T:
+\tilde{v}_a = v_a +
+\frac{{(d+1)}(\mathbf{p}_D - \mathbf{p}_T)}{|\mathcal{N}_T|\sum_{e\in E(a)}m_e}
+\end{equation}
+
+In the studies of this method to date we find that the momentum
+loss in a cavity is typically a small percentage, i.e.
+$(|\mathbf{p}_D - \mathbf{p}T|/\mathbf{p}_D \leq 1\%)$.
+For this reason it is less of a concern that we do not take into
+account the variation of velocity over space when distributing
+these corrections.
+
+The final complication involved in altering these velocities
+is that Alexa (and simulation codes in general) apply boundary
+conditions involving velocity, meaning they require that vertices
+on a subset of the overall mesh boundary have velocity values
+which are equal to some user-defined function $v(x,y,z,t)$
+over space and time.
+This means we should not apply velocity corrections to vertices
+with that restriction.
+Alexa will identify which boundary surfaces have boundary
+conditions applied to them and communicate them Omega\_h.
+Omega\_h will then reduce the set
+of modified target nodes $\mathcal{N}_T$ in Equation \ref{eq:new_velocity}
+accordingly.
+If no vertices remain in this set, we disallow that mesh
+modification from taking place.
+So far this has not been a serious limitation, but care needs to
+be taken in areas heavily affected by boundary conditions,
+such as the corner of a cube where all three surfaces are
+restricted.
+
+Since refinement is exact, it automatically conserves momentum
+and does not need to employ the above cavity expansion or velocity
+correction.
+As discussed in Section \ref{sec:osh_refine}, this is important
+because we prefer not to disallow refinement.
 
 \section{Serial Adaptation Performance}
 
