@@ -373,10 +373,11 @@ described in Section \ref{sec:omega_h-adapt}.
 The danger of rejecting operations based on quality is that
 if too many operations are rejected then edge lengths will
 not conform well enough to the metric field.
-However, recently researchers are having increasing success with
-careful rejection of operations and are able to avoid using
-sliver removal techniques \cite{loseille20093d,michal2012anisotropic}.
-Attempting to reproduce their results is an area of immediate future work.
+However, we are having increasing success with
+careful rejection of operations and some researchers
+re able to avoid using sliver removal techniques
+altogether if their quality requirements are low
+enough \cite{loseille20093d,michal2012anisotropic}.
 
 Typically, mesh adaptation libraries implement a balance
 between prevention of quality degradation and repairing
@@ -406,7 +407,7 @@ to its opposing triangle face.
 Here we try to execute an edge swap (see Figure \ref{fig:swap})
 on each of the three edges bounding the opposing triangle face.
 (The work of Li suggests that a face split and collapse operation
-should also be attempted as future work).
+should also be implemented as future work).
 \item In the third case, we have the classic sliver tetrahedron
 which has two opposing edges being too close to one another.
 We first attempt to perform an edge swap on each of the two
@@ -566,11 +567,11 @@ are intuitively expressed in that style.
 
 We have designed such alternative algorithms for performing mesh
 adaptation, and so far they have demonstrated
-equivalent and in some cases higher quality results
+comparable and in some cases higher quality results
 for simplex mesh adaptation.
 Additional efforts are still underway to examine algorithmic details,
 and additional test cases are being developed in collaboration with
-other research groups to better qualify mesh adaptation methods
+other research groups to better qualify mesh adaptation methods,
 independent of parallelization.
 
 The following sections describe the algorithms implemented
@@ -627,11 +628,12 @@ On the other hand, immediate refinement can produce elements of arbitrarily
 bad quality, making it increasing difficult to apply future mesh modifications
 and driving numerical conditioning of the physical simulation to unwanted extremes.
 Since computers use finite precision arithmetic, there are cases in practice
-where the resulting element volumes are indistinguishable from zero to the computer.
+where the refined element volumes are indistinguishable from zero to the computer.
 In Omega\_h, we choose to avoid immediate refinement that would violate
 quality criteria under the assumption, that in most cases, subsequent
 operations (including other edge splits) will improve the situation
-sufficiently that the deferred refinement will eventually be accepted.
+sufficiently that the deferred refinement will eventually be accepted
+(see the loop in Listing \ref{lst:osh}).
 This is especially important when using single edge splits instead of
 applying refinement templates, because the order in which edges are split
 strongly affects the resulting quality.
@@ -675,22 +677,33 @@ Barring that solution, one can topologically break up periodic geometry,
 for example a periodic CAD edge becomes three or more edges,
 which is quite reasonable in the vast majority of cases.
 
-Finally, Omega\_h applies the same quality restriction to coarsening
-that it applies to refinement, i.e. changes are not accepted if they produce elements
-below a user-defined threshold.
+Omega\_h also applies the same quality restriction to coarsening
+that it applies to refinement, i.e. changes are not accepted if they produce
+elements below a user-defined threshold.
+
+Finally, Omega\_h implements what we call ``overshoot protection"
+as suggested by Michal and Krakos \cite{michal2012anisotropic}.
+This means that edge collapses are rejected if they would create
+new edges that are longer than the edge refinement threshold
+from Section \ref{sec:osh_refine}.
+This restriction allows us to alternate refinement and coarsening
+without entering an infinite loop in which a collapse operation
+is exactly undone by a refinement operation, which is then
+undone by a subsequent collapse, etc.
 
 We mark candidate collapses using two boolean flags per edge, one for each
 endpoint.
-In addition to unmarking collapses that would violate the above topological
-and classification checks, we also require the output elements to be
-above some quality threshold.
 Once all collapses that violate the checks mentioned above are unmarked,
 we move the focus of the problem from edges to vertices.
-To do this, every vertex chooses the highest-quality candidate edge collapse
-for which it is an endpoint, and that collapse is the one it will
-represent, all others for which it is an endpoint are discarded.
+To do this, every vertex chooses a single adjacent candidate edge collapse
+which is the one it will represent for the remainder of the coarsening operation.
+The selection is made first preferring the shortest edge
+(as suggested in \cite{michal2012anisotropic}), preferring
+higher element qualities if lengths are equal, and ties in
+both length and quality are broken using global entity numbers.
+All others collapses in which the vertex could have participated for which it is an endpoint are discarded.
 Now the independent set selection in Section \ref{sec:indset} is used
-with vertices as the keys and their selected collapse's qualities as the
+with vertices as the keys and their selected collapse qualities as the
 values.
 The selected independent set of vertices is then collapsed, along each
 vertex's chosen edge.
@@ -734,7 +747,7 @@ marks to all face-adjacent elements of currently marked elements.
 
 Unlike MeshAdapt, Omega\_h requires that all elements be above a certain
 mean ratio quality, and will continue to attempt shape correction until
-this goal is satisfied.
+this goal is satisfied or all attempts stall (see Section \ref{sec:osh}).
 So far, we have been able to achieve minimum mean ratios between $20\%$
 and $30\%$ for all mesh elements in a variety of cases.
 
@@ -754,43 +767,36 @@ Implementing such identification and isolation is considered future work.
 
 Listing \ref{lst:osh} shows an abbreviated version of the C++ code for
 Omega\_h's main function.
-The ordering of these operations was selected for the most part to minimize
-the amount of work done, not to optimize memory usage or metric conformity.
-First, refinement as described in Section \ref{sec:osh_refine} is done
-until no more modifications are accepted.
-Next, the same is done for coarsening as per \ref{sec:osh_coarsen}.
-Finally, while the lowest element quality in the mesh is below some
-threshold, we attempt to apply edge swaps and edge collapses as
-per \ref{sec:osh_shape}.
-Notice that edge swaps are strongly preferred, in fact edge
-collapses as a quality repair solution are only attempted when
-quality remains below the threshold and no legal edge swaps
-would improve quality.
+There are two loops involved: the first attempts to satisfy edge lengths
+and the second attempts to repair element quality.
+The edge length loop consists of one refinement pass as described in Section
+\ref{sec:osh_refine},
+followed by one coarsening pass as per \ref{sec:osh_coarsen}.
+This first loop continues until neither of the passes could modify the mesh.
+The termination of this loop is dependent on the overshoot
+protection described in Section \ref{sec:osh_coarsen}.
 
-The parameter \texttt{qual\_floor} represents the quality that
-we would prefer elements to always exceed during all parts of
-adaptation.
-There is an exception for the case when the input mesh is
-already worse than that, hence the logic for computing
-\texttt{allow\_qual}, which is the quality actually enforced
-on modification operations.
-The parameter \texttt{qual\_ceil} is the quality we would prefer
-elements exceed \emph{after} mesh adaptation, and hence is the
-target for shape correction operations.
+The second loop attempts passes of shape correction operations,
+in decreasing order of preference.
+First a pass of edge swaps is attempted as described in Section \ref{sec:osh_shape}.
+Only if no swaps could be performed are edge collapses are attempted
+on the edges around slivers.
+This loop continues until the worst element is above the threshold
+or no valid correction operations could be found.
 
 \begin{lstlisting}[float,style=dan-style,caption=Omega\_h main function,label=lst:osh]
-bool adapt(Mesh* mesh, Real qual_floor, Real qual_ceil, Real len_floor,
-    Real len_ceil, Int nlayers) {
-  auto input_qual = mesh->min_quality();
-  auto allow_qual = min2(qual_floor, input_qual);
-  while (refine_by_size(mesh, len_ceil, allow_qual));
-  while (coarsen_by_size(mesh, len_floor, allow_qual));
-  while (mesh->min_quality() < qual_ceil) {
-    if (swap_edges(mesh, qual_ceil, nlayers)) continue;
-    if (coarsen_slivers(mesh, qual_ceil, nlayers)) continue;
+bool adapt(Mesh* mesh, AdaptOpts const& opts) {
+  bool did_anything;
+  do {
+    did_anything = false;
+    if (refine_by_size(mesh, opts)) did_anything = true;
+    if (coarsen_by_size(mesh, opts)) did_anything = true;
+  } while (did_anything);
+  while (mesh->min_quality() < opts.min_quality_desired) {
+    if (swap_edges(mesh, opts)) continue;
+    if (coarsen_slivers(mesh, opts)) continue;
     break;
   }
-  return true;
 }
 \end{lstlisting}
 
@@ -888,11 +894,6 @@ at 1:1000 anisotropy \cite{michal2012anisotropic}}
 \label{fig:log_interp}
 \end{center}
 \end{figure}
-
-To date the former two methods have proved sufficient for certain
-degrees of anisotropy.
-We consider the implementation of one
-of the latter two methods as an area of immediate future work.
 
 \subsection{Implied Metric Field}
 \label{sec:ident_metric}
