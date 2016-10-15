@@ -767,10 +767,13 @@ Listing \ref{lst:osh} shows an abbreviated version of the C++ code for
 Omega\_h's main function.
 There are two loops involved: the first attempts to satisfy edge lengths
 and the second attempts to repair element quality.
-The edge length loop consists of one refinement pass as described in Section
-\ref{sec:osh_refine},
-followed by one coarsening pass as per \ref{sec:osh_coarsen}.
-This first loop continues until neither of the passes could modify the mesh.
+The edge length loop consists of one refinement pass
+as described in Section \ref{sec:osh_refine} (on line 5),
+followed by one coarsening pass as per Section \ref{sec:osh_coarsen}
+(on line 6).
+This first loop continues until neither of the passes could modify the mesh,
+which is detected by the \texttt{did\_anything} boolean variable
+remaining false.
 The termination of this loop is dependent on the overshoot
 protection described in Section \ref{sec:osh_coarsen}.
 
@@ -779,8 +782,9 @@ in decreasing order of preference.
 First a pass of edge swaps is attempted as described in Section \ref{sec:osh_shape}.
 Only if no swaps could be performed are edge collapses attempted
 on the edges around slivers.
-This loop continues until the worst element is above the threshold
-or no valid correction operations could be found.
+This loop continues until the worst element is above the desired threshold
+(checked on line 8) or no valid correction operations could be found
+(the break at line 11) is reached.
 
 \begin{lstlisting}[float,style=dan-style,caption=Omega\_h main function,label=lst:osh]
 bool adapt(Mesh* mesh, AdaptOpts const& opts) {
@@ -796,6 +800,36 @@ bool adapt(Mesh* mesh, AdaptOpts const& opts) {
     break;
   }
 }
+\end{lstlisting}
+
+Listing \ref{lst:oshopts} shows the options structure.
+It specifies the following user-adjustable parameters:
+\begin{enumerate}
+\item[Line 2:] The minimum desired length of edges in metric space
+(used to mark edges for coarsening).
+\item[Line 3:] The maximum desired length of edges
+in metric space (used to mark edges for refinement).
+\item[Line 4:] The minimum allowed quality of any edge-length focused
+operation. During the first loop of Listing \ref{lst:osh},
+any operations that would create elements below this quality are rejected.
+\item[Line 5:] The minimum desired quality of elements after adaptation.
+The second loop in Listing \ref{lst:osh} will continue until
+all elements are above this quality or no improvements can be made.
+\item[Line 6:] The number of face-adjacent element layers around
+a sliver to consider for shape correction.
+\item[Line 7:] The amount of information to print to the user regarding
+the operations being carried out.
+\end{enumerate}
+
+\begin{lstlisting}[float,style=dan-style,caption=Omega\_h parameters,label=lst:oshopts]
+struct AdaptOpts {
+  Real min_length_desired;
+  Real max_length_desired;
+  Real min_quality_allowed;
+  Real min_quality_desired;
+  Int nsliver_layers;
+  Verbosity verbosity;
+};
 \end{lstlisting}
 
 \section{Size Field Algorithms}
