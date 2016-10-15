@@ -7,24 +7,75 @@
 \chapter{SCALABLE PARALLEL MESH ADAPTATION}
 \label{chap:parallel}
 
-\section{Definition}
+\section{Defining Scalability}
+\label{sec:scalable}
 
-What does it mean to scale well.
+It is important to first define scalability in the context of
+parallel computers.
+First, we define a single scalar $N$ describing the problem size.
+For mesh-based simulations, the number of mesh elements
+is a good approximate measure of problem size.
+Then we consider any operation which would take $O(N)$ time to execute
+on a single processor such as the reference computer
+in Section \ref{sec:ref_comp}, and analyze the runtime bound
+of this operation when it is parallelized using $P$ cooperating processes.
+When this the parallel runtime is $O(N/P)$, we say the operation
+has perfect linear scaling.
+Linear scaling typically only occurs when the processes do not have to coordinate,
+and coordination usually adds a factor $\log(P)$ to the runtime,
+meaning that the operation takes $O((N/P)\log(P))$ time in parallel.
 
-\begin{equation} \label{eq:big-o-scale}
-t = O\left(\frac{N}{P}\lg(P)\right)
-\end{equation}
+Notice that we are considering a single operation which takes $O(N)$
+time in serial.
+For example, a Recursive Bisection partitioning method is a
+divide-and-conquer algorithm which uses $O(\log(P))$ steps, each
+taking $O(N)$ time, to assign $N$ items to $P$ partitions
+for a total serial runtime which is $O(N\log(P))$
+(analogous to an incomplete sorting algorithm).
+If the items are already well partitioned amongst $P$ processes
+and we run a parallel version of this procedure to adjust the
+partitioning, each $O(N)$ step becomes $O((N/P)\log(P))$
+and the whole operation can be expected to take $O((N/P)(\log(P))^2)$.
 
-A list of requirements for scalability:
+Next, we define parallel runtime bounds which are considered non-scalable.
+The simplest example is one where an $O(N)$ serial operation becomes
+an $O(N)$ parallel operation, i.e. there is asymptotically no scaling.
+Although trivial, an alarming number of parallel programs in production
+use exhibit this degree of scaling for key parallel operations
+(for example, partitioning is done is serial prior to a parallel simulation).
+Such systems rely on the fact that their non-scalable operations
+consume a small percentage of runtime at low degrees of parallelism
+to show some speedup in practice, but ultimately run into great difficulties
+for large $P$ or large $N$.
+The second example is an operation which has $O(P)$ runtime in parallel.
+Once again, may systems in production use today suffer from such
+trivial non-scalability.
+For example, it is natural when organizing communications for each process to create
+an array of size $P$ with information about what is being sent to each
+other process (or worse, to actually send data to every other cooperating process).
+The continued use of $O(P)$ algorithms is a significant obstacle to
+increasing the degree of shared memory parallelism in leadership-class supercomputers.
+The issue is made worse by the fact that until fairly recently,
+MPI (see Section \ref{sec:def_mpi}) itself would either use
+or encourage the use of such algorithms \cite{balaji2009mpi}.
+We devote Section \ref{sec:mpi3} to a description of how to use modern MPI
+to avoid non-scalable operations during communication.
 
-\begin{enumerate}
-\item Never collect data of size $O(P)$ on one processor
-\end{enumerate}
+All the above considerations have analogues for the case of shared-memory programming,
+in which case one can exchange the number of parallel processes $P$ for a number
+of parallel threads $T$.
+In the case of shared memory only, there are fewer communication concerns because
+all threads may access all data directly.
+Although there are Non-Uniform Memory Access (NUMA) costs incurred if threads do
+not organize their data to minimize sharing, these costs are much smaller than
+the cost of network communication.
 
 \section{Scalable MPI Collectives}
 \label{sec:mpi3}
 
-Present what is in MPI3, specifically at least the following key items:
+In this section we introduce a set of primitive operations from the
+perspective of their implementation in the MPI 3.0 communication library
+standard for modern parallel programming \cite{gropp2014using}.
 
 \begin{enumerate}
 \item reductions
