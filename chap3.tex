@@ -274,12 +274,9 @@ and the triangle adjacent to the collapsing vertex must have the same classifica
 as this tetrahedron.
 \item All the resulting tetrahedra must have positive volume.
 In the 2D planar case, triangle normals should all be positive in the Z axis.
-A relaxed version of this can be used to adapt triangulations of 2D surfaces
-embedded in 3D, by requiring that the normals of new triangles be sufficiently
-close to the normals of old triangles.
-For straight-sided simplices in an equal-dimensional space (i.e. triangles in 2D),
-this check on its own can prevent some topological invalidities, except
-those in Figure \ref{fig:circle_hole} and Figure \ref{fig:surf_collapse}.
+For straight-sided simplices in an equal-dimensional space (i.e. triangles in 2D
+and tetrahedra in 3D), this check on its own can prevent some topological invalidities,
+except those in Figure \ref{fig:circle_hole} and Figure \ref{fig:surf_collapse}.
 \end{enumerate}
 
 The edge and face ring conditions are more complete versions of those described
@@ -376,7 +373,7 @@ if too many operations are rejected then edge lengths will
 not conform well enough to the metric field.
 However, we are having increasing success with
 careful rejection of operations and some researchers
-re able to avoid using sliver removal techniques
+are able to avoid using sliver removal techniques
 altogether if their quality requirements are low
 enough \cite{loseille20093d,michal2012anisotropic}.
 
@@ -521,8 +518,8 @@ void adapt(Input* in) {
 
 The Omega\_h code aims to provide MeshAdapt-like functionality
 on a wide variety of computing hardware.
-Due to the restrictions introduced by parallelism, Omega\_h
-initially chose a simpler set of algorithms to reduce the
+Due to the restrictions introduced by shared memory parallelism,
+Omega\_h initially chose a simpler set of algorithms to reduce the
 cost of redesigning each algorithm for portability.
 
 There are several key characteristics of MeshAdapt's design
@@ -533,7 +530,7 @@ high degrees of shared memory parallelism (e.g. on GPUs):
 substantial amounts of local data (e.g. a data structure
 representing a mesh partition) and act on that data in serial
 is invalid for GPUs, because the increased degree of parallelism
-requires lowering the per-thread overhead in memory use and computation.
+requires lowering the per-thread overhead in memory use and runtime.
 Shared memory parallelism is better expressed at the loop level
 (see Section \ref{sec:openmp}), and per-thread data should be avoided.
 This means data storage concerns (data structures) move up to
@@ -631,7 +628,7 @@ and driving numerical conditioning of the physical simulation to unwanted extrem
 Since computers use finite precision arithmetic, there are cases in practice
 where the refined element volumes are indistinguishable from zero to the computer.
 In Omega\_h, we choose to avoid immediate refinement that would violate
-quality criteria under the assumption, that in most cases, subsequent
+quality criteria under the assumption that, in most cases, subsequent
 operations (including other edge splits) will improve the situation
 sufficiently that the deferred refinement will eventually be accepted
 (see the loop in Listing \ref{lst:osh}).
@@ -780,7 +777,7 @@ protection described in Section \ref{sec:osh_coarsen}.
 The second loop attempts passes of shape correction operations,
 in decreasing order of preference.
 First a pass of edge swaps is attempted as described in Section \ref{sec:osh_shape}.
-Only if no swaps could be performed are edge collapses are attempted
+Only if no swaps could be performed are edge collapses attempted
 on the edges around slivers.
 This loop continues until the worst element is above the threshold
 or no valid correction operations could be found.
