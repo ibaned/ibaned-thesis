@@ -53,14 +53,14 @@ refinement can never correct or prevent this.
 New node placement when refining along a curved boundaries poses
 a similar issue to that of physical deformation.
 For these reasons we take a general approach, employing
-coarsening, swapping, and possibly other operations which are
+local cavity-based mesh modification operations which are
 able to coarsen beyond the input mesh and correct low-quality
 elements in the input mesh.
 
 \subsection{Cavity-Based}
 \label{sec:cavity}
 
-We restrict ourselves to local cavity operations as well,
+We restrict ourselves to local cavity operations,
 meaning that the transformation from input to output meshes
 can be expressed as a series of cavity modifications, each
 of which can in turn be expressed as the removal of
@@ -80,8 +80,9 @@ entities that are also adjacent to elements outside the cavity.
 This is the minimum requirement for the method to be conformal:
 it must preserve the topology of this relaxed boundary.
 For efficient parallel execution, we also require that attributes
-of those boundary entities remain unchanged (this includes
-geometric classification, hence Figure \ref{fig:surf_collapse}).
+of those boundary entities also remain unchanged.
+This includes geometric classification, as discussed in Section
+\ref{sec:ma_coarsen} and illustrated in Figure \ref{fig:surf_collapse}.
 This allows two cavities to be modified simultaneously by two
 threads or processes, so long as the cavities do not overlap
 (i.e. they do not share elements).
