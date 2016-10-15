@@ -1017,8 +1017,8 @@ in Section \ref{sec:metric_interp} used for metric interpolation
 (for example, Omega\_h uses the matrix logarithm).
 Then we take at each vertex the average of these linear
 tensors at adjacent elements.
-Applying the inverse ``de-linearizing" transformation to the resulting tensor
-retries the metric tensor at the vertex.
+Applying the inverse ``de-linearizing" transformation to the
+average linear tensor gives the metric tensor at the vertex.
 
 \subsection{Implied Isotropic Size}
 \label{sec:ident_size}
@@ -1169,8 +1169,17 @@ Our goal is to find a target density $\rho_T$ such that Equation
 \ref{eq:conserve_density} is satisfied,
 where $\Omega_D$ is the domain of the donor cavity and
 $\Omega_T$ is the domain of the target cavity.
-We will consider certain cases where $(\Omega_D\neq\Omega_T)$ later in the
-following discussion.
+Figure \ref{fig:mass_cavity} illustrates such a scenario,
+and also illustrates the important case $\Omega_D\neq\Omega_T$,
+which we eventually attempt to address with Equation \ref{eq:conserve_mass}.
+
+\begin{figure}
+\begin{center}
+\includegraphics[width=0.9\textwidth]{mass_cavity.png}
+\caption{Mass conservation case with changing cavity domains}
+\label{fig:mass_cavity}
+\end{center}
+\end{figure}
 
 \begin{equation} \label{eq:conserve_density}
 \int_{\Omega_T} \rho_T \dd V = \int_{\Omega_D} \rho_D \dd V

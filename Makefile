@@ -2,6 +2,7 @@ MAIN_BASE = ibanez_thesis
 MAIN = $(MAIN_BASE).tex
 
 FIGS = \
+mass_cavity.png \
 buffer_cavity.png \
 cavity_boundary.png \
 surf_collapse.png \
