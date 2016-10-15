@@ -1123,28 +1123,33 @@ to estimate future memory usage for load balancing purposes.
 
 When using mesh adaptation within the context of a simulation,
 one needs to maintain the simulation fields defined on the input mesh,
-and return similar fields defined on the adapted.
+and return the adapted mesh with the fields properly defined on it.
 Compared to full re-meshing methods, cavity-based adaptation has the
 advantage that field transfer can be localized to cavities, meaning
 that fields are only altered where the mesh topology was altered and
 that transfer algorithms need only consider this local problem
-as opposed to solving complex least-squares fits over the entire meshes.
+as opposed to dealing with general mesh-to-mesh searches and
+global, typically expensive and/or unsatisfactory field fitting operations.
+
+{\bf TODO: more background on mesh-to-mesh methods}
 
 \subsection{Conserving Integral Quantities}
+
+{\bf TODO: more background on integral quantity conservation}
 
 In order to develop the adaptive Lagrangian hydrodynamics application Alexa
 using Omega\_h (see Section \ref{sec:alexa}), we need transfer algorithms
 which conserve certain integral quantities.
 In particular, our two goals are:
 \begin{enumerate}
-\item Conserve the mass of each contiguous object in the simulation.
+\item Conserve the mass of each physical object in the simulation.
 An object may be a fluid body or a solid mass.
-Mass is stored as a scalar value at each element.
+Mass is a piecewise constant scalar field defined over the element volumes.
 The algorithm we developed is described in Section \ref{sec:conserve_mass}.
 \item Conserve the total momentum of the simulation system.
 This is done by using a special algorithm to transfer velocities
-(which are stored as vectors at mesh vertices) such that combined
-with the above mass transfer they result in momentum conservation.
+(which are defined as vectors at mesh vertices) such that combined
+with the above mass transfer result in momentum conservation.
 This algorithm is described in Section \ref{sec:conserve_momentum}.
 \end{enumerate}
 In both these cases, the additional goal beyond conservation is
@@ -1164,15 +1169,16 @@ Our goal is to find a target density $\rho_T$ such that Equation
 \ref{eq:conserve_density} is satisfied,
 where $\Omega_D$ is the domain of the donor cavity and
 $\Omega_T$ is the domain of the target cavity.
+We will consider certain cases where $(\Omega_D\neq\Omega_T)$ later in the
+following discussion.
 
 \begin{equation} \label{eq:conserve_density}
 \int_{\Omega_T} \rho_T \dd V = \int_{\Omega_D} \rho_D \dd V
 \end{equation}
 
-Our discretization of density is such that it has a constant
-value in the domain of each element, and is discontinuous between
-elements.
-We call this space of functions piecewise constants.
+Our discretization of density is piecewise constant in that there is
+a single value over the domain of each element,
+and values are discontinuous between elements.
 The value of density in an element multiplied by the element's
 volume is the element mass.
 We define two sets of elements: the donor elements $E_D$ and
@@ -1239,7 +1245,7 @@ to account for the fact that not all of $\Omega_D$ intersects with $\Omega_T$:
 {\sum_{c \in E_T} V(\Omega_b \cap \Omega_c)} m_b
 \end{equation}
 
-We can confirm the correctness of Equation \ref{eq:conserve_mass} by
+We can confirm Equation \ref{eq:conserve_mass} conserves mass by
 summing all target masses:
 
 \begin{gather*}
@@ -1271,18 +1277,21 @@ If all donor and target elements have non-zero volume, then
 each donor element will overlap with at least one target element
 via this boundary face relationship.
 
-Note that in the case of an edge split, every donor element
-becomes two target elements of equal volume, so we simply
+Note that in the case of an edge split (with no snapping),
+every donor element becomes two target elements of equal volume, so we simply
 assign half the donor element mass to each.
 
 \subsubsection{Momentum-Conserving Nodal Velocities}
 \label{sec:conserve_momentum}
 
-In the Alexa element formulation, velocity is what we will
-call a piecewise linear function.
-Its values are stored at vertices, and the value at any point
-inside the element is a weighted sum of that element's vertex values,
-where the weights are the barycentric coordinates of the point
+In the element formulation used in Alexa, velocity is
+a piecewise linear $C^0$ continuous function
+(its value is continuous between elements, but not its derivative).
+Such a field is defined in terms of common values at vertices,
+and the value at any point inside the element is a weighted sum
+of that element's vertex values,
+where the weights are the element basis functions, which
+in the linear case equal the barycentric coordinates of the point
 in the element.
 
 The most important transfer done for piecewise linear fields is that during
@@ -1297,7 +1306,7 @@ to the element connectivity.
 However, in the case of momentum conservation, we find a need
 to modify the vertex velocity values in order to prevent
 changing element connectivity from destroying or creating momentum.
-The main difficulty here is that the way cavities for edge
+One important difficulty here is that the way cavities for edge
 collapses and swaps are defined, \emph{there are no vertices on
 the interior}.
 Recall from Section \ref{sec:cavity} that we require modifications
@@ -1308,7 +1317,7 @@ and swaps, as shown in Figure \ref{fig:buffer_cavity}.
 By pushing the boundary outwards by one layer of elements,
 we bring the original boundary vertices into the interior
 which allows us to modify their values.
-In exchange for this, we pay a high price in the complexity
+In exchange for this, we pay a significant price in the complexity
 of parallelizing this method, because the selection of independent
 sets must now prevent cavities within distance three of
 one another from modifying simultaneously (see Section \ref{sec:indset}).
@@ -1336,6 +1345,8 @@ The momentum field is the product of the velocity field
 and the density field, which in our case is stored as masses
 at elements.
 The integral of momentum over the domain of an element $e$
+(in the case of mass and velocity being piecewise constant
+and linear, respectively)
 can be written as a discrete sum:
 
 \begin{equation} \label{eq:element_momentum}
@@ -1367,8 +1378,8 @@ Our momentum conservation method will begin by computing the
 momentum loss $(\mathbf{p}_D - \mathbf{p}_T)$, then
 we use Equation \ref{eq:sum_over_verts} as the basis for
 altering vertex velocities such that each vertex contributes
-an equal amount of momentum to the cavity, using these
-contributions to correct for momentum loss.
+an equal amount of the momentum difference to the cavity,
+using these contributions to correct for momentum loss.
 In particular, for a target vertex $a$ the adjusted velocity
 $\tilde{v}_a$ is given by Equation \ref{eq:new_velocity}.
 
@@ -1380,7 +1391,7 @@ $\tilde{v}_a$ is given by Equation \ref{eq:new_velocity}.
 
 In the studies of this method to date we find that the momentum
 loss in a cavity is typically a small percentage, i.e.
-$(|\mathbf{p}_D - \mathbf{p}T|/\mathbf{p}_D \leq 1\%)$.
+$(|\mathbf{p}_D - \mathbf{p}_T|/\mathbf{p}_D \leq 1\%)$.
 For this reason it is less of a concern that we do not take into
 account the variation of velocity over space when distributing
 these corrections.
