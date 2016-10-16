@@ -247,22 +247,140 @@ such that each process receives all the messages addressed to it
 during the operation.
 The difficult part of implementing an exchange is determining, for
 a given destination process, the full set of messages addressed to it.
-Hoefler, Siebert, and Lumsdaine \cite{hoefler2011scalable} describe
+Hoefler, Siebert, and Lumsdaine \cite{hoefler2010scalable} describe
 a communication-optimal algorithm for conducting a ``sparse dynamic exchange".
 They define a sparse exchange as one in which the number of messages
 sent from or received by any single process is $O(\log(P))$.
 This is important, because if a process tries to send $O(P)$ messages
 then it is impossible to execute the exchange in a scalable way.
-They define a dynamic exchange as one in which 
+They define a dynamic exchange as one in which the set of messages
+a process must receive is unknown to that process at first, hence
+the difficulty described above.
 
-\begin{enumerate}
-\item reductions
-\item scans
-\item graph communicators
-\item neighborhood reduction
-\item neighborhood \texttt{alltoall}
-\item neighborhood \texttt{alltoallv}
-\end{enumerate}
+Many codes in use today solve this problem by using a variant
+of the ``personalized consensus" algorithm in \cite{hoefler2010scalable},
+reproduced here as Algorithm \ref{alg:pcx}.
+By relying on a table (array) of size $P$, this algorithm is
+non-scalable.
+A scalable solution is the ``non-blocking consensus" algorithm
+in \cite{hoefler2010scalable}, seen here as Algorithm \ref{alg:nbx}.
+This algorithm uses synchronous sends, meaning that when a message
+is received at its destination, a confirmation is returned to the
+sender.
+Once a process receives confirmation that all its outgoing messages
+reached their destinations, it enters the non-blocking barrier.
+This barrier can execute concurrently with other message traffic,
+and once all processes enter it, it will signal its completion
+to all processes.
+Upon detecting completion, a process can be sure that all messages
+in flight have been received, thus it is safe to stop waiting for
+incoming messages.
+The barrier must be non-blocking because in order to make progress,
+processes must be able to continue receiving incoming messages
+until the time of overall completion.
+Knowing the communication is sparse, this algorithm runs in $O(\log(P))$
+time \cite{hoefler2010scalable}.
+
+\begin{algorithm}
+\caption{Non-Blocking Consensus \cite{hoefler2010scalable}}
+\label{alg:nbx}
+\SetKwInOut{Input}{input}\SetKwInOut{Output}{output}
+\Input{List $I$ of destinations and data}
+\Output{List $O$ of received data and sources}
+done$=$false\;
+barrier\_active$=$false\;
+\ForEach{$i \in I$}{
+  start nonblocking synchronous send to process dest($i$)\;
+}
+\While{not (done)}{
+  msg = nonblocking probe for incoming message\;
+  \If{msg exists}{
+    allocate buffer, receive message, add buffer to $O$\;
+  }
+  \eIf{barrier\_active}{
+    comp $=$ test barrier for completion\;
+    \lIf{comp}{done$=$true}
+  }{
+    \If{all sends are finished}{
+      start nonblocking barrier\;
+      barrier\_active$=$true\;
+    }
+  }
+}
+\end{algorithm}
+
+\begin{algorithm}
+\caption{Personalized Consensus \cite{hoefler2010scalable}}
+\label{alg:pcx}
+\SetKwInOut{Input}{input}\SetKwInOut{Output}{output}
+\Input{List $I$ of destinations and data}
+\Output{List $O$ of received data and sources}
+allocate local table with $P$ entries, initialize all entries to `0'\;
+\ForEach{$i \in I$}{
+  set row target($i$) in local table to `1'\;
+}
+$s_i=$ global sum of my table row\;
+\ForEach{$i \in I$}{
+  start nonblocking sends to dest($i$)\;
+}
+\For{round from $1$ to $s_i$}{
+  msg $=$ blocking probe for incoming message\;
+  allocate buffer, receive message, add buffer to $O$\;
+}
+\end{algorithm}
+
+Section \ref{sec:pcu_phased} describes how PUMI's communication
+library, PCU, implements Algorithm \ref{sec:nbx}.
+This implementation goes beyond MPI because it is designed to
+allow communication between operating system threads instead
+of processes.
+
+As of the MPI 3.0 standard, however, it is no longer necessary to
+program one's own exchange algorithm, as it can be accomplished
+by combining two key MPI systems:
+scalable process topology (graph communicators) \cite{hoefler2011scalable},
+and neighborhood collectives \cite{hoefler2012optimization}.
+
+MPI's neighborhood collective functions perform non-dynamic
+exchanges, meaning that they must be informed of the incoming
+as well as outgoing messages.
+This is semantically the same as performing a series of single-message
+sends and receives, but comes with a few benefits.
+First, MPI's understanding that the messages are all to be
+sent at once enables it to perform certain optimizations.
+Second, the interface specifies that the data for all
+outgoing messages is to be packed in a single array
+(with data going to the same destination being contiguous).
+This is good for integrating MPI with shared-memory
+code, because the shared-memory code may efficiently prepare
+the outgoing data array and may efficiently process the incoming
+data array, thus minimizing the amount of work done by MPI
+(which is not guaranteed to use shared-memory parallelism to
+accelerate its work).
+Unfortunately, the neighborhood collective exchange functions
+have the name prefix \texttt{MPI\_Neighbor\_alltoall}, where
+\texttt{alltoall} is too reminiscent of the non-scalable practice
+of transmitting $O(P)$ messages from one processor.
+
+The remaining problem of determining messages to receive can
+be delegated to MPI's scalable process topology description
+via the function \texttt{MPI\_Dist\_graph\_create}.
+First, note that the above process is a graph theoretical problem
+of determining incoming graph edges to a graph node when each
+graph node knows only its outgoing edges.
+\texttt{MPI\_Dist\_graph\_create} allows each process to specify
+any subset of the edges in the communication graph, and assumes
+responsibility for informing each process of all its incoming
+and outgoing edges.
+This is a more general and difficult problem than the one described
+above, and we restrict our use of this function to having each
+process specify all its outgoing edges.
+Given this restriction, we assume it executes in $O(\log(P))$ time.
+
+Note that the exchange operation does not have a clear shared-memory equivalent
+in the context of Omega\_h,
+because accessing shared memory directly is preferred over sending
+explicit messages amongst threads.
 
 \section{PCU: Scalable Inter-Thread Communication}
 \label{sec:pcu}
@@ -293,15 +411,14 @@ is supported, and the most common ones come built-in to PCU.
 These collectives are directly available to users.
 
 Using both collectives and point-to-point communication, PCU provides a flexible
-user interfaces similar to MPI 3.0's neighborhood \texttt{alltoallv}.
+user interfaces similar to MPI 3.0's \texttt{MPI\_Neighbor\_alltoallv}.
 The first phase
 allows tasks to construct messages to multiple neighbors
 at once and then send them.
 The second phase ensures that neighbors
 receive all the messages they have been sent.
 This ``phased" communication algorithm is
-powered by the non-blocking consensus algorithm
-for sparse data exchange \cite{hoefler2010scalable}.
+conceptually the same as Algorithm \ref{alg:nbx}.
 
 Finally, PCU has a system for creating a pool of threads within each process and
 assigning them ranks the way MPI does to processes.
