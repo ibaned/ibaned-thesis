@@ -70,12 +70,60 @@ Although there are Non-Uniform Memory Access (NUMA) costs incurred if threads do
 not organize their data to minimize sharing, these costs are much smaller than
 the cost of network communication.
 
-\section{Scalable MPI Collectives}
+\section{Scalable Collectives}
 \label{sec:mpi3}
 
-In this section we introduce a set of primitive operations from the
-perspective of their implementation in the MPI 3.0 communication library
-standard for modern parallel programming \cite{gropp2014using}.
+In this section we introduce a set of key collective parallel operations
+used to write parallel programs.
+
+\subsection{Reduction}
+
+A reduction operation takes as input an array
+$\mathbf{a}=\{a_0,a_1,a_2,...,a_N\}$ or scalar values and
+a binary operator $\bigotimes$, and returns a single scalar result.
+The result is related to the array entries via a binary expression tree,
+and in order to allow flexibility of implementation, any valid binary
+tree may be used.
+Figure \ref{fig:reduce} shows two valid binaries trees an implementation
+may use to reduce an array of five entries.
+The value of a leaf node in this tree is the value of a unique array entry,
+and the value of the non-leaf nodes is the result of applying
+the binary operator to the values of its two child nodes.
+The value of the root of the tree is the overall reduction result.
+
+The left tree in Figure \ref{fig:reduce} illustrates the typical
+serial reduction process of maintaining an accumulator value and
+adding each consecutive array entry to it.
+The right tree in Figure \ref{fig:reduce} illustrates the most theoretically
+scalable implementation, i.e. a balanced tree.
+Assuming we have as many parallel processes as we have array entries,
+each layer of the balanced tree can be evaluated simultaneously and the
+runtime to evaluate the reduction is $O(\log(N))$ for arrays of size $N$.
+However, the balanced tree requires $O(N)$ memory for the intermediate
+result at one layer, while the serial tree can be evaluated with
+a single accumulator ($O(1)$ memory).
+The memory requirement is one reason why the serial is chosen at
+all in cases when no parallelism is available.
+
+If we have fewer parallel processes than array entries, we can use a hybrid mix
+of the two trees in Figure \ref{fig:reduce}, where each processor
+uses a serial tree to reduce $O(N/P)$ values in $O(N/P)$ time, and
+then each process' local results are reduced using a balanced tree
+in $O(\log(N))$ time resulting in an $O((N/P)+\log(N))$ runtime.
+
+Notice that the ability of implementations to choose any tree
+is a problem when the operator $\bigotimes$ is not commutative,
+as is the case with computer implementations of floating-point operations.
+Section \ref{sec:repro_sum} will describe a technique for dealing
+with this issue.
+
+\begin{figure}
+\begin{center}
+\includegraphics[width=0.7\textwidth]{reduce.png}
+\caption{Two possible binary trees used for reduction}
+\label{fig:reduce}
+\end{center}
+\end{figure}
 
 \begin{enumerate}
 \item reductions
@@ -685,6 +733,7 @@ determinism on heterogeneous architectures.}
 {\bf The key algorithms Ben and I came up with go here.}
 
 \subsection{Order-Independent Sums}
+\label{sec:repro_sum}
 
 %%% Local Variables:
 %%% mode: latex
