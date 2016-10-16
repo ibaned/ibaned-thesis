@@ -35,7 +35,7 @@ for a total serial runtime which is $O(N\log(P))$
 If the items are already well partitioned amongst $P$ processes
 and we run a parallel version of this procedure to adjust the
 partitioning, each $O(N)$ step becomes $O((N/P)\log(P))$
-and the whole operation can be expected to take $O((N/P)(\log(P))^2)$.
+and the whole operation can be expected to take $O((N/P)\log^2(P))$.
 
 Next, we define parallel runtime bounds which are considered non-scalable.
 The simplest example is one where an $O(N)$ serial operation becomes
@@ -58,7 +58,7 @@ increasing the degree of shared memory parallelism in leadership-class supercomp
 The issue is made worse by the fact that until fairly recently,
 MPI (see Section \ref{sec:def_mpi}) itself would either use
 or encourage the use of such algorithms \cite{balaji2009mpi}.
-We devote Section \ref{sec:mpi3} to a description of how to use modern MPI
+Section \ref{sec:paraops} describes how to use modern MPI
 to avoid non-scalable operations during communication.
 
 All the above considerations have analogues for the case of shared-memory programming,
@@ -70,17 +70,50 @@ Although there are Non-Uniform Memory Access (NUMA) costs incurred if threads do
 not organize their data to minimize sharing, these costs are much smaller than
 the cost of network communication.
 
-\section{Scalable Collectives}
-\label{sec:mpi3}
+\section{Parallel Operations}
+\label{sec:paraops}
 
 In this section we introduce a set of key collective parallel operations
 used to write parallel programs.
+All of these are scalable operations as described in Section \ref{sec:scalable}.
+As such, a good approach to designing scalable programs is to use
+only these operations for parallelism.
 
-\subsection{Reduction}
+\subsection{Map}
+
+This is the most basic parallel operation, and is included to
+place our definitions in the context of the map-reduce programming model which
+has gained popularity in processing Internet data sets \cite{dean2008mapreduce}.
+The simplest definition of a map operation takes in an array $\mathbf{a}=\{a_0,a_1,a_2,...a_N\}$
+and a unary operator $f$ and returns an array
+$\mathbf{b}=\{f(a_0), f(a_1), f(a_2),...,f(a_N)\}$.
+
+We generalize it to the idea of running $N$ independent
+operations in parallel with no need for coordination.
+The shared memory implementation of a map operation is the \texttt{parallel\_for}
+concept introduced in Section \ref{sec:openmp}.
+The need for these operations to be independent often forces the result to exist
+as one or more arrays of $N$ result values.
+The distributed memory implementation is anything inside a normal MPI program.
+Since MPI processes always execute in parallel, anytime all processes perform
+the same operation without coordination (message passing), it can be interpreted
+as an implicit map operation.
+This illustrates an important distinction between MPI programming and shared
+memory programming: MPI is parallel by default, while shared memory programming
+environments like OpenMP and CUDA are serial by default and parallelism
+must be explicitly requested per operation.
+
+The map operation is the prime example of an operation which scales
+perfectly.
+Assuming the operator $f$ requires $O(1)$ time, a serial execution
+requires $O(N)$ time and a parallel operation over $P$ processes
+and $T$ threads takes $O(N/(PT))$ time.
+
+\subsection{Reduce}
 
 A reduction operation takes as input an array
-$\mathbf{a}=\{a_0,a_1,a_2,...,a_N\}$ or scalar values and
-a binary operator $\bigotimes$, and returns a single scalar result.
+$\mathbf{a}=\{a_0,a_1,a_2,...,a_N\}$ of scalar values and
+a binary operator $\otimes$, and returns a single scalar result.
 The result is related to the array entries via a binary expression tree,
 and in order to allow flexibility of implementation, any valid binary
 tree may be used.
@@ -97,13 +130,14 @@ adding each consecutive array entry to it.
 The right tree in Figure \ref{fig:reduce} illustrates the most theoretically
 scalable implementation, i.e. a balanced tree.
 Assuming we have as many parallel processes as we have array entries,
-each layer of the balanced tree can be evaluated simultaneously and the
+each of the $\lceil\log(N)\rceil$ layers of the balanced tree
+can be evaluated simultaneously and the
 runtime to evaluate the reduction is $O(\log(N))$ for arrays of size $N$.
 However, the balanced tree requires $O(N)$ memory for the intermediate
 result at one layer, while the serial tree can be evaluated with
 a single accumulator ($O(1)$ memory).
-The memory requirement is one reason why the serial is chosen at
-all in cases when no parallelism is available.
+The memory requirement is one reason why the serial tree is chosen
+in cases when no parallelism is available.
 
 If we have fewer parallel processes than array entries, we can use a hybrid mix
 of the two trees in Figure \ref{fig:reduce}, where each processor
@@ -111,9 +145,12 @@ uses a serial tree to reduce $O(N/P)$ values in $O(N/P)$ time, and
 then each process' local results are reduced using a balanced tree
 in $O(\log(N))$ time resulting in an $O((N/P)+\log(N))$ runtime.
 
+The binary operators used most often in Omega\_h reductions
+are the sum, minimum, and maximum of the two inputs.
 Notice that the ability of implementations to choose any tree
-is a problem when the operator $\bigotimes$ is not commutative,
-as is the case with computer implementations of floating-point operations.
+is a problem when the operator $\otimes$ is not commutative
+(the result depends on the tree structure),
+as is the case with typical computer implementations of floating-point summation.
 Section \ref{sec:repro_sum} will describe a technique for dealing
 with this issue.
 
@@ -124,6 +161,99 @@ with this issue.
 \label{fig:reduce}
 \end{center}
 \end{figure}
+
+The shared memory implementation of reductions is in our case
+provided by the Kokkos library's \texttt{Kokkos::parallel\_reduce}
+function \cite{edwards2013kokkos}.
+The distributed memory implementation (which accepts a single value
+per process) is provided by MPI's \texttt{MPI\_Reduce} and \texttt{MPI\_Allreduce}
+functions (the later makes the result available to all processes, which is
+often desired).
+Combining these gives a reduction that can be expected to
+complete in $O((N/(PT))+\log(PT))$ time.
+
+\subsection{Scan}
+
+Scan operations are key to scalable parallel programming, especially when using
+arrays for storage.
+Given an input array $\mathbf{a}=\{a_0, a_1, a_2, ..., a_N\}$ and a binary operator
+$\otimes$, an inclusive scan returns an array $\mathbf{b}=\{b_0, b_1, b_2, ..., b_N\}$
+where each $b_i=\text{reduce}(\{a_0, a_1, a_2, ..., a_i\}, \otimes)$, i.e. the
+$i$-th output value is the result of reducing the first $i$ input values.
+An exclusive scan differs in that the $i$-th output value is the reduction
+of the first $(i-1)$ values only (meaning the first output value must be defined separately).
+A scan with $(\otimes)=(+)$ is often referred to as a prefix sum.
+
+Intuitively, a scan operation may be implemented with help from the intermediate
+values of a reduction tree.
+For example, the intermediate values in the serial tree (Figure \ref{fig:reduce}(left))
+are exactly the output values for scanning, meaning a scan takes $O(N)$ time in serial.
+Parallel scanning is a bit more complex and requires essentially traversing a
+balanced tree twice (Figure \ref{fig:reduce}(right)), which still gives
+it a time complexity of $O(\log(N))$ assuming as many processors as input values.
+
+We use the \texttt{Kokkos::parallel\_scan} function to provide the shared
+memory implementation of scans, and the \texttt{MPI\_Exscan} function
+to provide the distributed memory implementation, which accepts one
+value per process.
+
+The utility of exclusive scans is in generating offsets for sub-groups of items in
+a global collection based on the size of each subgroup.
+For example, given the number of mesh elements per part, the \texttt{MPI\_Exscan}
+takes $O(\log(P))$ time to returns offsets which can be used to establish a global
+numbering of mesh elements without further communication.
+Likewise, given the number of edges adjacent to each mesh vertex, a
+\texttt{Kokkos::parallel\_scan} takes $O((N/T)\log(T))$ to produce offsets
+for all vertices that allow the construction of compressed-row
+storage for the vertex-to-edge adjacency (see Section \ref{sec:adj_arr}).
+
+\subsection{Sort}
+
+Although we do not yet require a full distributed memory sorting algorithm
+in our work, we do have uses for sorting at the shared memory level
+(see Section \ref{sec:reorder}), so we include this as a key parallel operation.
+In Omega\_h, we use a slightly unusual definition of sorting:
+given an array $\mathbf{k}=\{k_0,k_1,k_2,...,k_N\}$ of keys and
+a strict weak ordering $(\prec)$ \cite{roberts2009applied},
+return a permutation array
+$\mathbf{p}=\{i_0,i_1,i_2,...,i_N\}$ which indicates
+a sorted order for $\mathbf{k}$, meaning that ($k_{i_j} \prec k_{i_{j+1}}$).
+We use this definition so that the permutation array can be re-used
+to sort multiple other arrays that are associated with the array of keys.
+We also require that the algorithm be stable (keys which are ``equal"
+in the ordering $(\prec)$ retain the same relative order) for
+determinism reasons.
+This is especially important when other arrays are being sorted
+using the permutation array.
+
+Implementing a parallel sorting algorithm is considerably more
+challenging than implementing scans and reductions.
+At the time of this writing, Kokkos does not offer a highly general
+sorting capability.
+Instead, Omega\_h relies on the Thrust library to provide sorting functionality
+on GPUs \cite{bell2011thrust}.
+There several algorithms for sorting on GPUs \cite{satish2009designing},
+ranging in complexity up to $O((N/T)\log^2(N))$, which we still consider
+scalable.
+On manycore CPUs, we use a parallel merge sort implementation provided
+by researchers at Intel \cite{robinson2014parallel}.
+
+\subsection{Exchange}
+
+We use the term exchange to refer to the distributed memory operation
+in which each process has a set of messages to send, each message
+having a unique destination process, and these messages are exchanged
+such that each process receives all the messages addressed to it
+during the operation.
+The difficult part of implementing an exchange is determining, for
+a given destination process, the full set of messages addressed to it.
+Hoefler, Siebert, and Lumsdaine \cite{hoefler2011scalable} describe
+a communication-optimal algorithm for conducting a ``sparse dynamic exchange".
+They define a sparse exchange as one in which the number of messages
+sent from or received by any single process is $O(\log(P))$.
+This is important, because if a process tries to send $O(P)$ messages
+then it is impossible to execute the exchange in a scalable way.
+They define a dynamic exchange as one in which 
 
 \begin{enumerate}
 \item reductions
@@ -140,7 +270,7 @@ with this issue.
 {\bf attribution to the TOMS paper.}
 
 {\bf Everything in this section needs to constantly
-compare/contrast against what is in Section \ref{sec:mpi3},
+compare/contrast against what is in Section \ref{sec:paraops},
 reinforce that its being redone for a hybrid environment}
 
 PCU is a library that provides a parallel programming model including
