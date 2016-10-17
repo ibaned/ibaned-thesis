@@ -636,17 +636,117 @@ contention for the MPI library between the threads in that process.
 When these calls are protected by a lock, avoiding contention is important
 \cite{mavriplis2002parallel}.
 
+\section{Remote Copies and Owners}
+\label{sec:remotes}
+
+For distributed memory parallelism, we are required to separate our
+data amongst multiple memory spaces.
+In order to find a piece of data across an entire distributed memory
+machine, one needs to pieces of information: which of the
+memory spaces it is in, and where in that memory space it is.
+The first value is provided by MPI and is called a ``rank", which is
+a 32-bit integer identifying an MPI process.
+In object-oriented codes, the second value is a pointer
+to an object, which is a memory address (typically 64 bits).
+If data is stored mainly in arrays as we do in our work,
+the second value can be an integer, and can be 32 bits if
+that is the size chosen for array indices.
+
+The way we partition a mesh onto a distributed memory machine is
+to have each MPI process create a data structure (one of those
+described in Chapter \ref{chap:struct}) and store in it a subset
+of the entities in the overall mesh.
+Partitioning begins with a subset of the elements that will
+reside in a given partition, and then requires that this
+partition also contain all entities on the boundary of those
+elements.
+The choice of elements is typically such that each element resides
+in exactly one partition (we call this an ``element-based" partitioning),
+or an element may reside in multiple partitions (the most common
+example of this is a special case we call ``ghosting").
+A partitioning may be represented as a map from unique entities
+to a subset of partitions (MPI ranks).
+Each single mapping from a unique entity to a single partition
+causes a ``copy" of that entity to be included in the data structure
+on that partition.
+
+In order to maintain an understanding of the mesh as a whole,
+we need to maintain some information about which copies represent
+the same unique mesh entity.
+When working with a partitioned mesh, it is also very useful to
+designate one of the copies that represent the same unique entity
+as the owner copy, making it responsible for changes involving
+that unique entity.
+Figure \ref{fig:remotes} shows the two ways in which we maintain
+this information.
+On the left, we have the PUMI implementation in which every copy
+stores a set of ``remote copies", which are links to all other copies
+that represent the same unique mesh entity.
+This forms a complete graph of connectivity between the copies of
+one unique entity.
+What Omega\_h maintains most of the time is a more sparse representation
+in which each entity stores a link to its owner (which may
+be itself, note the self-edge in Figure \ref{fig:remotes}(right)).
+In both cases (PUMI and Omega\_h), a remote link is a pair
+containing an MPI rank and an entity pointer, where the
+entity pointer decomposes into one or more array indices
+(see Section \ref{sec:sisc_mstruct}).
+
+\begin{figure}[t]\vspace*{4pt}
+\centerline{\includegraphics[width=0.9\textwidth]{remotes.png}}
+\caption{Complete and owner-based remote links for a
+4-partition mesh}\vspace*{-6pt}
+\label{fig:remotes}
+\end{figure}
+
 \section{Entity-Level Communication}
 \label{sec:dist}
 
-{\bf Something which both PCU and Omega\_h do is simulate
-mesh entities sending messages to each other, while
-doing this much more efficiently than the naive approach.}
+A common operation in both PUMI and Omega\_h is to send
+data in a way that can be interpreted as mesh entities
+communicating with one another.
+A good example of this would be mesh nodes communicating
+field values to one another to add up contributions from
+different mesh partitions.
+In a more general sense, we would like to have communications
+in which data is sent to and from many small objects,
+where there are more objects than threads.
 
-\section{Remotes and Owners}
+In PCU, there is no explicit support for this, but it
+is straightforward to achieve by sending small messages
+which begin with the entity pointer of a copy (obtained from remote
+copies as described in Section \ref{sec:remotes}),
+followed by the data aimed at that copy.
+When receiving data using PCU, a thread will loop over these
+small messages (which are packed into one large message
+for the entire thread) and bring up the relevant entity for each message.
 
-{\bf Explain remote copies and owners, and how they become
-part of the two structures from \ref{chap:struct}.}
+In Omega\_h, we have a more explicit implementation of
+this communication pattern in an object called the \texttt{Dist},
+which is short for ``distributor".
+The \texttt{Dist} model is that of a directed communication graph from one set of
+copies (the ``sources") to another set (the ``destinations").
+The two sets may be the same, for example the copies of nodes of a
+mesh communicating with one another, or they may be different, for example
+the copies of vertices of the input mesh communicating with
+the copies of vertices of the adapted mesh.
+Each source may communicate with multiple destinations, although we
+assume the number of destinations per source (and the number of sources
+per destination) is bound by a small constant.
+Notice that both the sources and destinations are sets of copies which
+are distributed throughout the whole machine.
+
+Along each edge of this communication graph, we will transmit
+a small amount of data.
+These transmissions will happen all at once.
+First a type of data (integer, floating-point, etc.) and a width
+(a very small constant, for example 3 values) is selected.
+Then the input values for each source are provided, and the
+\texttt{Dist} is responsible for relaying these to
+the destinations, such that each destination can readily access
+the data sent to it.
+Note that this is very similar to the exchange algorithm from
+Section \ref{sec:exch}, it is simply implemented at a finer-grained level.
 
 \section{Migration}
 
