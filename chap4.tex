@@ -826,7 +826,7 @@ involves careful duplication of mesh entities into "copies"
 in different memory spaces, and establishing the needed
 links between copies of the same entity.
 Creation of a partitioned mesh is handled by a procedure
-called ``migration".
+called ``migration" \cite{ibanez2015pumi}.
 It accepts as input a partitioned mesh (the input partitioning
 may be such that the entire mesh is in a single partition),
 and outputs a new partitioned mesh based on an input description
@@ -923,8 +923,59 @@ to transfer each data array from the old owners to the new copies.
 
 \section{Ghosting}
 
-{\bf As with migration, describe what is done in both PUMI/APF
-and Omega\_h.}
+As mentioned in Section \ref{sec:remotes}, mesh partitioning can
+in some cases copy an element onto multiple partitions.
+The term ghosting typically refers to a partitioning algorithm
+that begins with an element-based partitioning (all elements
+exist on only one partition) and gradually copies layers of elements
+from neighboring partitions.
+Formally, a partition after ghosting one layer will have copies
+of all mesh elements adjacent to all $b$-dimensional entities
+it had copies of before ghosting, where $b$ is called the bridge dimension.
+In our work we only consider vertex bridges $(b=0)$.
+
+The interface to PUMI's element-based migration procedure is
+``push-based", meaning that each partition specifies, for each
+of it current elements, a single destination partition to send
+that element to.
+By definition, such a specification cannot express ghosting.
+Although PUMI has recently acquired ghosting capability, it was
+not developed as part of this thesis and treats ghost elements
+in a specialized manner.
+
+We focus here on Omega\_h's implementation, which begins with
+a migration procedure capable of handling any amount of element duplication.
+The input to Omega\_h migration specifies a list of element copies
+in the input mesh (which may be in other partitions) which define
+the element copies desired in the newly partitioned mesh.
+This way, one may request all the elements currently in the
+partition plus several elements in other partitions.
+Since the Omega\_h migration procedure treats element duplication
+the same as duplication in lower dimensions, implementing ghosting
+only requires specifying the right set of elements.
+We form a graph from vertices to all adjacent elements (including
+those on other partitions) by having every vertex copy send its
+adjacent element identifiers to the vertex owner.
+The vertex owners send back the full list of adjacent elements,
+allowing partitions to request all elements adjacent to its current
+vertices.
+
+The only care that needs to be taken in the migration procedure
+is to preserve the owner ranks of all entities when ghosting,
+because this is the only mechanism for distinguishing ghosted
+elements in case one needs to remove them and return to
+an element-based partitioning.
+This also gives a critical guarantee for parallelism:
+after ghosting, an owned entity will have all upward adjacent
+entities available as copies in shared memory.
+Any computations that need to consider entities adjacent to
+a central entity can be programmed without any communication,
+assuming all information is present in the data structure.
+As this is only true for owned entities, one need only communicate
+the result of this computation from owned entities to their other
+copies.
+This is a good alternative to the dynamic migration system
+presented in Section \ref{sec:cavity_operator}.
 
 \section{Parallel Cavity Operations}
 \label{sec:cavity_sched}
@@ -1081,35 +1132,12 @@ of the local ordering of entities.
 \subsubsection{Ghosting for Set Selection}
 \label{sec:indset_ghost}
 
-For distributed memory machines, we implement MPI parallelism
-with the help of a generalized ``migration" mechanism.
-Migration redistributes the copies of the mesh entities
-across MPI ranks \cite{ibanez2015pumi}.
-Each MPI rank specifies which entities it requires in the new
-partition, using references to entities in the existing
-partition.
-Multiple MPI ranks may request the same mesh entity, which
-is the underlying mechanism to support ghost layers,
-since even mesh elements may be requested by multiple ranks.
-By using MPI 3.0 features including neighborhood collectives
-\cite{hoefler2012optimization}
-and graph communicators \cite{hoefler2011scalable},
-we developed a scalable migration mechanism.
-
-Our mesh is typically distributed such that each element
-is copied to a single MPI rank, and that MPI rank also receives
-copies of all entities in the element's boundary.
-We call this an element-based partition.
-A ghosted partition is constructed
-from an element-based partition by having all MPI ranks request
-all elements adjacent to the vertices which they had copies
-of in the old partition, and the entities bounding those elements.
-
-A ghosted partition has the useful property that every owned entity
-(not just elements, but vertices and edges also) has local copies
-of all its adjacent entities.
+As mentioned in Section \ref{sec:ghost}, a ghosted partition has
+the useful property that every owned entity
+(most importantly vertices and edges) has local copies
+of all its upward adjacent entities.
 All operations centered around a key entity which read information
-from one-level adjacent entities and write information to the
+from upward adjacent entities and write information to the
 key entity can now be parallelized easily.
 Every MPI rank performs the local operation around the key entities
 that it owns, and then the information written to the key entities
