@@ -742,7 +742,7 @@ Along each edge of this communication graph, we will transmit
 a small amount of data.
 These transmissions will happen all at once.
 First a type of data (integer, floating-point, etc.) and a width
-(a very small constant, for example 3 values) is selected.
+(a very small constant, for example 3 values) are selected.
 Then the input values for each source are provided, and the
 \texttt{Dist} is responsible for relaying these to
 the destinations, such that each destination can readily access
@@ -821,10 +821,105 @@ in Section \ref{sec:adj_cache}.
 
 \section{Migration}
 
-{\bf Both the PUMI/APF and Omega\_h migration algorithms
-are quite different from what has been published for FMDB,
-and they are essentially what it means for a mesh
-data structure to be parallel.}
+As described in Section \ref{sec:remotes}, a partitioned mesh
+involves careful duplication of mesh entities into "copies"
+in different memory spaces, and establishing the needed
+links between copies of the same entity.
+Creation of a partitioned mesh is handled by a procedure
+called ``migration".
+It accepts as input a partitioned mesh (the input partitioning
+may be such that the entire mesh is in a single partition),
+and outputs a new partitioned mesh based on an input description
+of where the user would like certain mesh elements.
+This process is expected to take advantage of as much parallelism
+as possible, within the constraints of the input and output
+partitionings (for example, if either one has the whole mesh
+in one partition, portions of the migration will be inherently serial).
+
+Following their respective styles, PUMI will modify the given
+mesh by incrementally adding and removing entities and remote
+copy links,
+while Omega\_h will construct a new mesh structure.
+
+The following sub-sections cover the key sub-problems involved
+in mesh migration:
+
+\subsection{Derive Lower Dimensional Partitionings}
+\label{sec:migr_down}
+
+The user specifies only the element partitioning, and
+the required partitioning for lower-dimensional entities needs to
+be derived from it.
+This is a set union problem: each partition will request lower-dimensional
+entities adjacent to the elements it has been assigned.
+These requests are sent to the owners of the lower-dimensional entities
+in the input mesh, who will resolve duplicate requests (from multiple
+adjacent elements on the same partition) and derive the set
+of unique copies to generate.
+
+\subsection{Create and Link New Copies}
+\label{sec:migr_links}
+
+For a given dimension, the new copies need to be set up
+and related via remote copy links.
+As above, the owner copy of an entity in the input mesh is responsible
+for setting up these links.
+This is where PUMI's task is more difficult due to it maintaining
+a complete set of remote links (see Figure \ref{fig:remotes}).
+PUMI uses several stages of communication to first construct
+new copies, send their identities back to the old owner, and then
+have the old owner transmit all copy identities to all copies (all-to-all
+amongst copies is required to form a complete graph).
+Omega\_h can use a subset of the \texttt{Dist} setup procedure
+to establish and number all new copies (sources are old owners, destinations are
+new copies defined at first by rank only).
+Their identities are transmitted back to the old owners, who then
+select a new owner amongst the new copies and transmit that single
+identity back to all new copies (note that all three of these
+communications are carried out by a single \texttt{Dist}).
+
+\subsection{Build New Topological Adjacencies}
+\label{sec:migr_topo}
+
+Permanent topological adjacencies need to be constructed
+between different dimensions (see Figures \ref{fig:adjs_mds} and
+\ref{fig:adjs_osh} from Chapter \ref{chap:struct}).
+This brings about an interesting consideration, which is that we
+usually create adjacency information in a bottom-up fashion (vertices
+are created, then edges are defined from vertices, etc.), but
+partition information is specified first at elements, and then
+derived in a top-down fashion.
+PUMI resolves this in a V-cycle fashion, meaning that it will first
+derive the new partitionings for all lower dimension in a top-down
+fashion and then input all these partitionings to a bottom-up algorithm
+for actually building new entities and setting up remote links.
+Unlike PUMI (and APF in particular), where the interface is based on the
+concept of an entity being an object, Omega\_h has no concept of entity
+objects, only adjacency structures and associated data.
+This allows it to loosen constraints and build adjacencies in a top-down fashion.
+At each dimension $d$, it first resolves the unique copies of
+$(d-1)$-dimensional entities as described in Section \ref{sec:migr_down}.
+This results in an accurate prediction of the new identities (indices)
+for those low-dimensional entities, which can be fed back to the
+the old owners of $d$-dimensional entities, immediately forming
+the new adjacency structure.
+This can also be done with a single \texttt{Dist}, from old
+$d$-dimensional owners to new $(d-1)$-dimensional copies.
+It also sets up the partitioning for dimension $(d-1)$
+(also a \texttt{Dist} as described in Section \ref{sec:migr_links}).
+In this way, Omega\_h can carry out a full migration as a single
+top-down iteration from elements to vertices.
+
+\subsection{Transfer Associated Data}
+
+Associated data in this case means classification, field data,
+and other data such as the marks described in Chapter \ref{chap:adapt}.
+The process of transferring these during migration is relatively
+straightforward.
+In PUMI, all such data is appended to the small message used
+to construct a new copy.
+In Omega\_h, we reuse the \texttt{Dist} from Section \ref{sec:migr_links}
+to transfer each data array from the old owners to the new copies.
 
 \section{Ghosting}
 
