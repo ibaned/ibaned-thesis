@@ -110,6 +110,7 @@ requires $O(N)$ time and a parallel operation over $P$ processes
 and $T$ threads takes $O(N/(PT))$ time.
 
 \subsection{Reduce}
+\label{sec:reduce}
 
 A reduction operation takes as input an array
 $\mathbf{a}=\{a_0,a_1,a_2,...,a_N\}$ of scalar values and
@@ -208,6 +209,7 @@ for all vertices that allow the construction of compressed-row
 storage for the vertex-to-edge adjacency (see Section \ref{sec:adj_arr}).
 
 \subsection{Sort}
+\label{sec:sort}
 
 Although we do not yet require a full distributed memory sorting algorithm
 in our work, we do have uses for sorting at the shared memory level
@@ -745,8 +747,77 @@ Then the input values for each source are provided, and the
 \texttt{Dist} is responsible for relaying these to
 the destinations, such that each destination can readily access
 the data sent to it.
-Note that this is very similar to the exchange algorithm from
+Note that this is really the exchange algorithm from
 Section \ref{sec:exch}, it is simply implemented at a finer-grained level.
+
+The \texttt{Dist} system goes through several stages in order
+to complete its task, as illustrated in Figure \ref{fig:exch}.
+Data begins in array in the memory space of each source rank,
+with one entry per source.
+It is then expanded such that there is one entry per communication graph
+edge whose source is in this rank.
+The array is then permuted such that data whose destinations are on
+the same rank is stored contiguously.
+At this point, we use the MPI 3.0 exchange mechanism described in
+Section \ref{sec:exch} to send out the contents of the given
+array and receive incoming data into a new array, which all
+the data whose destinations are on this rank, sorted by the
+rank of their sources.
+This received array is permuted such that data is organized
+by destination object.
+Finally (and optionally), the data may be reduced such that
+multiple values with the same destination become a single
+value (recall the common reductions in Section \ref{sec:reduce}).
+
+\begin{figure}[t]\vspace*{4pt}
+\centerline{\includegraphics[width=0.8\textwidth]{exch.png}}
+\caption{The stages of a Distributor exchange algorithm}\vspace*{-6pt}
+\label{fig:exch}
+\end{figure}
+
+Figure \ref{fig:exch} illustrates well the symmetry of this process,
+and the ease with which it can be executed in reverse.
+This symmetry is reflected in the programming interface.
+Each of the five transformations requires storing some data.
+The expansion and reduction steps can each be described by an array
+of offsets (see the compressed row format from Section \ref{sec:adj_arr}).
+The permutation steps each store a permutation array.
+Finally, the message-passing step also stores arrays describing which
+portions of the input and output arrays are associated with which
+MPI ranks (these are also symmetric).
+
+The generality of this interface covers a wide variety of communication
+needs.
+Most of the time, we use it such that each source has a single destination
+(e.g. entities to their owners), or symmetrically each destination may
+have a single source (owners back to entities).
+In order to create a \texttt{Dist} system, users need only specify
+the destination of each source on a given rank, where destinations
+are specified as pairs of rank and index (see Section \ref{sec:remotes}).
+We use a shared-memory parallel sort (see Section \ref{sec:sort}) to
+obtain the first permutation, by sorting these destinations by their rank.
+We then construct the MPI information from the sorted ranks, and transmit
+the destination indices on their own.
+At the destination, we apply the mapping inversion described in
+Appendix \ref{sec:invert_map} to obtain the second permutation and
+the offsets used for reduction (this is where the small degree assumption
+comes into play).
+If there are multiple destinations per source, one need only specify
+the offsets from sources to the provided destination links.
+
+Notice that all of these data manipulation steps can be performed in
+a shared-memory parallel fashion.
+In the case of a machine which has a CPU and a GPU, the GPU performs
+all the array transformations, and data is only copied to the CPU
+in the form appropriate for MPI's neighborhood exchange.
+After the exchange it returns to the GPU for the second half of the
+transformations.
+Despite this effective use of shared memory, it is still expensive
+to set up a \texttt{Dist} system.
+The ones which are most likely to be reused are those that Omega\_h
+builds for communicating from copies of one dimension to their owners,
+and so we cache these systems the same way adjacencies are cached
+in Section \ref{sec:adj_cache}.
 
 \section{Migration}
 
