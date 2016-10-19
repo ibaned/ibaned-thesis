@@ -1073,31 +1073,58 @@ which depends on neither input partitioning nor traversal order of the mesh.
 \subsection{Independent Sets}
 \label{sec:indset}
 
-{\bf this is from the full-paper submission to IMR 2016}
+As mentioned in Section \ref{sec:cavity_operator}, it may be beneficial
+to have some control over the ordering of cavity operations in the
+case when two or more cavities overlap.
+In the case of topology modifications, it is often the case that
+performing a modification will change topology such that overlapping
+modifications that used to be possible are no longer applicable.
+In this sense, the ordering also determines which operations will
+definitely be applied and which may be discarded in favor of others.
 
-\subsubsection{Selection of a Set}
-
-At each pass during mesh adaptation, we select a set of mesh modifications
-whose affected cavities do not overlap (do not share elements) to apply.
-This allows us to execute each modification using fine-grained parallelism.
+The following Sections \ref{sec:indset_select} and \ref{sec:indset_ghost}
+describe the algorithm used by Omega\_h to select operations to apply.
+It aims to choose an independent set of operations (i.e. their cavities
+do not overlap), such that they may be applied in
+any order (including simultaneously) and produce the same result.
+This allows us to execute each modification using fine-grained
+shared-memory parallelism.
 Such an approach was suggested for GPU use by Pande et al. \cite{pandea2015gpu},
 although their implementation computed the independent set on the CPU.
-It is also already used in MPI-only adaptation codes \cite{de1999parallel}
+Recall also that independent sets are used in MeshAdapt \cite{de1999parallel}
 during coarsening to prevent a chain of overlapping edge collapses
-from removing too many mesh elements.
+from removing too many mesh elements (see Section \ref{sec:ma_coarsen}).
 
-One can view this as a graph independent set problem, with a graph whose
+Similar to the dynamic migration system from Section \ref{sec:cavity_operator},
+this algorithm may be repeated several times as each iteration
+discards some operations that can then be reconsidered.
+For example, when refining long edges as per Section \ref{sec:osh_refine},
+one iteration will split a set of long edges such that no two of them
+are adjacent to the same element.
+There usually remain long edges after these splits, so the algorithm
+is repeated after measuring the edges of the modified mesh.
+In the specific case of Omega\_h, an independent set of edge collapses
+would first be tried, but the concept of iteration remains the same.
+
+\subsubsection{Selection of a Set}
+\label{sec:indset_select}
+
+We have to solve a graph independent set problem, with a graph whose
 graph nodes are possible modifications around certain key entities
 and the graph edges represent an overlap between their cavities,
 in our case meaning the key entities are adjacent to a common element.
-
 We have either vertices or edges as the key entities, and either
 triangles or tetrahedra for elements.
 Fast algorithms can construct the graph of keys that are adjacent
 to a common element, which we use as the basis for our conflict graph.
-At the beginning of each pass, threshold and quality logic results
-in each key entity being annotated as either being a candidate or
-not, and if a candidate it is annotated with its output cavity quality.
+(Note that the expanded cavities used in Section \ref{sec:conserve_momentum}
+require more expensive algorithms to establish the conflict graph).
+
+At the beginning of each pass, each key entity is annotated as either
+being a candidate or not based on the conditions described throughout
+Section \ref{sec:omega_h-adapt}.
+If it is a candidate, it is annotated with its output cavity quality
+(the minimum quality of any element that would be created by the modification).
 We would like to resolve conflicts in a way that prefers ``better" mesh
 modifications, which in this case is defined by output quality.
 
@@ -1107,14 +1134,30 @@ A maxim\emph{al} independent set is simply one that cannot be improved by
 adding more graph nodes to it, as opposed to a maxim\emph{um} independent
 set which is NP-hard to find and has the most graph nodes of any
 possible independent set.
-The structure of Luby's algorithm that we preserve is that it is iterative,
-and at each iteration graph nodes which are local maxima of some function
+We develop a variant of Luby's algorithm that is still iterative,
+where at each iteration graph nodes which are local maxima of some function
 are added to the independent set.
 Each vertex can, in parallel, determine whether its function value is
-less than that of its neighbors, and alter its own state (whether or not it is in the set)
+less than that of its neighbors, and alter its own state
+(whether or not it is in the set)
 with confidence that no neighbor will make an inconsistent decision.
 Luby's original algorithm assigned random integers to each graph node
-at each iteration, having no more information than the graph connectivity as input.
+at each iteration.
+
+Instead of local maxima of random numbers, we use local maxima of
+output quality.
+Our modified Luby iteration is listed in full detail
+as Algorithm \ref{alg:indset}.
+Its parallel \texttt{for} loop will have its iterations scheduled by the
+current runtime (CUDA, OpenMP, etc.) onto the available hardware threads.
+In the extreme case, there may be enough threads for all iterations
+to execute simultaneously.
+Recall that the principles of shared memory programming described
+in Section \ref{sec:openmp} suggest careful control over array accesses.
+All arrays involved in Algorithm \ref{alg:indset} are either read-only
+or write-only, and the latter (\texttt{new\_state}) has each entry written
+by one thread only, by aligning its writes with the iterations
+of the parallel \texttt{for} loop.
 
 \begin{algorithm}
  \LinesNumbered
@@ -1169,36 +1212,21 @@ at each iteration, having no more information than the graph connectivity as inp
  \label{alg:indset}
 \end{algorithm}
 
-Instead of local maxima of random numbers, we find local maxima of
-output quality.
-Our modified Luby iteration is listed in full detail
-as Algorithm \ref{alg:indset}.
-Its parallel \texttt{for} loop will have its iterations scheduled by the
-current runtime (CUDA, OpenMP, etc.) onto the available hardware threads.
-In the extreme case, there may be enough threads for all iterations
-to execute simultaneously.
-Of key importance in programming for shared memory is
-the elimination of read and write contention between threads.
-All arrays involved are either read-only or write-only,
-and the latter (\texttt{new\_state}) has each entry written by one
-thread only, by aligning its writes with the iterations
-of the parallel \texttt{for} loop.
-
 \begin{figure}[t]\vspace*{4pt}
-\centerline{\includegraphics[width=0.3\textwidth]{indset_iters.png}}
+\centerline{\includegraphics[width=0.5\textwidth]{indset_iters.png}}
 \caption{Independent set convergence histogram}\vspace*{-6pt}
 \label{fig:indset_conv}
 \end{figure}
 
-The proof for the time complexity of Luby's original algorithm
+The proof of the time complexity of Luby's original algorithm
 relied on probability theory and changing
 the graph node numbers at each iteration \cite{luby1986simple}.
 In our algorithm, the number of iterations is bounded by the
-length of the longest path in the conflict graph whose nodes have monotonic
-quality values.
+length of the longest path in the conflict graph whose nodes have monotonically
+increasing quality values.
 Although it may be theoretically possible to construct pathological
 meshes where this path length grows proportional to the number of elements,
-in practice such paths are short.
+in practice such paths are bound by a constant.
 Figure \ref{fig:indset_conv} shows a histogram of the number of
 iterations required to find a maximal independent set during execution
 of a typical Omega\_h mesh adaptation.
@@ -1208,7 +1236,7 @@ typically requiring about four iterations.
 Finally, note that in line 20 of Algorithm \ref{alg:indset} we
 compare graph node global IDs in the case of equal quality values.
 Ties could otherwise cause the algorithm to deadlock, and we
-prefer a deterministic resolution.
+prefer a deterministic tie-breaker.
 Thus in some cases the output is affected by the global ID values,
 however this does not mean it is ordering-dependent because
 we update global ID values in a way that is independent
@@ -1235,10 +1263,11 @@ with incomplete surrounding information.
 
 \begin{figure}[t]\vspace*{4pt}
 \centerline{
-\includegraphics[width=0.5\textwidth]{mpi_indset.png}}
-\caption{Steps to distributed adapt: (left) non-ghosted partitions (mid)
-add ghost layers, compute independent set (right)
-trim away non-owned ghosts}\vspace*{-6pt}
+\includegraphics[width=0.7\textwidth]{mpi_indset.png}}
+\caption{Steps for distributed set selection:
+(left) non-ghosted partitions
+(mid) add ghost layers, compute independent set
+(right) trim away non-owned ghosts}\vspace*{-6pt}
 \label{fig:mpi_indset}
 \end{figure}
 
