@@ -1271,60 +1271,132 @@ with incomplete surrounding information.
 \label{fig:mpi_indset}
 \end{figure}
 
-During each adaptation pass, we do what is possible without a ghost
+During each adaptation pass in Omega\_h, we do what is possible without a ghost
 layer first. Typically, this means measuring edge lengths and determining
 whether any of them are too long or two short.
 Then a ghost layer is constructed and possible operations are evaluated
-as described above and an independent set is chosen as described in
-Section \ref{sec:indset}.
+as described in Section \ref{sec:omega_h-adapt} and
+an independent set is chosen as described in Section \ref{sec:indset}.
 Once an independent set has been chosen, we return to an element-based
 partitioning, but one which is altered such that cavities in the independent
 set reside on one MPI rank.
-At that point, the code can proceed to apply the cavity modifications
-and produce a new local mesh structure without further communication
-because shared entities are not modified.
+At that point, the code can proceed to apply the independent cavity modifications
+simultaneously and produce a new local mesh structure without further communication
+because entities on the partition boundary are not modified.
 Figure \ref{fig:mpi_indset} illustrates this process at a simple partition boundary,
 in the case of selecting which mesh vertices ought to be collapsed.
 
-The tracking of parallel connectivity in our code is based first on global
-IDs for the entities.
-By the definition of our partitioning, new cavity entities are only created
-inside the MPI rank which owns the cavity, so we assign their ownership
-to that rank.
-We can also take the intersection of entities that stayed the same
-(not in cavities) and are owned.
-Together these numbers give a count of how many entities in the new mesh are owned
-by the local MPI rank.
-A simple \texttt{MPI\_Exscan} function call converts local counts into
-global numbers for owned copies.
-There are still non-owned copies which do not know their global ID, but they
-are by definition entities which stayed the same, so we can use the
-communication instruments of the old mesh to synchronize their IDs.
+We can create the global numberings of the new mesh based on the global
+numberings of the old mesh.
+Entities of the same dimension are numbered together.
+In an effort to preserve the spatial locality of the global numbering,
+we number newly created entities based on the numbers of their old
+cavity counterparts.
+Specifically, we designate an entity of dimension $d$ in the old cavity
+to represent all entities of dimension $d$ created in the new cavity.
+If the cavity created $r$ such entities, then we assign the value
+$r$ to the representative old entity.
+Other $d$-dimensional entities that were destroyed by the modification
+are assigned the value $0$.
+Entities which stayed the same in the mesh are assigned the value $1$.
+These values are put through a global exclusive scan operation
+(see Section \ref{sec:scan}), resulting in offsets for the old entities.
+These offsets can then be used to number the new entities.
+The exclusive scan is performed in the order that entities appear
+in the old numbering.
+Combined with the upward adjacency sorting mechanism described
+in Section \ref{sec:sort_up}, this results in a global renumbering
+mechanism that is independent of partitioning and local ordering.
 
-Combined with the independent set selection mechanism, this results
-in a mesh adaptation method which is unaffected by partition boundaries,
+This overall selection process based on ghosting allows
+Omega\_h mesh adaptation method to be unaffected by partition boundaries,
 in the sense that the decision process of what modifications to apply
 is not influenced by the partition.
-The resulting algorithm is also deterministic,
-in that its output is the same regardless of the order of
-execution of shared memory threads and MPI processes.
-Its output is independent
-of ordering so long as global IDs are independent of ordering.
+The output is independent
+of local ordering so long as global IDs are independent of ordering
+as described above.
 Most other parallel adaptation implementations that we know of explicitly
 consider interior modifications first, followed by a repartitioning that
 allows consideration and modification of the near-boundary mesh
 \cite{loseille2015parallel,de1999parallel}, making them
-partitioning-dependent.
+at least partitioning-dependent.
 
 \section{Determinism}
 \label{sec:determinism}
 
-{\bf Discuss things done by Omega\_h to achieve
-determinism on heterogeneous architectures.}
+Section \ref{sec:indset_ghost} describes how Omega\_h takes steps
+to select operations and number entities in a partitioning independent and
+ordering independent way.
+Omega\_h is also deterministic,
+meaning that its output is the same if run twice with exactly
+the same inputs, which may not be the case if it were affected
+by the relative order in which distributed processes and shared
+threads reach a certain point in execution.
+That ordering is dependent
+on computer system state beyond the control of the program,
+such as other programs currently running, operating system
+state, or even the physical temperature of hardware cores
+altering their processing speed.
+
+Each of these properties is important
+for software development purposes for two reasons.
+First, when symptoms of a bug are encountered,
+it is important to be able to re-run the program with
+additional instrumentation to determine the root cause.
+Non-determinism can cause symptoms to appear with arbitrarily
+low probability, requiring an arbitrarily large number of
+trials to reproduce the issue.
+
+If a program is partitioning-independent, a highly parallel
+case that exhibits symptoms can be run with less parallelism
+for debugging purposes.
+As a practical example, MeshAdapt at one point had a bug
+which would exhibit symptoms with sufficient probability
+only using 4096 or more processes.
+Much of the time required to diagnose the issue was spent
+waiting for sufficient computing resources.
+Conversely, if a code is partitioning-independent then
+one can construct regression tests which confirm that
+exactly the same results are produced with several different
+partitionings.
+This can catch a wide array of issues in parallel implementation.
+For example, if a bug causes 0.01\% of the edge splits
+along a partition boundary to be incorrectly rejected,
+it may go unnoticed indefinitely for partition-dependent programs
+while it would be detected by a strict comparison
+of serial and parallel results.
+
+Omega\_h is developed and debugged using a small number
+of threads and processes, but has regression tests requiring
+the exact same results at varying degrees of parallelism.
+This tends to quickly catch parallel bugs, and it has
+been scaled to thousands of GPU CUDA cores and tens of
+thousands of MPI ranks without exhibiting any symptoms of
+bugs that depend on the degree of parallelism.
+
+The following sections cover two more key operations
+that Omega\_h uses to establish partitioning-independence
+and determinism.
 
 \subsection{Adjacency Inversion}
+\label{sec:sort_up}
 
-{\bf The key algorithms Ben and I came up with go here.}
+The mapping inversion algorithm in Section \ref{sec:invert_map}
+relies on atomic operations to determine the local ordering
+of upward adjacent entities, and so by itself is non-deterministic
+(it depends on the temporal order in which two threads attempt to
+access a single value).
+We run a post-processing step which locally sorts upward adjacent
+entities of a single entity by their global numbers.
+Recall from Section \ref{sec:indset_ghost} that global numbers
+are independent of local ordering, so this operation likewise
+makes upward adjacency information independent of local
+traversal order and temporal thread access order.
+This is important because operations like floating-point summation
+are non-associative (see Section \ref{sec:repro_sum})
+and so higher-level operations like averaging values from elements
+to vertices produce slightly different values depending on the
+traversal order of upward adjacencies.
 
 \subsection{Order-Independent Sums}
 \label{sec:repro_sum}
