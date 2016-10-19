@@ -174,6 +174,7 @@ Combining these gives a reduction that can be expected to
 complete in $O((N/(PT))+\log(PT))$ time.
 
 \subsection{Scan}
+\label{sec:scan}
 
 Scan operations are key to scalable parallel programming, especially when using
 arrays for storage.
@@ -1378,7 +1379,7 @@ The following sections cover two more key operations
 that Omega\_h uses to establish partitioning-independence
 and determinism.
 
-\subsection{Adjacency Inversion}
+\subsection{Upward Adjacency Ordering}
 \label{sec:sort_up}
 
 The mapping inversion algorithm in Section \ref{sec:invert_map}
@@ -1400,6 +1401,79 @@ traversal order of upward adjacencies.
 
 \subsection{Order-Independent Sums}
 \label{sec:repro_sum}
+
+Computers typically implement floating-point numbers following the IEEE 754
+standard \cite{hennessy2011computer}.
+This format represents real numbers as the nearest rational number
+which can be represented as $(m\cdot 2^p)$, where $m$ and $p$ are both
+integers within a predefined range.
+Varying the exponent $p$ can be interpreted as shifting the position of the
+decimal point, hence the term floating-point numbers.
+The exponent $p$ is adjusted such that the digits of $m$ capture the
+most significant digits of the real number being approximated.
+When adding a series of floating-point numbers whose exponents
+vary significantly, the resulting value can be different
+depending on the order of summation.
+If the values are added in descending order of magnitude, the intermediate
+values will all have exponents equal to or greater than the largest
+exponent $p_{\text{max}}$, so they will truncate all values less
+than $2^{p_{\text{max}}}$.
+When the sum follows the ascending order of magnitude, intermediate
+values start with the smallest exponent and gradually increase their
+exponent as small values are added.
+This more accurately accumulates digits of low significance, which
+may amount to a substantial difference in the final sum.
+
+Mesh adaptation is highly sensitive to floating point values, because
+as described in Chapter \ref{chap:adapt} we choose to make modifications
+based on whether floating point values such as the length of an
+edge in metric space are above and below an exact threshold.
+Thus any perturbation could change the result of this comparison
+in certain cases, and produce a different mesh topologically.
+For our purposes, it is more important to have a consistent
+(ordering independent) set of operations rather than the most
+accurate method possible.
+Simple floating point summation can be performed very quickly relative
+to other mesh adaptation operations, so we prefer faster options
+so long as they are consistent.
+For this reason, we do not carry out a full global sort of the values
+into ascending order, as that would be too expensive.
+That said, we would prefer that the accuracy of our method be comparable
+to that of the non-deterministic algorithm.
+
+We add global values using a fixed-point accumulator,
+meaning we select some $p_{\text{fixed}}$ and represent all
+intermediate values as $M\cdot 2^{p_{\text{fixed}}}$, where $M$
+is an integer.
+We select $p_{\text{fixed}}=p_{\text{max}}$, which ensures that
+our accuracy is at least as good as the worst-case non-deterministic
+ordering, i.e. summation in descending order.
+The integer $M$ must have a large enough range to store the largest
+magnitude intermediate value (modulo $2^{p_{\text{fixed}}}$).
+The most common format for scientific computations is a 64-bit
+floating point number in which 52 bits are devoted to the integer $m$.
+We devote 128 bits to our intermediate $M$ values, meaning they can
+reliably add up to ($2^76 > 10^22$) input values.
+By comparison, the largest-scale problems being solved at the
+time of this writing require summing at most $10^12$
+floating-point values, meaning that 128 bits will remain sufficient
+until the maximum problem size of interest increases
+by an additional factor of $10^10$.
+To implement this algorithm, we need to perform two reductions:
+one to determine $p_{\text{max}}$, and one to add up all the
+values in discrete units of $2^{p_{\text{max}}}$.
+Since not all computers have built-in instructions for 128-bit
+integers, we sometimes have to implement intermediate values
+as a pair of 64-bit values emulating a 128-bit value.
+
+The resulting method has a runtime that is small compared to
+the other operations of mesh adaptation and produces the
+exact same (bitwise consistent) values regardless of ordering.
+Combining this with other techniques such as upward adjacency sorting
+(see Section \ref{sec:sort_up}), we can carry out mesh adaptation
+such that all floating point values are partition-independent
+and ordering-independent, which is a prerequisite to having
+fully independent results for the overall adaptation algorithm.
 
 %%% Local Variables:
 %%% mode: latex
