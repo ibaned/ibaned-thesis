@@ -922,6 +922,7 @@ In Omega\_h, we reuse the \texttt{Dist} from Section \ref{sec:migr_links}
 to transfer each data array from the old owners to the new copies.
 
 \section{Ghosting}
+\label{sec:ghost}
 
 As mentioned in Section \ref{sec:remotes}, mesh partitioning can
 in some cases copy an element onto multiple partitions.
@@ -974,16 +975,100 @@ assuming all information is present in the data structure.
 As this is only true for owned entities, one need only communicate
 the result of this computation from owned entities to their other
 copies.
-This is a good alternative to the dynamic migration system
+This is an alternative to the dynamic migration system
 presented in Section \ref{sec:cavity_operator}.
 
 \section{Parallel Cavity Operations}
 \label{sec:cavity_sched}
 
+When doing operations that account for higher-dimensional entities
+around a lower-dimensional entity, it is useful to have a mechanism
+for altering the mesh partition such that the cavity being operated
+on (defined by the elements adjacent to a lower-dimensional entity)
+is copied in its entirety onto at least one partition, so that this
+partition can perform the computation.
+In this way, the code that operates within the cavity need not change
+when going from a serial (non-parallel) code to a scalable parallel code.
+Section \ref{sec:ghost} above hints at how ghosting plays this role
+in Omega\_h.
+The equivalent system for PUMI is described in Section \ref{sec:cavity_operator}.
+
+When the cavity operations alter mesh topology, one additionally needs
+mechanisms for scheduling the application of these modifications
+such that no two threads make conflicting modifications to the mesh,
+and threads are made aware of changes by other threads as needed.
+The following two Sections describe how this is done in PUMI and Omega\_h.
+
 \subsection{Dynamic Migration}
 \label{sec:cavity_operator}
 
-{\bf The PUMI/APF ``Cavity Operator" system that supports MeshAdapt.}
+There is a system in APF called \texttt{CavityOp} which is responsible
+for carrying out dynamic mesh migration in order to apply a set
+of requested cavity operations.
+These operations may modify topology (e.g. MeshAdapt operators)
+or they may not (e.g. averaging element values to vertices).
+This system at all times maintains an element-based partitioning,
+meaning that elements are copied onto only one partition.
+It begins by iterating over the mesh and performing any
+cavity operations for which the cavity is entirely within the
+local partition (we say the cavity is local).
+If the mesh is well partitioned, this should account for the majority
+of desired operations.
+Afterwards, it will mark any cavities which are broken up among
+multiple partitions and executes a single migration that aims
+to localize as many non-local cavities as possible.
+These two steps are repeated until all cavities have been operated on.
+
+Cavities are required to be centered around a certain key entity,
+such as an edge or vertex.
+To use this system, users supply certain low-level functions
+to be executed.
+The first function accepts a central key entity and returns information
+about whether or not that entity represents a cavity that still needs
+to be operated on and whether the required cavity is local.
+If the cavity is not local, it indicates which low-entities need their
+upward adjacent entities localized.
+The second function is run after the first if the cavity is local,
+and applies the user-defined operation.
+
+The dynamic migration system will try to localize a cavity onto the
+partition that owns the central key entity.
+Repeated migration is necessary because cavities may overlap, which creates
+a possibility of conflicts in which two overlapping cavities cannot be simultaneously
+localized by this heuristic, because their owners are different.
+We use a ranking of partitions to choose which competing partition
+has its request satisfied.
+This ensures at least that progress is guaranteed to be made at every iteration,
+because the highest ranked partition in a conflict will have its cavity localized.
+In practice, the number of iterations required is small and not dependent
+on the problem size, which makes this a scalable system.
+
+There are a few drawbacks to the dynamic migration system, however.
+First, it alters the partitioning of the mesh, often significantly.
+Because it is focused on satisfying locality requests, it result in
+a poor partitioning (high surface areas) or even remove all elements
+from a partition.
+This has required us in practice to keep at least a few thousand
+elements per partition to avoid partitions being emptied by dynamic migration.
+Second, if the order of application of the cavity operations matters
+(as it does in the case of topological modifications), dynamic migration
+makes no attempt to order them intelligently; they will be applied
+in the order that key entities are encountered during mesh iteration
+and partition boundaries will by definition be acted upon later than
+partition interiors.
+This makes the results dependent on the partitioning of the mesh
+and the ordering of mesh entities within a partition.
+
+Ghosting as described in \ref{sec:ghost} can be used instead of dynamic
+migration for operations that do not modify topology and
+where the order in which the cavities
+are processed does not matter.
+The original partition is a subset of the ghosted partition
+(so will never be empty), and can always be recovered afterwards.
+For operations which modify topology and therefore are order-dependent
+when cavities overlap,
+Sections \ref{sec:indset} and \ref{sec:indset_ghost} describe a system
+which depends on neither input partitioning nor traversal order of the mesh.
 
 \subsection{Independent Sets}
 \label{sec:indset}
