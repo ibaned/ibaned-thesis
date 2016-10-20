@@ -889,7 +889,95 @@ dimension      & 3 &  3.2 &  9.1 &      &      \\
 \section{Reordering}
 \label{sec:reorder}
 
-{\bf TODO: describe Hilbert curve reordering}
+Array-based structures have a natural order of traversal which is to
+traverse each array from start to finish.
+In Omega\_h, all $d$-dimensional simplices are in one traversal order,
+and in MDS there is a traversal order for each polytope topology.
+Typically, mesh operations access multiple arrays but are based on
+the natural ordering of a single array.
+For example, a traversal based on elements may access the vertices
+of each element.
+Recall from Section \ref{sec:ref_comp} that the key to achieving decent
+performance on most cache architectures is to access data in the order
+it is stored.
+Thus, we would like to establish orderings of each group (e.g. the elements)
+such that accesses to other groups (e.g. the vertices) are made
+in an approximately linear fashion.
+Since these accesses are based on directly adjacency, what we aim to do
+is order each group such that locality in the mesh (defined by graph distances)
+is well correlated to locality in the array (defined by indices).
+We further simplify the problem by focusing on ordering the vertices,
+and define orderings for other groups based on their adjacencies to
+vertices and the vertex ordering.
+
+We interpret the mesh vertices as graph nodes and the mesh edges
+as graph edges, which enables us to use the linear arrangement
+measure from graph theory as our metric of locality:
+
+\begin{equation}\label{eq:la}
+\text{la}(G=(V,E)) = \sum_{(i,j)\in E} |i-j|
+\end{equation}
+
+Where $i$ and $j$ are the array indices of two graph nodes.
+There is additional rationale for using this metric in the case
+of finite element assembly for linear elements, which traverses
+mesh vertices and accesses adjacent vertices across mesh edges.
+
+Finding an ordering of the vertices $V$ such that Equation \ref{eq:la}
+is minimized has been shown to be NP-complete for general
+graphs \cite{garey1976some}.
+However, our mesh-based graphs have at least two useful properties:
+the degree of each vertex is bound by a small constant,
+and they are equipped with an embedding of vertices into $\mathbb{R}^3$
+such that Euclidean distance closely reflects graph distance.
+As such, several heuristics for good linear arrangements have been developed
+for meshes.
+The Cuthill-McKee algorithm \cite{cuthill1969reducing},
+developed to minimize the storage complexity of sparse matrices
+derived from meshes, is based on
+Breadth-First Search (BFS) of the graph and sorts each layer based
+on the degrees of the vertices.
+A similar algorithm by Zhou et al. \cite{zhou2010adjacency} also
+reduces to BFS for a linear mesh, and has special considerations
+for the starting point of BFS.
+Other (geometric) methods take advantage of the vertex coordinates,
+for example by arranging vertices along the Hilbert Space-Filling Curve
+(HSFC) \cite{devine2005new}.
+Finally, there a libraries implementing hierarchic methods of
+graph reordering, such as METIS \cite{METIS}.
+
+Table \ref{tab:la} shows the values of Equation \ref{eq:la} using
+several of these methods on three different meshes:
+a cube meshed with tetrahedra (1254 vertices), a fusion reactor
+cross-section meshed with triangles (3695 vertices), and
+a circuit solder geometry meshed with tetrahedra (2601 vertices).
+The ``input" row represents the mesh's linear arrangement value
+prior to reordering.
+Parentheses indicate the starting node used for a search procedure,
+for example BFS(0) uses the first input node as the starting point
+while BFS($n-1$) uses the last input node.
+For the cube, BFS(center) uses the node closest to the cube's center.
+Our two main conclusions based on Table \ref{tab:la} are that
+BFS and HSFC give the best (smallest) linear arrangement values,
+and that the BFS result is heavily dependent on the starting point.
+
+\begin{table}
+\caption{Linear arrangement values for different meshes and heuristics}
+\label{tab:la}
+\begin{center}
+\begin{tabular}{r|ccc}
+                     &    cube &   fusion &   solder \\\hline
+input                & 3163141 &  1743275 &  8688982 \\
+BFS($0$)             &  678166 &   910451 &  2085725 \\
+BFS($n-1$)           &  675903 &   471728 &  2098239 \\
+BFS(center)          & 1106864 &      N/A &      N/A \\
+HSFC                 &  597009 &   627726 &  1877633 \\
+Cuthill-McKee($0$)   &  822050 &   956364 &  2161626 \\
+Cuthill-McKee($n-1$) &  784566 &   501883 &  2198386 \\
+METIS                & 1120368 &  1234170 &  2849735 \\
+\end{tabular}
+\end{center}
+\end{table}
 
 %%% Local Variables:
 %%% mode: latex
