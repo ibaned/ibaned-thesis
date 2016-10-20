@@ -1453,12 +1453,12 @@ magnitude intermediate value (modulo $2^{p_{\text{fixed}}}$).
 The most common format for scientific computations is a 64-bit
 floating point number in which 52 bits are devoted to the integer $m$.
 We devote 128 bits to our intermediate $M$ values, meaning they can
-reliably add up to ($2^76 > 10^22$) input values.
+reliably add up to ($2^{76} > 10^{22}$) input values.
 By comparison, the largest-scale problems being solved at the
-time of this writing require summing at most $10^12$
+time of this writing require summing at most $10^{12}$
 floating-point values, meaning that 128 bits will remain sufficient
 until the maximum problem size of interest increases
-by an additional factor of $10^10$.
+by an additional factor of $10^{10}$.
 To implement this algorithm, we need to perform two reductions:
 one to determine $p_{\text{max}}$, and one to add up all the
 values in discrete units of $2^{p_{\text{max}}}$.
