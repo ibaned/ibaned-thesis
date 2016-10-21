@@ -11,25 +11,24 @@
 \section{Future Work}
 
 \subsection{Convergence of PUMI and Omega\_h}
+\label{sec:converge}
 
-Section \ref{sec:struct_goals} presented the rationale
+Section \ref{sec:omega_h-struct} presented the rationale
 for the development of Omega\_h as a separate effort from PUMI,
 which opens the question of whether it is possible
 to combine the two codes in the future.
-% A combination is simply defined as a code which
-% has a union of their capabilities, both theoretical
-% and practical.
-
-% If a code is to make any use of current and near-future GPUs,
-% then it must be written in the more restrictive programming
-% model that Omega\_h operates in.
-% This applies equally well to any proposed combination of the
-% two codes.
-% This in turn requires a redesign of algorithms
-% and structures that currently violate those restrictions,
-% which includes the majority of the PUMI code.
-
-\subsection{Improvements to Anisotropic Adaptation}
-
-Interpolate metric square root or logarithm,
-implement Todd Michal's logic, etc.
+A combination in this case would be defined as a strict
+union of their capabilities.
+In order to retain the ability to execute efficiently
+on GPUs and other shared memory hardware, a parallel
+\texttt{for} loop programming model such as that introduced
+in Section \ref{sec:openmp} would need to be used throughout.
+The MDS structure design which allows single additions
+and removals (see Section \ref{sec:sisc_soa}) would likely
+need to be replated with a static design and independent
+set algorithms as is done in Omega\_h.
+The resulting structure would need to be augmented to
+accept more than just simplices, as described in Section \ref{sec:sisc_mstruct}.
+Finally, several MeshAdapt algorithms not discussed
+in this thesis would need to be re-designed to use parallel
+\texttt{for} loops.
