@@ -13,6 +13,89 @@
 \section{Mapping Inversion}
 \label{sec:invert_map}
 
+The shared-memory parallel map inversion algorithm used by
+Omega\_h is not only a key building block but also an example
+of the limitations of typical shared-memory programming principles
+and how atomic operations may be unavoidable under certain constraints.
+In our case, a map means an array (\texttt{a2b}) describing a mapping from
+its accessible indices to another index space.
+This describes a bipartite graph (from set $A$ to set $B$) in which all graph nodes
+in set $A$ have degree 1, while nodes in set $B$ may
+have degrees greater than one.
+In particular, nodes in the second set are assumed to have degrees
+which are bound by a small constant.
+The goal is to construct the graph from the set $B$ to the set $A$,
+$f^{-1}:B\to \mathcal{P}(A)$, where $\mathcal{P}(A)$ is the power set of $A$.
+
+\begin{lstlisting}[float,style=dan-style,caption=Invert map by atomics,label=lst:invert_map]
+Graph invert_map_by_atomics(LOs a2b, LO nb) {
+  auto na = a2b.size();
+  Write<LO> degrees(nb, 0);
+  auto count = LAMBDA(LO a) { atomic_increment(&degrees[a2b[a]]); };
+  parallel_for(na, count);
+  auto b2ba = offset_scan(Read<LO>(degrees));
+  auto nba = b2ba.get(nb);
+  Write<LO> write_ba2a(nba);
+  auto positions = Write<LO>(nb, 0);
+  auto fill = LAMBDA(LO a) {
+    auto b = a2b[a];
+    auto first = b2ba[b];
+    auto j = atomic_fetch_add<LO>(&positions[a2b[a]], 1);
+    write_ba2a[first + j] = a;
+  };
+  parallel_for(na, fill);
+  auto ba2a = LOs(write_ba2a);
+  return Graph(b2ba, ba2a);
+}
+\end{lstlisting}
+
+Listing \ref{lst:invert_map} shows the actual C++ code used for map inversion.
+We are given the array \texttt{a2b} mapping each index in set $a\in A$ to an
+index in set $f(a)\in B$.
+We also given the size $|B|$ of set $B$ as \texttt{nb}.
+We first construct an array of degrees for each index in $B$,
+initialized to a degree of zero at every index (line 3).
+We then iterate over each ($a\in A$) and atomically increment the
+degree of $b=f(a)$ (lines 4 and 5).
+We then use an exclusive scan (see Section \ref{sec:scan})
+to convert the array of degrees into an array of offsets.
+We call this offsets array \texttt{b2ba}, where \texttt{ba}
+refers to the edges $(a,b)$ of the bipartite graph sorted
+by their destination node $b$ (line 6).
+The total number graph edges \texttt{nba} is given by the
+last offset (line 7).
+We then construct an array with one entry for each edge
+(edges are sorted by destination), which will store
+the source node index of each edge (line 8).
+We again iterate over $a\in A$, this time trying to fill
+an entry in the edge to source array.
+Since the order of edges with the same destination is unspecified,
+we use atomic operations again to determine where edges are placed.
+An array of $|B|$ position indices is created to keep track of
+how many edges have been processed for each destination node (line 9).
+Each iteration of the final loop will atomically read the current
+position and increment it by one, thereby obtaining an allocated slot
+(line 13).
+It then writes the source vertex $a$ into this slot (line 14).
+The resulting graph from set $B$ to set $A$ is represented by the
+two arrays \texttt{b2ba} (destinations to edges) and \texttt{ba2a}
+(edges to sources), which are exactly the inverse of the
+input mapping \texttt{a2b} (sources to destinations).
+
+Using $T$ threads, this algorithm can be expected to run in time
+$O(r(|A|/T)+\log(|B|))$,
+where $r$ is the maximum degree of any node in $B$ and the $\log(|B|)$
+term is introduced by the scan operation.
+As such, it is specifically designed for low-degree graphs,
+such as mesh adjacencies.
+There is an alternative, which is to explicitly sort the
+edges by destination node using a general sorting function.
+As described in Section \ref{sec:sort}, this could take up to
+$O((|A|/T)\log(|A|))$ time to run.
+Explicit sorting is preferable for higher degrees, but for Omega\_h usage
+the two are comparable in runtime and we use the variant
+based on atomic operations.
+
 \chapter{Topological Ratios}
 
 \section{Maximum Upward Adjacencies}
