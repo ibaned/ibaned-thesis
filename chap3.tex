@@ -832,6 +832,57 @@ struct AdaptOpts {
 };
 \end{lstlisting}
 
+\subsection{Approaching Displacements and Metrics}
+\label{sec:approach}
+
+A common problem that arises when doing Lagrangian simulations
+(those in which the mesh follows the simulated fluid and objects)
+as described in Sections \ref{sec:proteus}, \ref{sec:albany}, and \ref{sec:alexa},
+is that vertex motions may be requested such that after
+deformation the mesh has inverted or arbitrarily low-quality elements.
+Similarly, when aiming to satisfy an anisotropic metric tensor
+field, it may be that the elements of a initial mesh have arbitrary low
+(though not negative) quality when measured in the desired metric space.
+
+Omega\_h implements similar approaches in order to maintain good element
+quality throughout adaptation in both of these cases.
+The idea is to establish an initial field which is known to be
+compatible with the initial mesh in terms of element quality,
+and then to use an interpolation method to gradually travel
+from the initial field to the given target field.
+Each step along this interpolation will degrade element quality,
+and the subsequent adaptation will repair it sufficiently
+that another step may be taken.
+Because it is difficult to predict a priori how far one may
+interpolate towards the target before quality limits are met,
+we use a predictor-corrector method which begins by stepping
+all the way to the target mesh and iteratively halves the
+step size until quality criteria are met.
+The quality criteria is usually the same as the minimum
+allowed quality during adaptivity, see Section \ref{sec:osh}.
+After each step, mesh adaptation is used to improve element
+qualities which enables a subsequent step.
+
+In the case of displacements, the initial displacement field
+is all zero vectors at the vertices.
+Linear interpolation between this and the desired displacement
+equates to linear motion in space of the vertices.
+The mesh is deformed until qualities reach a limit, after which
+point adaptation is used to correct low quality elements.
+
+In the case of metric fields, the initial metric field
+is the implied metric field described in Section \ref{sec:ident_metric}.
+This metric field is closely aligned with the initial mesh
+and its elements typically have good quality when measured in
+this metric space.
+We use the Log-Euclidean metric tensor interpolation described
+in Section \ref{sec:metric_interp} to step from the implied
+metric field to the desired metric field.
+Each change in the metric field will tend to decrease element
+quality in metric space, and subsequent adaptation will
+improve quality by bringing the mesh into agreement with
+the new metric field.
+
 \section{Size Field Algorithms}
 \label{sec:sf}
 
