@@ -416,17 +416,10 @@ given new identifiers, and all links between them updated
 accordingly.
 If the new identifiers are contiguous, the arrays can shrink
 to minimal size.
-Beyond that, we can choose a reordering which
-makes subsequent queries cache-friendly.
-Beall and Shephard describe a reordering for mesh entities which
-improves the locality of subsequent adjacency queries
-and, more importantly, the sparsity pattern of
-matrices assembled from finite element meshes \cite{beall1997general}.
-Adjacency-based reordering was expanded upon and
-tested by Zhou et al. \cite{zhou2010adjacency}.
-This is a supported operation in our implementation,
-which combines hole removal with adjacency-based reordering
-that improves locality.
+As described in detail in Section \ref{sec:reorder},
+this is implemented in PUMI as an operation that
+combines hole removal with adjacency-based reordering
+to improve locality.
 
 An important benefit of this array-based structure is the
 ease with which additional attributes can be added or removed
@@ -937,14 +930,22 @@ developed to minimize the storage complexity of sparse matrices
 derived from meshes, is based on
 Breadth-First Search (BFS) of the graph and sorts each layer based
 on the degrees of the vertices.
-A similar algorithm by Zhou et al. \cite{zhou2010adjacency} also
+A similar algorithm by Zhou et al. \cite{zhou2010adjacency} based
+on work by Beall and Shephard \cite{beall1997general} also
 reduces to BFS for a linear mesh, and has special considerations
 for the starting point of BFS.
 Other (geometric) methods take advantage of the vertex coordinates,
 for example by arranging vertices along the Hilbert Space-Filling Curve
 (HSFC) \cite{devine2005new}.
-Finally, there a libraries implementing hierarchic methods of
+There are also libraries implementing hierarchic methods of
 graph reordering, such as METIS \cite{METIS}.
+The most effective methods at minimizing the linear arrangement metric
+are those which begin with one of the above methods and then apply
+a form of simulated annealing in which local modifications are made
+to the ordering that locally improve the metric \cite{petit2003experiments}.
+However, for our purposes of cache locality it is not worth
+spending a large amount of computational power to obtain a slightly
+better ordering.
 
 Table \ref{tab:la} shows the values of Equation \ref{eq:la} using
 several of these methods on three different meshes:
@@ -965,7 +966,7 @@ and that the BFS result is heavily dependent on the starting point.
 \caption{Linear arrangement values for different meshes and heuristics}
 \label{tab:la}
 \begin{center}
-\begin{tabular}{r|ccc}
+\begin{tabular}{r|rrr}
                      &    cube &   fusion &   solder \\\hline
 input                & 3163141 &  1743275 &  8688982 \\
 BFS($0$)             &  678166 &   910451 &  2085725 \\
@@ -978,6 +979,89 @@ METIS                & 1120368 &  1234170 &  2849735 \\
 \end{tabular}
 \end{center}
 \end{table}
+
+PUMI implements a BFS method with heuristics that use geometric
+classification for selecting a starting node
+\cite{zhou2010adjacency, beall1997general}.
+One of the difficulties with the BFS method is that it is difficult
+to parallelize, since layers need to be constructed sequentially.
+Early versions of Omega\_h implemented a BFS method that was not
+parallelized for this reason, but we did study its effects on subsequent
+adaptation operations on different hardware.
+Table \ref{tab:reorder-speed} shows the speedup in Omega\_h adaptation
+(see Section \ref{sec:omega_h-adapt}) when a reordering is carried out
+prior to each adaptation call.
+Note that even though this reordering was not parallelized, there
+was never a decrease in performance, and in the most extreme case
+reordering made a 26-30\% difference.
+This result suggests that reordering is quite beneficial and should
+be incorporated into array-based adaptation workflows.
+
+\begin{table}
+\begin{center}
+\caption{Locality speedups including and excluding BFS reordering time}
+\label{tab:reorder-speed}
+\begin{tabular}{l|r|r}
+Platform           & overall & excl. reorder \\ \hline
+IBM BG/Q 1 thread     &  3\% &  7\% \\
+IBM BG/Q 16 threads   & 10\% & 15\% \\
+IBM BG/Q 64 threads   &  5\% & 11\% \\
+NVidia K40            &  2\% &  8\% \\
+Intel Phi 1 thread    & 26\% & 30\% \\
+Intel Phi 120 threads & 24\% & 29\% \\
+Intel Phi 240 threads &  9\% & 19\% \\
+Intel i7 1 thread     &  0\% &  4\% \\
+Intel i7 4 threads    & 11\% & 16\% \\
+Intel i7 8 threads    &  5\% & 10\% \\
+\end{tabular}
+\end{center}
+\end{table}
+
+Despite non-parallel BFS reordering being adequate, we would prefer
+a reordering method that scales with parallelism.
+The current Omega\_h code implements a Hilbert curve method (HSFC).
+The Hilbert curve is a numbering of the cubes of a regular cubic grid.
+Since our vertex coordinates are in a floating-point format with
+52 binary digits of precision (see Section \ref{sec:repro_sum}),
+we place our mesh in an implicit cubic grid that has $2^{52}$
+cubes along each axis of the mesh's bounding box.
+This grid never has to be represented in its entirety; there
+is a constant-time algorithm for converting a coordinate in this
+grid to its integer position in the Hilbert curve
+\cite{skilling2004programming}.
+We map each floating-point vertex coordinate to the cube it
+lies in, and assign that vertex the Hilbert curve position of that
+cube.
+We then sort vertices by their Hilbert curve positions.
+Although our resolution makes it very unlikely that two
+vertices fall in the same cube, the sorting procedure would
+arbitrarily order them if this did occur.
+More importantly, we can use efficient sorting algorithms for
+shared memory parallelism as described in Section \ref{sec:sort},
+and the conversion of coordinates to Hilbert curve positions
+scales linearly (see Section \ref{sec:map}), so this reordering
+method is more readily parallelizable than the BFS methods.
+
+\begin{figure}
+\begin{center}
+\includegraphics[width=0.4\textwidth]{bfs.png}
+\includegraphics[width=0.4\textwidth]{hilbert.png}
+\caption{Meshes colored by vertex ordering:
+(left) BFS, (right) Hilbert curve}
+\label{fig:reorder}
+\end{center}
+\end{figure}
+
+Figure \ref{fig:reorder} shows a cube mesh with its vertices colored by
+two different reordering methods: the BFS method implemented in PUMI,
+and the HSFC method implemented in Omega\_h.
+Blue indicates a low vertex index while red indicates a high index.
+Note that while the HSFC method has a clear interface along which
+indices differ highly, it should have better locality among neighbors
+in the smooth areas because in the BFS method most vertices are adjacent
+to vertices in the previous or subsequent layer, and those differences
+are on average the size of one layer (the surface area of a cut through
+the cube, measured in exposed vertices).
 
 %%% Local Variables:
 %%% mode: latex
