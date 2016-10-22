@@ -1484,7 +1484,84 @@ because we prefer not to disallow refinement.
 
 \section{Serial Adaptation Performance}
 
-{\bf TODO... }
+\subsection{Analytic Anisotropy Test}
+\label{sec:ugawg}
+
+In order to compare against other anisotropic adaptation software,
+we run Omega\_h on the first test case presented by Park,
+Loseille, Krakos and Michal \cite{park2015comparing}.
+This case consists of a unit cube and an analytic metric defined
+in Equation \ref{eq:ugawg}.
+Figure \ref{fig:ugawg} shows the mesh before and after Omega\_h adapts
+it to conform to this analytic metric.
+We use the metric approaching method described in Section \ref{sec:approach},
+which takes 10 steps to reach the final metric while restricted
+to keep all elements above 20\% mean ratio quality.
+These 10 steps include 49 total refinement passes, 65 coarsening passes,
+and 22 swapping passes, and took 8.1 seconds to execute in serial
+on an Intel Xeon E5-2620v4 CPU.
+Table \ref{tab:ugawg} shows the element quality and edge length statistics
+in metric space for the final adapted mesh.
+Note that shape correction was able to bring all elements above 30\% quality
+while keeping edges in the length range shown in the histogram
+(the minimum edge length is 0.16).
+
+\begin{equation} \label{eq:ugawg}
+\mathcal{M}=\begin{pmatrix}
+h_x^{-2} & 0 & 0 \\
+0 & h_y^{-2} & 0 \\
+0 & 0 & h_z^{-2} \\
+\end{pmatrix}
+\quad\text{where}
+\left\{\begin{tabular}{l}
+$h_x = 0.1$ \\
+$h_y = 0.1$ \\
+$h_z = 0.001 + 0.198 | z - 0.5 |$ \\
+\end{tabular}\right.
+\end{equation}
+
+\begin{figure}
+\begin{center}
+\includegraphics[width=0.4\textwidth]{ugawg_before.png}
+\includegraphics[width=0.4\textwidth]{ugawg_after.png}
+\caption{Mesh before and after adapting to analytic metric}
+\label{fig:ugawg}
+\end{center}
+\end{figure}
+
+\begin{table}
+\caption{Metric quality and length histograms for analytic metric test}
+\label{tab:ugawg}
+\begin{center}
+\begin{tabular}{l|r}
+quality & \#elements \\ \hline
+0.00-0.10 & 0 \\
+0.10-0.20 & 0 \\
+0.20-0.30 & 0 \\
+0.30-0.40 & 295 \\
+0.40-0.50 & 1268 \\
+0.50-0.60 & 4117 \\
+0.60-0.70 & 9241 \\
+0.70-0.80 & 13221 \\
+0.80-0.90 & 19660 \\
+0.90-1.00 & 5224 \\
+\end{tabular}
+\quad\quad
+\begin{tabular}{l|r}
+length & \#edges \\ \hline
+0.00-0.20 & 1 \\
+0.20-0.40 & 120 \\
+0.40-0.60 & 782 \\
+0.60-0.80 & 13644 \\
+0.80-1.00 & 18290 \\
+1.00-1.20 & 15847 \\
+1.20-1.40 & 16215 \\
+1.40-1.60 & 654 \\
+1.60-1.80 & 23 \\
+1.80-2.00 & 7 \\
+\end{tabular}
+\end{center}
+\end{table}
 
 %%% Local Variables:
 %%% mode: latex
