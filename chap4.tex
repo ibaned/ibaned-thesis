@@ -300,7 +300,7 @@ $g=$ global sum of my table row\;
 \ForEach{$i \in S$}{
   start nonblocking sends to dest($i$)\;
 }
-\For{round from $1$ to $g$}{
+\For{\algt round from $1$ to $g$}{
   msg $=$ blocking probe for incoming message\;
   allocate buffer, receive message, add buffer to $R$\;
 }
@@ -317,16 +317,16 @@ barrier\_active$=$false\;
 \ForEach{$i \in S$}{
   start nonblocking synchronous send to process dest($i$)\;
 }
-\While{not (done)}{
+\While{\algt not (done)}{
   msg = nonblocking probe for incoming message\;
-  \If{msg exists}{
+  \If{\algt msg exists}{
     allocate buffer, receive message, add buffer to $R$\;
   }
-  \eIf{barrier\_active}{
+  \eIf{\algt barrier\_active}{
     comp $=$ test barrier for completion\;
     \lIf{comp}{done$=$true}
   }{
-    \If{all sends are finished}{
+    \If{\algt all sends are finished}{
       start nonblocking barrier\;
       barrier\_active$=$true\;
     }
@@ -489,10 +489,10 @@ in Algorithm \ref{alg:receive}.
 \Input{pattern $P$}
 \Output{received message metadata $M$ and data $b$, or null}
 let message $M \gets$ non-blocking probe\;
-\If{$M$ is null (there is no message)}{
+\If{\algt $M$ is null (there is no message)}{
   \Return null\;
 }
-\If{metadata of $M$ does not match $P$}{
+\If{\algt metadata of $M$ does not match $P$}{
   \Return null\;
 }
 allocate buffer $b$ per metadata of $M$\;
@@ -960,6 +960,59 @@ Their identities are transmitted back to the old owners, who then
 select a new owner amongst the new copies and transmit that single
 identity back to all new copies (note that all three of these
 communications are carried out by a single \texttt{Dist}).
+
+Algorithm \ref{alg:new_links} combines the full-mesh rebuild approach
+from Omega\_h with the readability of PUMI-style communications to
+present an understandable implementation of new entity and link creation,
+with a single conditional controlling whether complete or owner-based
+links are used.
+The actual differences between Algorithm \ref{alg:new_links} and the
+actual C++ code are minor, for example PUMI only creates new copies
+that do not exist in the old mesh (because it is being directly
+transformed into the new mesh) and Omega\_h transmits almost no
+information in the messages $m_1$ because creating a copy simply
+means establishing a local numbering of new copies.
+
+\begin{algorithm}
+  \SetKwInOut{Input}{input}\SetKwInOut{Output}{output}
+  \Input{Old entities $E_O$, where old owners know their new ranks}
+  \Input{New entities $E_N$ with good remote links}
+  \ForEach{\algt old owner $o\in E_O$}{
+    \ForEach{\algt new rank $r$ that needs a copy of $o$}{
+      Record a message $m_1$ to $r$ with data to build a copy of $o$\;
+    }
+  }
+  exchange messages $m_1$\;
+  \ForEach{\algt message $m_1$ received}{
+    $c \gets$ build a copy of an old owner $o$ based on $m_1$\;
+    add $c$ to $E_N$ (usually implicit)\;
+    send the identity of $c$ back to $o$ as a message $m_2$\;
+  }
+  exchange messages $m_2$\;
+  \ForEach{\algt message $m_2$ received}{
+    let $C_o$ be the set of new copies of $o$\;
+    add the new copy $c$ to $C_o$\;
+  }
+  \ForEach{\algt old owner $o\in E_O$}{
+    \If{\algt not maintaining complete links}{
+      select new owner $q\in C_o$\;
+    }
+    \ForEach{$c\in C_o$}{
+      \If{\algt maintaining complete links}{
+        send $C_o$ to $c$ in message $m_3$\;
+      }\Else{
+        send $q$ to $c$ in message $m_3$\;
+      }
+    }
+  }
+  exchange messages $m_3$\;
+  \ForEach{\algt message $m_3$ received}{
+    let $L_c$ be the set of links maintained for new copy $c$\;
+    $L_c \gets$ the links in message $m_3$\;
+  }
+  \caption{Establish new entity copies and links of one dimension}
+  \label{alg:new_links}
+\end{algorithm}
 
 \subsection{Build New Topological Adjacencies}
 \label{sec:migr_topo}
