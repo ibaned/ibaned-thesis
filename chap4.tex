@@ -579,6 +579,77 @@ Non-blocking collectives are useful from the perspective of
 of hiding latency, but they prove to be indispensable to
 Algorithm \ref{alg:nbx}.
 
+As a detailed example of how our non-blocking collectives work,
+Algorithms \ref{alg:start_reduce} and \ref{alg:progress_reduce}
+show the functions that would begin and advance a non-blocking
+reduction, respectively.
+In these algorithms we use $\wedge$ to denote a bitwise and
+operation and $\oplus$ to denote a bitwise exclusive or operation.
+The operator $\otimes$ continues to represent the binary reduction,
+e.g. summation.
+Several helper functions were inlined for brevity, hence there
+is some repetition.
+For example, the termination condition on line 4 of Algorithm
+\ref{alg:start_reduce} and lines 1 and 14 of Algorithm \ref{alg:progress_reduce}.
+This condition is one of the aspects which varies depending on
+which type of collective is being executed (broadcasts and scans
+have different logic here).
+
+\begin{algorithm}
+  \SetKwInOut{Input}{input}\SetKwInOut{Output}{output}
+  \Input{local data $d_l$}
+  peers $\gets$ total thread count\;
+  rank $\gets$ local thread rank $\in[0,$peers$-1]$\;
+  bit $\gets 1$\;
+  \If{\algt ((rank$=0$) and (bit$\geq$peers)) or \\
+      ((rank$\neq0$) and (((bit$/2$)$\wedge$rank)$\neq0$))}{
+    \Return\;
+  }
+  \If{\algt rank$\oplus$bit$<$peers}{
+    \If{\algt bit$\wedge$rank$\neq0$}{
+      request $\gets$ send $d_l$ to (rank$\oplus$bit)\;
+    }
+  }
+  \Return{\algt state as (bit,request)}
+  \caption{Starting a non-blocking reduction}
+  \label{alg:start_reduce}
+\end{algorithm}
+
+\begin{algorithm}
+  \SetKwInOut{Input}{input}\SetKwInOut{Output}{output}
+  \Input{access to local data $d_l$}
+  \Input{access to state tuple (bit,request)}
+  \If{\algt((rank$=0$) and (bit$\geq$peers)) or \\
+      ((rank$\neq 0$) and (((bit$/2$)$\wedge$rank)$\neq0$))}{
+    \Return{\algt false}\;
+  }
+  step\_done $\gets$ false\;
+  \lIf{\algt rank$\oplus$bit$\geq$peers}{step\_done $\gets$ true}
+  \Else{
+    \If{\algt bit$\wedge$rank$\neq0$}{
+      \lIf{\algt request is done}{step\_done $\gets$ true}
+    }\Else{
+      \If{\algt received message from (rank$\oplus$bit) with data $d_r$}{
+        $d_l \gets d_l \otimes d_r$\;
+        step\_done $\gets$ true\;
+      }
+    }
+  }
+  bit $\gets 2\cdot$bit\;
+  \If{\algt ((rank$=0$) and (bit$\geq$peers)) or \\
+      ((rank$\neq 0$) and (((bit$/2$)$\wedge$rank)$\neq0$))}{
+    \Return{\algt false}\;
+  }
+  \If{\algt rank$\oplus$bit$<$peers}{
+    \If{\algt bit$\wedge$rank$\neq0$}{
+      request $\gets$ send $d_l$ to (rank$\oplus$bit)\;
+    }
+  }
+  \Return{\algt true}
+  \caption{Progress a non-blocking reduction}
+  \label{alg:progress_reduce}
+\end{algorithm}
+
 \subsection{Non-blocking Consensus in PCU}
 \label{sec:pcu_phased}
 
