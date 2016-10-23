@@ -6,19 +6,8 @@ vppp := 0.25;
 input TEX;
 
 beginfig(1);
-% old vertex owners
-fill fullcircle scaled 3 shifted (0,90) withcolor white;
-draw fullcircle scaled 3 shifted (0,90);
-fill fullcircle scaled 3 shifted (0,120) withcolor white;
-draw fullcircle scaled 3 shifted (0,120);
-fill fullcircle scaled 3 shifted (60,90) withcolor white;
-draw fullcircle scaled 3 shifted (60,90);
-fill fullcircle scaled 3 shifted (60,120) withcolor white;
-draw fullcircle scaled 3 shifted (60,120);
-fill fullcircle scaled 3 shifted (120,90) withcolor white;
-draw fullcircle scaled 3 shifted (120,90);
-fill fullcircle scaled 3 shifted (120,120) withcolor white;
-draw fullcircle scaled 3 shifted (120,120);
+path fullsquare;
+fullsquare := unitsquare shifted (-.5,-.5);
 % new copies to old owners
 draw (0,75){up}..(0,88);
 draw (16,75){up}..(2,120);
@@ -63,27 +52,53 @@ draw (0,0)--(30,0)--(0,30)--cycle;
 draw (50,0)--(50,30)--(20,30)--cycle;
 draw (70,0)--(70,30)--(100,30)--cycle;
 draw (120,0)--(90,0)--(120,30)--cycle;
+% old vertex owners
+fill fullcircle scaled 4 shifted (0,90) withcolor white;
+draw fullcircle scaled 4 shifted (0,90);
+fill fullcircle scaled 4 shifted (0,120) withcolor white;
+draw fullcircle scaled 4 shifted (0,120);
+fill fullcircle scaled 4 shifted (60,90) withcolor white;
+draw fullcircle scaled 4 shifted (60,90);
+fill fullcircle scaled 4 shifted (60,120) withcolor white;
+draw fullcircle scaled 4 shifted (60,120);
+fill fullcircle scaled 4 shifted (120,90) withcolor white;
+draw fullcircle scaled 4 shifted (120,90);
+fill fullcircle scaled 4 shifted (120,120) withcolor white;
+draw fullcircle scaled 4 shifted (120,120);
 % new copies
 %   first rank
-path fullsquare;
-fullsquare := unitsquare shifted (-.5,-.5);
-fill fullsquare scaled 3 shifted (0,75) withcolor white;
-draw fullsquare scaled 3 shifted (0,75);
-fill fullsquare scaled 3 shifted (16,75) withcolor white;
-draw fullsquare scaled 3 shifted (16,75);
-fill fullsquare scaled 3 shifted (33,75) withcolor white;
-draw fullsquare scaled 3 shifted (33,75);
-fill fullsquare scaled 3 shifted (50,75) withcolor white;
-draw fullsquare scaled 3 shifted (50,75);
+fill fullsquare scaled 4 shifted (0,75) withcolor white;
+draw fullsquare scaled 4 shifted (0,75);
+fill fullsquare scaled 4 shifted (16,75) withcolor white;
+draw fullsquare scaled 4 shifted (16,75);
+fill fullsquare scaled 4 shifted (33,75) withcolor white;
+draw fullsquare scaled 4 shifted (33,75);
+fill fullsquare scaled 4 shifted (50,75) withcolor white;
+draw fullsquare scaled 4 shifted (50,75);
 %   second rank
-fill fullsquare scaled 3 shifted (70,75) withcolor white;
-draw fullsquare scaled 3 shifted (70,75);
-fill fullsquare scaled 3 shifted (86,75) withcolor white;
-draw fullsquare scaled 3 shifted (86,75);
-fill fullsquare scaled 3 shifted (103,75) withcolor white;
-draw fullsquare scaled 3 shifted (103,75);
-fill fullsquare scaled 3 shifted (120,75) withcolor white;
-draw fullsquare scaled 3 shifted (120,75);
+fill fullsquare scaled 4 shifted (70,75) withcolor white;
+draw fullsquare scaled 4 shifted (70,75);
+fill fullsquare scaled 4 shifted (86,75) withcolor white;
+draw fullsquare scaled 4 shifted (86,75);
+fill fullsquare scaled 4 shifted (103,75) withcolor white;
+draw fullsquare scaled 4 shifted (103,75);
+fill fullsquare scaled 4 shifted (120,75) withcolor white;
+draw fullsquare scaled 4 shifted (120,75);
+% new uses
+%   first rank
+fill fullsquare scaled 4 shifted (00,45);
+fill fullsquare scaled 4 shifted (10,45);
+fill fullsquare scaled 4 shifted (20,45);
+fill fullsquare scaled 4 shifted (30,45);
+fill fullsquare scaled 4 shifted (40,45);
+fill fullsquare scaled 4 shifted (50,45);
+%   second rank
+fill fullsquare scaled 4 shifted (070,45);
+fill fullsquare scaled 4 shifted (080,45);
+fill fullsquare scaled 4 shifted (090,45);
+fill fullsquare scaled 4 shifted (100,45);
+fill fullsquare scaled 4 shifted (110,45);
+fill fullsquare scaled 4 shifted (120,45);
 endfig;
 
 end.
