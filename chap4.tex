@@ -594,6 +594,8 @@ For example, the termination condition on line 4 of Algorithm
 This condition is one of the aspects which varies depending on
 which type of collective is being executed (broadcasts and scans
 have different logic here).
+We implement a balanced binary tree (similar to Figure \ref{fig:reduce}(right))
+based on the binary digits of the thread ID (rank).
 
 \begin{algorithm}
   \SetKwInOut{Input}{input}\SetKwInOut{Output}{output}
