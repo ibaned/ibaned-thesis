@@ -771,6 +771,18 @@ entity pointer decomposes into one or more array indices
 \label{fig:remotes}
 \end{figure}
 
+The main disadvantage of a complete set of links at every entity
+is the additional storage requirement and maintenance of the links
+during migration (see Section \ref{sec:migr_links}).
+The storage format is also more complicated because there is a variable
+number of links per entity, which requires some kind of indirection.
+In the case of PUMI, links for a single entity are allocated in their
+own small array and a single large array maps each entity to its associated
+small array of links.
+The advantage, as is often the case, is that this additional memory
+can save time in certain algorithms,
+for example ownership rules may be changed without communication.
+
 \section{Entity-Level Communication}
 \label{sec:dist}
 
@@ -890,6 +902,7 @@ and so we cache these systems the same way adjacencies are cached
 in Section \ref{sec:adj_cache}.
 
 \section{Migration}
+\label{sec:migr}
 
 As described in Section \ref{sec:remotes}, a partitioned mesh
 involves careful duplication of mesh entities into ``copies"
