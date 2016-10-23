@@ -43,10 +43,10 @@ an $O(N)$ parallel operation, i.e. there is asymptotically no scaling.
 Although trivial, an alarming number of parallel programs in production
 use exhibit this degree of scaling for key parallel operations
 (for example, partitioning is done is serial prior to a parallel simulation).
-Such systems rely on the fact that their non-scalable operations
-consume a small percentage of runtime at low degrees of parallelism
-to show some speedup in practice, but ultimately run into great difficulties
-for large $P$ or large $N$.
+Because non-scalable operations may not consume a large percentage
+of runtime at low degrees of parallelism,
+these systems can show good parallel speedups up to a certain degrees of parallelism,
+but ultimately run into difficulties for large $P$ ($10^6$).
 The second example is an operation which has $O(P)$ runtime in parallel.
 Once again, may systems in production use today suffer from such
 trivial non-scalability.
@@ -287,6 +287,26 @@ Knowing the communication is sparse, this algorithm runs in $O(\log(P))$
 time \cite{hoefler2010scalable}.
 
 \begin{algorithm}
+\caption{Personalized Consensus \cite{hoefler2010scalable}}
+\label{alg:pcx}
+\SetKwInOut{Input}{input}\SetKwInOut{Output}{output}
+\Input{List $S$ of destinations and data}
+\Output{List $R$ of received data and sources}
+allocate local table with $P$ entries, initialize all entries to `0'\;
+\ForEach{$i \in S$}{
+  set row target($i$) in local table to `1'\;
+}
+$g=$ global sum of my table row\;
+\ForEach{$i \in S$}{
+  start nonblocking sends to dest($i$)\;
+}
+\For{round from $1$ to $g$}{
+  msg $=$ blocking probe for incoming message\;
+  allocate buffer, receive message, add buffer to $R$\;
+}
+\end{algorithm}
+
+\begin{algorithm}
 \caption{Non-Blocking Consensus \cite{hoefler2010scalable}}
 \label{alg:nbx}
 \SetKwInOut{Input}{input}\SetKwInOut{Output}{output}
@@ -311,26 +331,6 @@ barrier\_active$=$false\;
       barrier\_active$=$true\;
     }
   }
-}
-\end{algorithm}
-
-\begin{algorithm}
-\caption{Personalized Consensus \cite{hoefler2010scalable}}
-\label{alg:pcx}
-\SetKwInOut{Input}{input}\SetKwInOut{Output}{output}
-\Input{List $S$ of destinations and data}
-\Output{List $R$ of received data and sources}
-allocate local table with $P$ entries, initialize all entries to `0'\;
-\ForEach{$i \in S$}{
-  set row target($i$) in local table to `1'\;
-}
-$g=$ global sum of my table row\;
-\ForEach{$i \in S$}{
-  start nonblocking sends to dest($i$)\;
-}
-\For{round from $1$ to $g$}{
-  msg $=$ blocking probe for incoming message\;
-  allocate buffer, receive message, add buffer to $R$\;
 }
 \end{algorithm}
 
@@ -516,9 +516,8 @@ implementation can be found in \cite{thakur2003improving}.
 Non-blocking collectives are more advanced implementations which
 are typically used to overlap communication and computation.
 By using them, PCU benefits from this overlap.
-Furthermore, in Section \ref{sec:pcu_phased}, we present an algorithm
-for which blocking collectives are insufficient, and a non-blocking
-implementation is not just convenient but necessary.
+Furthermore, in Section \ref{sec:pcu_phased}, we use Algorithm \ref{alg:nbx}
+for which a non-blocking implementation is necessary.
 
 Since collectives are used by nearly all applications,
 we place a focus on developing built-in
@@ -695,8 +694,8 @@ of unique sources.
 This relation of message counts to communication neighbors (sources and
 destinations) is quite useful in the process of determining runtime bounds.
 This is because, due to mesh partitioning, each thread should have a small
-and constant number of neighbors,
-about 40 at most \cite{zhou2010petascale}.
+and constant number of neighbors, with 40 being a maximum value among
+several meshes studied \cite{zhou2010petascale}.
 
 We have shown previously that buffering small messages can greatly improve performance
 due to the latency cost $\alpha$ and MPI's own management overhead per message,
@@ -806,7 +805,7 @@ the copies of vertices of the adapted mesh.
 Each source may communicate with multiple destinations, although we
 assume the number of destinations per source (and the number of sources
 per destination) is bound by a small constant.
-Notice that both the sources and destinations are sets of copies which
+It should be noted that both the sources and destinations are sets of copies which
 are distributed throughout the whole machine.
 
 Along each edge of this communication graph, we will transmit
@@ -823,7 +822,7 @@ Section \ref{sec:exch}, it is simply implemented at a finer-grained level.
 
 The \texttt{Dist} system goes through several stages in order
 to complete its task, as illustrated in Figure \ref{fig:exch}.
-Data begins in array in the memory space of each source rank,
+Data begins as an array within the memory space of each source rank,
 with one entry per source.
 It is then expanded such that there is one entry per communication graph
 edge whose source is in this rank.
@@ -831,11 +830,11 @@ The array is then permuted such that data whose destinations are on
 the same rank is stored contiguously.
 At this point, we use the MPI 3.0 exchange mechanism described in
 Section \ref{sec:exch} to send out the contents of the given
-array and receive incoming data into a new array, which all
-the data whose destinations are on this rank, sorted by the
-rank of their sources.
-This received array is permuted such that data is organized
-by destination object.
+array.
+This MPI exchange then receives all the data whose destinations are on this rank
+into a new array whose contents are sorted by the rank of their sources.
+This received array is permuted such that data is sorted
+by destination object index.
 Finally (and optionally), the data may be reduced such that
 multiple values with the same destination become a single
 value (recall the common reductions in Section \ref{sec:reduce}).
@@ -869,7 +868,7 @@ We use a shared-memory parallel sort (see Section \ref{sec:sort}) to
 obtain the first permutation, by sorting these destinations by their rank.
 We then construct the MPI information from the sorted ranks, and transmit
 the destination indices on their own.
-At the destination, we apply the mapping inversion described in
+At the destination, we apply the mapping inversion algorithm described in
 Appendix \ref{sec:invert_map} to obtain the second permutation and
 the offsets used for reduction (this is where the small degree assumption
 comes into play).
@@ -961,7 +960,7 @@ are created, then edges are defined from vertices, etc.), but
 partition information is specified first at elements, and then
 derived in a top-down fashion.
 PUMI resolves this in a V-cycle fashion, meaning that it will first
-derive the new partitionings for all lower dimension in a top-down
+derive the new partitionings for all lower dimensional entities in a top-down
 fashion and then input all these partitionings to a bottom-up algorithm
 for actually building new entities and setting up remote links.
 Unlike PUMI (and APF in particular), where the interface is based on the
@@ -984,7 +983,8 @@ top-down iteration from elements to vertices.
 \subsection{Transfer Associated Data}
 
 Associated data in this case means classification, field data,
-and other data such as the marks described in Chapter \ref{chap:adapt}.
+and other data such as marks (booleans describing whether or not
+an entity is in a certain set).
 The process of transferring these during migration is relatively
 straightforward.
 In PUMI, all such data is appended to the small message used
@@ -1011,7 +1011,7 @@ The interface to PUMI's element-based migration procedure is
 of it current elements, a single destination partition to send
 that element to.
 By definition, such a specification cannot express ghosting.
-Although PUMI has recently acquired ghosting capability, it was
+Although PUMI has recently acquired a ghosting capability, it was
 not developed as part of this thesis and treats ghost elements
 in a specialized manner.
 
@@ -1057,7 +1057,7 @@ around a lower-dimensional entity, it is useful to have a mechanism
 for altering the mesh partition such that the cavity being operated
 on (defined by the elements adjacent to a lower-dimensional entity)
 is copied in its entirety onto at least one partition, so that this
-partition can perform the computation.
+partition can perform the computation \cite{de1999parallel}.
 In this way, the code that operates within the cavity need not change
 when going from a serial (non-parallel) code to a scalable parallel code.
 Section \ref{sec:ghost} above hints at how ghosting plays this role
@@ -1078,15 +1078,15 @@ for carrying out dynamic mesh migration in order to apply a set
 of requested cavity operations.
 These operations may modify topology (e.g. MeshAdapt operators)
 or they may not (e.g. averaging element values to vertices).
-This system at all times maintains an element-based partitioning,
+At all times, this system maintains an element-based partitioning,
 meaning that elements are copied onto only one partition.
 It begins by iterating over the mesh and performing any
 cavity operations for which the cavity is entirely within the
 local partition (we say the cavity is local).
 If the mesh is well partitioned, this should account for the majority
 of desired operations.
-Afterwards, it will mark any cavities which are broken up among
-multiple partitions and executes a single migration that aims
+Afterwards, it will mark any cavities which are distributed over
+multiple partitions and execute a single migration that aims
 to localize as many non-local cavities as possible.
 These two steps are repeated until all cavities have been operated on.
 
@@ -1188,8 +1188,8 @@ We have either vertices or edges as the key entities, and either
 triangles or tetrahedra for elements.
 Fast algorithms can construct the graph of keys that are adjacent
 to a common element, which we use as the basis for our conflict graph.
-(Note that the expanded cavities used in Section \ref{sec:conserve_momentum}
-require more expensive algorithms to establish the conflict graph).
+Note that the expanded cavities used in Section \ref{sec:conserve_momentum}
+require more expensive algorithms to establish the conflict graph.
 
 At the beginning of each pass, each key entity is annotated as either
 being a candidate or not based on the conditions described throughout
@@ -1338,7 +1338,8 @@ with incomplete surrounding information.
 \caption{Steps for distributed set selection:
 (left) non-ghosted partitions
 (mid) add ghost layers, compute independent set
-(right) trim away non-owned ghosts}\vspace*{-6pt}
+(right) trim away ghost elements not in owned independent
+cavities}\vspace*{-6pt}
 \label{fig:mpi_indset}
 \end{figure}
 
@@ -1395,7 +1396,7 @@ at least partitioning-dependent.
 \section{Determinism}
 \label{sec:determinism}
 
-Section \ref{sec:indset_ghost} describes how Omega\_h takes steps
+Section \ref{sec:indset_ghost} described how Omega\_h takes steps
 to select operations and number entities in a partitioning independent and
 ordering independent way.
 Omega\_h is also deterministic,
