@@ -13,7 +13,35 @@
 
 \section{Workflow Integration}
 
-Introduce how parallel adaptivity fits into workflows.
+In order to realize its fullest potential to benefit
+simulations, mesh adaptation needs to be incorporated
+into a simulation workflow.
+This can be implemented in a loosely coupled manner in which
+which a simulation runs several (or even all) steps with
+an unchanging mesh, then gives the solution and mesh
+files to an {\it a posteriori} error estimator, whose results
+are fed as files to a standalone mesh adaptation program, which
+outputs a new mesh file back to the original simulation program
+to run all over again.
+The trade-off with coupling is that a loosely coupled implementation
+requires few modifications (sometimes none) to the simulation program,
+but the overhead of file I/O and switching programs (which may have
+different parallel efficiencies) may preclude some of the more
+interesting uses of mesh adaptation.
+By contrast, in a closely coupled system, mesh adaptation
+and physics code are linked together into a single program,
+with minimal overhead in transferring data between the various
+components, and all components having comparable parallel efficiencies.
+This allows, for example, adapting the mesh after every simulation
+time step in a simulation that is massively parallel.
+In practice, all integrations of mesh adaptation into simulation programs
+fall somewhere along this spectrum.
+
+A goal of this thesis has been to bring maximal value to simulation
+codes by integrating mesh adaptation into their workflows with
+the most appropriate degree of coupling.
+This chapter covers multiple such integrations and aspects unique
+to each of the simulation programs.
 
 \section{Proteus}
 \label{sec:proteus}
