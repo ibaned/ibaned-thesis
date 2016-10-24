@@ -953,13 +953,6 @@ PUMI uses several stages of communication to first construct
 new copies, send their identities back to the old owner, and then
 have the old owner transmit all copy identities to all copies (all-to-all
 amongst copies is required to form a complete graph).
-Omega\_h can use a subset of the \texttt{Dist} setup procedure
-to establish and number all new copies (sources are old owners, destinations are
-new copies defined at first by rank only).
-Their identities are transmitted back to the old owners, who then
-select a new owner amongst the new copies and transmit that single
-identity back to all new copies (note that all three of these
-communications are carried out by a single \texttt{Dist}).
 
 Algorithm \ref{alg:new_links} combines the full-mesh rebuild approach
 from Omega\_h with the readability of PUMI-style communications to
@@ -1014,6 +1007,23 @@ means establishing a local numbering of new copies.
   \label{alg:new_links}
 \end{algorithm}
 
+Omega\_h can use a subset of the \texttt{Dist} setup procedure
+to establish and number all new copies as described in Section
+\ref{sec:migr_topo} and illustrated in Figure \ref{fig:push_down}.
+The sources are old owners and the destinations are
+new copies defined at first by rank only (step $3$ in Figure \ref{fig:push_down}).
+Their identities are transmitted back to the old owners, who then
+selects a new owner amongst the new copies and transmits that single
+identity back to all new copies (step $5$ of Figure \ref{fig:push_down}).
+Note that all three of these
+communications are carried out by a single \texttt{Dist}).
+
+\begin{figure}[t]\vspace*{4pt}
+\centerline{\includegraphics[width=0.98\textwidth]{push_down.png}}
+\caption{Omega\_h migration steps for one dimension (reduced)}\vspace*{-6pt}
+\label{fig:push_down}
+\end{figure}
+
 \subsection{Build New Topological Adjacencies}
 \label{sec:migr_topo}
 
@@ -1029,22 +1039,30 @@ PUMI resolves this in a V-cycle fashion, meaning that it will first
 derive the new partitionings for all lower dimensional entities in a top-down
 fashion and then input all these partitionings to a bottom-up algorithm
 for actually building new entities and setting up remote links.
-Unlike PUMI (and APF in particular), where the interface is based on the
+
+Unlike PUMI (and APF in particular), whose programming interfaces are based on the
 concept of an entity being an object, Omega\_h has no concept of entity
 objects, only adjacency structures and associated data.
 This allows it to loosen constraints and build adjacencies in a top-down fashion.
-At each dimension $d$, it first resolves the unique copies of
-$(d-1)$-dimensional entities as described in Section \ref{sec:migr_down}.
+Each dimension $d$ is handled as depicted for vertices in Figure \ref{fig:push_down}.
+It first resolves the unique copies of
+$d$-dimensional entities as described in Section \ref{sec:migr_down}
+(steps $1$ and $2$ in Figure \ref{fig:push_down}).
 This results in an accurate prediction of the new identities (indices)
-for those low-dimensional entities, which can be fed back to the
-the old owners of $d$-dimensional entities, immediately forming
-the new adjacency structure.
-This can also be done with a single \texttt{Dist}, from old
-$d$-dimensional owners to new $(d-1)$-dimensional copies.
-It also sets up the partitioning for dimension $(d-1)$
-(also a \texttt{Dist} as described in Section \ref{sec:migr_links}).
-In this way, Omega\_h can carry out a full migration as a single
-top-down iteration from elements to vertices.
+for those entities, which can be fed back to
+their old owners (step $3$), and forwarded
+again to form the new adjacency structure (step $4$).
+It also sets up the partitioning for dimension $(d-1)$ by sending
+new owners links to new copies (step $5$).
+This can all be done with two \texttt{Dist} objects.
+One from new
+high-dimensional (e.g. triangle) copies to old low-dimensional (e.g. vertex) owners,
+formed in step $1$ of Figure \ref{fig:push_down}.
+The second from old low-dimensional owners to their new copies,
+formed in step $3$ of Figure \ref{fig:push_down}, and
+mentioned in Section \ref{sec:migr_links}.
+Repeating these steps in order of decreasing dimension, Omega\_h
+can carry out a full migration.
 
 \subsection{Transfer Associated Data}
 
@@ -1055,7 +1073,7 @@ The process of transferring these during migration is relatively
 straightforward.
 In PUMI, all such data is appended to the small message used
 to construct a new copy.
-In Omega\_h, we reuse the \texttt{Dist} from Section \ref{sec:migr_links}
+Omega\_h, reuses the \texttt{Dist} described in Section \ref{sec:migr_links}
 to transfer each data array from the old owners to the new copies.
 
 \section{Ghosting}
