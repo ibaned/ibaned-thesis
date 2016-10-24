@@ -1630,6 +1630,94 @@ such that all floating point values are partition-independent
 and ordering-independent, which is a prerequisite to having
 fully independent results for the overall adaptation algorithm.
 
+\section{Parallel Adaptation Performance}
+
+\subsection{Moving Objects on Shared Memory Devices}
+
+{\bf attribution to the accepted IMR paper}
+
+In this test case, we focus on the potential for mesh adaptation to support simulations
+that have 3D solid bodies moving through a fluid.
+Mesh adaptation can be used to adjust connectivity between iterations of
+mesh motion, preventing tangling and inversion.
+Several other researchers have made good progress in applying general adaptation
+for these purposes
+\cite{compere2010mesh,wicke2010dynamic,clausen2013simulating,chen2015parallel}.
+In this test case, we created a geometry consisting of two ``rotors" whose ranges of
+motion overlap.
+This geometry is meant to be similar to simulations of interest such as
+helicopter rotors and manufacturing processes in which a fluid product is
+stirred.
+
+\begin{figure}[t]\vspace*{4pt}
+\centerline{
+\includegraphics[width=0.3\textwidth]{twin_rotor_1.png}
+\includegraphics[width=0.3\textwidth]{twin_rotor_2.png}
+\includegraphics[width=0.3\textwidth]{twin_rotor_3.png}
+}
+\caption{Cutaway mesh views at steps 2, 8, and 14 of 16}\vspace*{-6pt}
+\label{fig:twin_rotor}
+\end{figure}
+
+\begin{table}
+\caption{Runtime in minutes on different hardware}
+\label{tab:twin_rotor_times}\vspace*{4pt}
+\centerline{
+\begin{tabular}{l|r|r|r|r|r| r| r| r}
+ & \multicolumn{7}{c}{number of OpenMP threads} \\
+Hardware              & N/A &    1 &   2 &   4 &   8 & 16 & 32 & 64 \\\hline
+Intel Xeon 2620 v4    &     &  203 & 115 &  76 &  55 &    &    &    \\
+Intel Knights Landing &     & 1196 & 598 & 299 & 153 & 79 & 42 & 24 \\
+NVidia K80            &  35 &      &     &     &     &    &    &    \\
+NVidia GTX 980 Ti     &  15 &      &     &     &     &    &    &    \\
+\end{tabular}
+}
+\end{table}
+
+The case is executed in a series of 16 time steps, where the
+following happens at each step:
+\begin{enumerate}
+\item A velocity field is prescribed for each object as vectors
+at mesh nodes.
+\item This velocity field is spread onto the surrounding fluid
+mesh nodes by solving Laplace's equation using the
+objects and domain boundary as Dirichlet conditions.
+\item The mesh is moved according to the velocity field
+and stops right before any element goes below 20\% mean ratio quality. 
+\item Mesh adaptation is applied to the deformed mesh to
+recover edge lengths and ensure all elements are above 30\%
+mean ratio quality.
+Mesh adaptation will rebuild the mesh about ten times when applied.
+\item Steps 2 to 4 are repeated for any remaining motion
+that would previously have inverted elements.
+This repetition occurs ten to twenty times per time step.
+\end{enumerate}
+We generated the initial mesh
+using Gmsh \cite{geuzaine2009gmsh} with optimization by Netgen
+to remove sliver elements.
+All subsequent motion and adaptation is handled by our code.
+Figure \ref{fig:twin_rotor} shows cutaway views of the mesh
+after certain time steps.
+The number of elements increases from one million to two
+million from start to finish.
+
+Table \ref{tab:twin_rotor_times} shows the runtime performance across
+different hardware.
+We first run on an Intel Xeon processor typical of current servers
+and clusters.
+Then, we run the same case on two pieces of hardware found on
+current supercomputers: the Intel Knights Landing CPU
+and the NVidia Tesla K80 GPU.
+Finally, we also run on a more consumer-market GPU,
+the NVidia GTX 980 Ti.
+Unlike CPUs, GPUs do not offer clear controls for using a subset
+of threads, so it is typical to simply show GPU speedup versus
+serial (in this case, 7X for the GTX 980 Ti) as opposed to some
+kind of scaling on the GPU.
+The Xeon 2620 has 8 cores and the Knights Landing CPU has
+64 cores, and we see decent scaling until the number
+of OpenMP threads equals the number of cores, on both CPUs.
+
 %%% Local Variables:
 %%% mode: latex
 %%% TeX-master: t
