@@ -13,6 +13,13 @@ D. A. Ibanez, E. S. Seol, C. W. Smith, and M. S. Shephard,
 \textit{ACM Trans. Math. Softw.},
 vol. 42, no. 3, pp. 17:1–17:28, May 2016.
 }
+\blfootnote{
+Portions of this chapter previously appeared as:
+D. Ibanez, I. Dunn, and M. S. Shephard,
+``Hybrid mpi-thread parallelization of adaptive mesh operations,"
+\textit{Parallel Comput.},
+vol. 52, pp. 133 – 143, 2016.
+}
 
 \section{Defining Scalability}
 \label{sec:scalable}
@@ -438,8 +445,6 @@ These capabilities support PUMI's overall hybrid MPI+thread operation.
 \subsection{Messaging Primitives in PCU}
 \label{sec:pcu_p2p}
 
-{\bf attribution to the PCU paper.}
-
 The main unusual design choice of PCU compared to
 other hybrid programming systems is
 its focus on inter-thread message passing.
@@ -509,8 +514,6 @@ blocking receive $M$ into $b$\;
 
 \subsection{Simple Collectives in PCU}
 \label{sec:pcu_coll}
-
-{\bf attribution to the PCU paper.}
 
 Collective operations are a necessary staple of
 distributed-memory high-performance computing.
