@@ -5,6 +5,13 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \chapter{SCALABLE PARALLEL MESH ADAPTATION}
+\let\thefootnote\relax\footnotetext{
+Portions of this chapter previously appeared as:
+D. A. Ibanez, E. S. Seol, C. W. Smith, and M. S. Shephard,
+``Pumi: Parallel unstructured mesh infrastructure,"
+\textit{ACM Trans. Math. Softw.},
+vol. 42, no. 3, pp. 17:1–17:28, May 2016.
+}
 \label{chap:parallel}
 
 \section{Defining Scalability}
@@ -391,8 +398,6 @@ explicit messages amongst threads.
 
 \section{PCU: Scalable Inter-Thread Communication}
 \label{sec:pcu}
-
-{\bf attribution to the TOMS paper.}
 
 PCU is a library that provides a parallel programming model including
 parallel control functions.
@@ -909,7 +914,7 @@ involves careful duplication of mesh entities into ``copies"
 in different memory spaces, and establishing the needed
 links between copies of the same entity.
 Creation of a partitioned mesh is handled by a procedure
-called ``migration" \cite{ibanez2015pumi}.
+called ``migration" \cite{ibanez2016pumi}.
 It accepts as input a partitioned mesh (the input partitioning
 may be such that the entire mesh is in a single partition),
 and outputs a new partitioned mesh based on an input description
