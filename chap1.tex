@@ -5,6 +5,13 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \chapter{INTRODUCTION AND BACKGROUND}
+\let\thefootnote\relax\footnotetext{
+Portions of this chapter submitted as:
+D. Ibanez and M. Shephard,
+``Modifiable Array Data Structures for Mesh Topology,"
+in \textit{SIAM J. Scientific Comput.},
+under review.
+}
 \label{chap:intro}
 
 \section{Introduction}
@@ -104,7 +111,6 @@ here in order to solve a variety of engineering problems.
 \section{Nomenclature}
 
 {\bf TO BE EXPANDED, once most content is in place}
-{\bf Part of the nomenclature is attributed to SISC}
 
 \begin{tabular}{l|l}
 Topological Complex & A breakdown of a domain in Cartesian space into
@@ -128,8 +134,6 @@ Next we go on to specify the type of meshes we
 are dealing with (Section \ref{sec:def_fem}),
 and the unique way in which they are being modified,
 i.e. mesh \emph{adaptation} (Section \ref{sec:def_adapt}).
-
-{\bf All definitions before hardware are from SISC}
 
 \subsection{Topological Complex}
 \label{sec:def_complex}
@@ -309,10 +313,8 @@ otherwise shape quality and numerical conditioning will degrade.
 Therefore, in such meshes, all upward adjacencies are bound
 by a constant.
 Any operation whose runtime is proportional to the
-number of upward adjacencies can be treated as a constant-time operation.
-
-{\bf consider including a more detailed proof of constant upward
-adjacency degree, which I already have written somewhere}
+number of upward adjacencies can be treated as a constant-time operation
+(see Appendix \ref{app:vert_up_deg} for a proof of this bound).
 
 Finally, if there are multiple polytope types per dimension,
 such as having both triangles and quadrilaterals in 2D, then
