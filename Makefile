@@ -43,7 +43,7 @@ scorec-refs/scorec-refs.bib
 SRCS = \
 $(MAIN) \
 title.tex \
-rpiabs.tex \
+abs.tex \
 ack.tex \
 rpibib.tex \
 chap1.tex \

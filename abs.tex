@@ -1,0 +1,43 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                                                                 %
+%                            ABSTRACT                             %
+%                                                                 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\specialhead{ABSTRACT}
+
+Mesh adaptation is a technique which dynamically modifies the
+mesh being used to approximately solve a Partial Differential
+Equation (PDE) in order to improve aspects of the approximate solution
+including the computer time and memory used to compute it
+as well as its level of accuracy.
+Even with the use of mesh adaptation, computing ever more accurate
+PDE solutions requires significant computer time and memory,
+motivating the use of supercomputers, which are constructed as
+networks of cooperating computational hardware.
+Trends in the computer hardware industry at large are introducing
+heterogeneous designs for current leadership-class supercomputers,
+which is both an opportunity and a challenge for programs
+aiming to make use of these machines.
+
+This thesis presents implementations of mesh adaptation
+which are designed with memory efficient cache-friendly
+data structures and algorithms which can effectively leverage
+both distributed memory parallelism and shared memory
+parallelism (including GPUs).
+The data structures used in these implementations are widely
+applicable other tasks involving meshes, and the programming
+paradigms introduced are general enough to be of use in most
+programs targeting leadership-class supercomputers.
+The implementations presented are being used by
+several simulation codes in production, and are available
+as open-source tools so they may continue providing value
+to the scientific community.
+
+Several improvements to the design of mesh adaptation programs
+are presented, including solution transfer methods which
+preserve mass and momentum, methods for the maintenance of
+high-quality elements, scalable and deterministic methods
+for hybrid parallelization of mesh modification operations,
+and a combination of modification operators which reduce
+implementation complexity without sacrificing effectiveness.
