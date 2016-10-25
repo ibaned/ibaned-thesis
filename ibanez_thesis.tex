@@ -53,6 +53,14 @@
 %Dan: this macro undoes the italics that are the default
 %for conditions in algorithm2e
 \newcommand{\algt}{\mdseries \rmfamily \upshape}
+% ------------------------
+% You MUST attribute any previously published work (even if it's your own writing)
+% Attribution of previously published work
+% Use the after title and before the first sentence of the chapter
+% Example: \blfootnote{This work perviously appeared as: \bibentry{mypaper2015}
+\makeatletter
+\def\blfootnote{\xdef\@thefnmark{}\@footnotetext}
+\makeatother
 
 \begin{document}
 
