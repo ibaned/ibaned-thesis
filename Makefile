@@ -58,7 +58,7 @@ $(BIBS)
 
 $(MAIN_BASE).pdf: $(SRCS)
 	pdflatex $(MAIN)
-	bibtex $(MAIN_BASE)
+	bibtex -min-crossrefs=100 $(MAIN_BASE)
 	pdflatex $(MAIN)
 	pdflatex $(MAIN)
 
