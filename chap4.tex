@@ -971,8 +971,8 @@ amongst copies is required to form a complete graph).
 
 Algorithm \ref{alg:new_links} combines the full-mesh rebuild approach
 from Omega\_h with the readability of PUMI-style communications to
-present an understandable implementation of new entity and link creation,
-with a single conditional controlling whether complete or owner-based
+present an understandable implementation of new entity and link creation.
+A single conditional controls whether complete or owner-based
 links are used.
 The actual differences between Algorithm \ref{alg:new_links} and the
 actual C++ code are minor, for example PUMI only creates new copies
@@ -1031,11 +1031,11 @@ Their identities are transmitted back to the old owners, who then
 selects a new owner amongst the new copies and transmits that single
 identity back to all new copies (step $5$ of Figure \ref{fig:push_down}).
 Note that all three of these
-communications are carried out by a single \texttt{Dist}).
+communications are carried out by a single \texttt{Dist}.
 
 \begin{figure}[t]\vspace*{4pt}
 \centerline{\includegraphics[width=0.98\textwidth]{push_down.png}}
-\caption{Omega\_h migration steps for one dimension (reduced)}\vspace*{-6pt}
+\caption{Omega\_h migration steps for vertices based on triangles}\vspace*{-6pt}
 \label{fig:push_down}
 \end{figure}
 
@@ -1078,18 +1078,6 @@ formed in step $3$ of Figure \ref{fig:push_down}, and
 mentioned in Section \ref{sec:migr_links}.
 Repeating these steps in order of decreasing dimension, Omega\_h
 can carry out a full migration.
-
-\subsection{Transfer Associated Data}
-
-Associated data in this case means classification, field data,
-and other data such as marks (booleans describing whether or not
-an entity is in a certain set).
-The process of transferring these during migration is relatively
-straightforward.
-In PUMI, all such data is appended to the small message used
-to construct a new copy.
-Omega\_h, reuses the \texttt{Dist} described in Section \ref{sec:migr_links}
-to transfer each data array from the old owners to the new copies.
 
 \section{Ghosting}
 \label{sec:ghost}
@@ -1678,7 +1666,7 @@ stirred.
 \centerline{
 \begin{tabular}{l|r|r|r|r|r| r| r| r}
  & \multicolumn{7}{c}{number of OpenMP threads} \\
-Hardware              & N/A &    1 &   2 &   4 &   8 & 16 & 32 & 64 \\\hline
+Hardware              & GPU &    1 &   2 &   4 &   8 & 16 & 32 & 64 \\\hline
 Intel Xeon 2620 v4    &     &  203 & 115 &  76 &  55 &    &    &    \\
 Intel Knights Landing &     & 1196 & 598 & 299 & 153 & 79 & 42 & 24 \\
 NVidia K80            &  35 &      &     &     &     &    &    &    \\
@@ -1696,10 +1684,14 @@ at mesh nodes.
 mesh nodes by solving Laplace's equation using the
 objects and domain boundary as Dirichlet conditions.
 \item The mesh is moved according to the velocity field
-and stops right before any element goes below 20\% mean ratio quality. 
+and stops right before any element goes below 20\% mean ratio quality.
+Using a lower threshold here causes quality repair to take much longer
+or fail.
 \item Mesh adaptation is applied to the deformed mesh to
 recover edge lengths and ensure all elements are above 30\%
 mean ratio quality.
+Our shape correction algorithms can have difficulties bringing
+all elements above a higher threshold than this.
 Mesh adaptation will rebuild the mesh about ten times when applied.
 \item Steps 2 to 4 are repeated for any remaining motion
 that would previously have inverted elements.
@@ -1710,7 +1702,7 @@ using Gmsh \cite{geuzaine2009gmsh} with optimization by Netgen
 to remove sliver elements.
 All subsequent motion and adaptation is handled by our code.
 Figure \ref{fig:twin_rotor} shows cutaway views of the mesh
-after certain time steps.
+after time steps 2, 8, and 14 out of 16.
 The number of elements increases from one million to two
 million from start to finish.
 
