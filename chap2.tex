@@ -895,13 +895,13 @@ Typically, mesh operations access multiple arrays but are based on
 the natural ordering of a single array.
 For example, a traversal based on elements may access the vertices
 of each element.
-Recall from Section \ref{sec:ref_comp} that the key to achieving decent
-performance on most cache architectures is to access data in the order
-it is stored.
+Recall from Section \ref{sec:ref_comp} that accessing data in the order
+it is stored is key to achieving
+performance on most cache architectures.
 Thus, we would like to establish orderings of each group (e.g. the elements)
 such that accesses to other groups (e.g. the vertices) are made
 in an approximately linear fashion.
-Since these accesses are based on directly adjacency, what we aim to do
+Since these accesses are based on adjacency, what we aim to do
 is order each group such that locality in the mesh (defined by graph distances)
 is well correlated to locality in the array (defined by indices).
 We further simplify the problem by focusing on ordering the vertices,
@@ -910,7 +910,7 @@ vertices and the vertex ordering.
 
 We interpret the mesh vertices as graph nodes and the mesh edges
 as graph edges, which enables us to use the linear arrangement
-measure from graph theory as our metric of locality:
+measure from graph theory \cite{garey1976some} as our metric of locality:
 
 \begin{equation}\label{eq:la}
 \text{la}(G=(V,E)) = \sum_{(i,j)\in E} |i-j|
@@ -950,7 +950,8 @@ a form of simulated annealing in which local modifications are made
 to the ordering that locally improve the metric \cite{petit2003experiments}.
 However, for our purposes of cache locality it is not worth
 spending a large amount of computational power to obtain a slightly
-better ordering.
+better ordering, so we limit ourselves to BFS-like algorithms and space filling
+curve algorithms, and we do not consider simulated annealing.
 
 Table \ref{tab:la} shows the values of Equation \ref{eq:la} using
 several of these methods on three different meshes:
@@ -996,8 +997,8 @@ adaptation operations on different hardware.
 Table \ref{tab:reorder-speed} shows the speedup in Omega\_h adaptation
 (see Section \ref{sec:omega_h-adapt}) when a reordering is carried out
 prior to each adaptation call.
-Note that even though this reordering was not parallelized, there
-was never a decrease in performance, and in the most extreme case
+Note that even though this reordering was not shared-memory parallel,
+there was never a decrease in performance, and in the most extreme case
 reordering made a 26-30\% difference.
 This result suggests that reordering is quite beneficial and should
 be incorporated into array-based adaptation workflows.
@@ -1022,8 +1023,8 @@ Intel i7 8 threads    &  5\% & 10\% \\
 \end{center}
 \end{table}
 
-Despite non-parallel BFS reordering being adequate, we would prefer
-a reordering method that scales with parallelism.
+Despite non-parallel BFS reordering being adequate, we prefer
+a reordering method that takes advantage of shared-memory parallelism.
 The current Omega\_h code implements a Hilbert curve method (HSFC).
 The Hilbert curve is a numbering of the cubes of a regular cubic grid.
 Since our vertex coordinates are in a floating-point format with
