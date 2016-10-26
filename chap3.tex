@@ -1183,16 +1183,45 @@ that transfer algorithms need only consider this local problem
 as opposed to dealing with general mesh-to-mesh searches and
 global, typically expensive and/or unsatisfactory field fitting operations.
 
-{\bf TODO: more background on mesh-to-mesh methods}
+We are usually dealing with an input sub-mesh which has a field defined
+over it and an output sub-mesh over which we need to define a new
+field.
+The sub-meshes may be meshes of the entire domain or they may
+be local cavities.
 
 \subsection{Conserving Integral Quantities}
 
-{\bf TODO: more background on integral quantity conservation}
+Integral conservation is a special property that may be required of
+solution transfer algorithms.
+There are often infinitely many solutions which preserve the
+integral of some quantity over some portion of the mesh, and
+transfer algorithms differ in how well they preserve the variation
+of the solution field over space.
+In the context of conservative algorithms we use the terms
+``donor" and ``target" to denote the input and output sub-meshes,
+respectively.
+Jiao and Heath develop a conservative method which minimizes
+the Sobolev error between the input and transferred fields
+by taking intersections of donor and target elements and
+solving a linear system based on a weighted residual formulation
+over these intersected elements which form a ``common refinement" mesh
+\cite{jiao2004common}.
+Farrell and Maddison apply a similar method (in which they refer
+to the element intersections as the ``supermesh") with a focus
+on transferring quantities to support mesh adaptation \cite{farrell2009conservative}.
+Theirs can still be considered a full mesh-to-mesh method, which
+they apply to the meshes before and after adaptation.
+Alauzet develops methods very similar to what we present in this
+section in their handling of $C^{-1}$
+piecewise constants and $C^0$ piecewise linear functions as well
+as starting to account for different domains \cite{alauzet2016parallel}.
+Surprisingly, Alauzet still applies this as a full mesh-to-mesh transfer
+despite building on a cavity-based mesh adaptation code.
 
-In order to develop the adaptive Lagrangian hydrodynamics application Alexa
-using Omega\_h (see Section \ref{sec:alexa}), we need transfer algorithms
-which conserve certain integral quantities.
-In particular, our two goals are:
+We need conservative transfer in our work to develop the
+adaptive Lagrangian hydrodynamics application Alexa
+using Omega\_h (see Section \ref{sec:alexa}).
+In particular, our two goals to support Alexa are:
 \begin{enumerate}
 \item Conserve the mass of each physical object in the simulation.
 An object may be a fluid body or a solid mass.
@@ -1207,9 +1236,6 @@ This algorithm is described in Section \ref{sec:conserve_momentum}.
 In both these cases, the additional goal beyond conservation is
 the preservation of the variation or distribution of these fields,
 as much as possible within the bounds of conservation.
-In the context of these algorithms it is useful to define the terms
-``donor" and ``target", which indicate the state of the cavity before
-and after the mesh is modified, respectively.
 
 \subsubsection{Element-Centered Mass-Like Quantities}
 \label{sec:conserve_mass}
