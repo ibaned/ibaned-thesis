@@ -844,8 +844,9 @@ Similarly, when aiming to satisfy an anisotropic metric tensor
 field, it may be that the elements of a initial mesh have arbitrary low
 (though not negative) quality when measured in the desired metric space.
 
-Omega\_h implements similar approaches in order to maintain good element
-quality throughout adaptation in both of these cases.
+Omega\_h implements two methods (which are similar to one another)
+in order to maintain good element
+quality throughout adaptation in each of these respective cases.
 The idea is to establish an initial field which is known to be
 compatible with the initial mesh in terms of element quality,
 and then to use an interpolation method to gradually travel
@@ -863,9 +864,9 @@ allowed quality during adaptivity, see Section \ref{sec:osh}.
 After each step, mesh adaptation is used to improve element
 qualities which enables a subsequent step.
 
-In the case of displacements, the initial displacement field
-is all zero vectors at the vertices.
-Linear interpolation between this and the desired displacement
+In the case of large displacement problems, the initial displacement field
+is zero for all the vertices.
+Linear interpolation between this and the solved-for large displacement
 equates to linear motion in space of the vertices.
 The mesh is deformed until qualities reach a limit, after which
 point adaptation is used to correct low quality elements.
