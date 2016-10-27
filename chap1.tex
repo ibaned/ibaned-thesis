@@ -998,7 +998,7 @@ part of this thesis.
 The Parallel Unstructured Mesh Infrastructure (PUMI) is a software package
 containing several libraries which together provide all the tooling
 necessary to store, query, and adapt partitioned meshes with
-simulation fields attached.
+simulation fields attached \cite{pumi_github}.
 PUMI's design is based on locally serial software threads which
 cooperate with one another using message passing, assuming
 there is no sharing of memory.
@@ -1054,7 +1054,8 @@ in detail in Sections \ref{sec:ma_methods} as well as Section
 \subsection{Omega\_h}
 
 Omega\_h is a single C++ library which was designed from the beginning
-with the restrictions and potential of GPU programming in mind.
+with the restrictions and potential of GPU programming in mind
+\cite{osh_github}.
 It aims to provide as much of the core functionality of PUMI as
 is feasible in a portably performant way, which currently
 amounts to adapting triangle and tetrahedral meshes using anisotropic
