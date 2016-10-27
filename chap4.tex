@@ -577,8 +577,10 @@ developed in Section \ref{sec:pcu_p2p}.
 Although the simplicity of collectives would allow blocking primitives
 to be used, using non-blocking primitives gives us a great benefit:
 we obtain a non-blocking collective operation.
-Such operations have been implemented before \cite{hoefler2007implementation}
-and subsequently proposed for the latest MPI standard \cite{hoefler2006non}.
+Such operations were implemented by Hoefler and Lumsdaine outside MPI
+\cite{hoefler2007implementation}
+and their subsequent proposal to make them part of the MPI standard
+\cite{hoefler2007case} was accepted.
 Our work implements hybrid threaded versions of such collectives.
 
 Users of this system initiate a collective operation, and can interleave
