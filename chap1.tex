@@ -110,18 +110,30 @@ here in order to solve a variety of engineering problems.
 
 \section{Nomenclature}
 
-{\bf TO BE EXPANDED, once most content is in place}
-
 \begin{tabular}{l|l}
-Topological Complex & A breakdown of a domain in Cartesian space into
-topological entities \\
-Mesh & A topological complex whose entities have simple shape \\
+Topological Complex & A breakdown of a domain \\
+ & in Cartesian space into topological entities \\
+Mesh & A topological complex whose entities \\
+ & have simple shape \\
 Entity & A topological entity of a mesh \\
 Vertex & A 0-dimensional entity \\
 Edge & A 1-dimensional entity \\
 Face & A 2-dimensional entity \\
 Region & A 3-dimensional entity \\
 Element & An entity not bounding another entity \\
+(Hardware) Node & A computer having a single \\
+ & hardware memory space, cooperating with \\
+ & others via a network to form a supercomputer \\
+Core & A CPU core or a GPU hardware thread \\
+ & (the smallest unit of hardware parallelism) \\
+Process & An operating system process \\
+ & (has a software memory space, \\
+ & contains one or more threads) \\
+Thread & An operating system thread or a CUDA \\
+ & thread (the smallest unit of software parallelism) \\
+(MPI) rank & One of several operating system \\
+ & processes cooperating using MPI \\
+to execute a parallel program \\
 \end{tabular}
 
 \section{Mesh Definitions}
