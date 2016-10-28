@@ -1186,14 +1186,15 @@ global, typically expensive and/or unsatisfactory field fitting operations.
 We are usually dealing with an input sub-mesh which has a field defined
 over it and an output sub-mesh over which we need to define a new
 field.
-The sub-meshes may be meshes of the entire domain or they may
-be local cavities.
+While other researchers may have sub-meshes equal to the entire mesh,
+in our case these sub-meshes are always those associated with
+a local cavity before and after a mesh modification operation.
 
 \subsection{Conserving Integral Quantities}
 
-Integral conservation is a special property that may be required of
+Integral conservation of specific fields may be required of
 solution transfer algorithms.
-There are often infinitely many solutions which preserve the
+There are typically infinitely many solutions which preserve the
 integral of some quantity over some portion of the mesh, and
 transfer algorithms differ in how well they preserve the variation
 of the solution field over space.
