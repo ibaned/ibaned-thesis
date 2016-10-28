@@ -22,15 +22,20 @@ its accessible indices to another index space.
 This describes a bipartite graph (from set $A$ to set $B$) in which all graph nodes
 in set $A$ have degree 1, while nodes in set $B$ may
 have degrees greater than one.
+
 Nodes in the second set are also assumed to have degrees
 which are bound by a small constant.
 These degrees correspond to upward adjacency degrees in mesh
 applications, the upward adjacency with the highest average degree is 36
 triangles adjacent to a vertex in 3D, and the maximum degree in that
 graph may be over twice as much, so 100 is a reasonable upper bound.
+Although certain meshes for complex simulations have exhibited upward degrees
+of 300 or more, those cases also exhibit serious problems with adaptation
+and simulation accuracy near the high-degree entity.
 Although this algorithm can handle nodes in set $B$ having zero degree,
 this would only occur in mesh applications when there are ``dangling"
 low-dimensional entities without upward adjacent higher-dimensional entities.
+
 The goal for this algorithm is to construct the graph from the set $B$ to the set $A$,
 $f^{-1}:B\to \mathcal{P}(A)$, where $\mathcal{P}(A)$ is the power set of $A$.
 
