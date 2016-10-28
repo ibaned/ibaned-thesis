@@ -137,6 +137,37 @@ Thread & An operating system thread \\
  & to execute a parallel program \\
 \end{tabular}
 
+\section{Notation}
+
+\begin{tabular}{l|l}
+$\Omega$ & a subset of Cartesian space (a domain) \\
+$T^d$ & the subset of $d$-dimensional entities in a topological complex $T$ \\
+$T^d_i$ & the $i$-th entity in $T^d$ \\
+$\partial e$ & the set of lower-dimensional entities adjacent \\
+ & to entity $e$, called its boundary \\
+$\partial S$ & for a set of entities $S$, $\partial S = \bigcup_{e\in S} \partial e$ \\
+$\bar{S}$ & for a set of entities $S$, $\bar{S} = S \cup \partial S$ \\
+$a \subseteq \partial b$ & entity $a$ is a subset of entity $b$'s boundary, \\
+ & meaning $a$ is adjacent to $b$ \\
+$a\{T^q\}$ & the set of entities in $T^q$ adjacent to entity $a$ \\
+$S\{T^q\}$ & for a set of entities $S$, $S\{T^q\} = \bigcup_{e\in S} e\{T^q\}$ \\
+$\mathcal{M}$ & the (symmetric positive-definite) mesh metric tensor \\
+$h$ & the desired length of mesh edges (isotropic size) \\
+$\text{diag}(a,b,c)$ & a diagonal matrix $A\in\mathbb{R}^{3\times 3}$ with
+   $A_{11}=a,A_{22}=b,A_{33}=c$ \\
+$l_e$ & the length of edge $e$ in real space \\
+$\tilde{l}_e$ & the length of edge $e$ in metric space \\
+$V_K$ & the volume of tetrahedron $K$ in real space \\
+$\tilde{V}_K$ & the volume of tetrahedron $K$ in metric space \\
+$l_{K,\text{RMS}}$ & the root-mean-squared edge length of tetrahedron $K$ \\
+$\eta_K$ & the mean ratio quality of simplex $K$ \\ \hline
+$P$ & the number of processes in an MPI job \\
+$T$ & the number of threads per process \\ \hline
+$\rho$ & density \\
+$v$ & velocity \\
+$\mathbf{p}$ & momentum \\
+\end{tabular}
+
 \section{Mesh Definitions}
 
 We define here the basic concept of a \emph{mesh}
