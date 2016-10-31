@@ -35,7 +35,9 @@ albany1.png \
 albany2.png \
 def_topo.png \
 zoo.png \
-solid_angle.png
+solid_angle.png \
+scale_7k.png \
+scale_112k.png
 
 BIBS = \
 scorec-refs/scorec-refs.bib

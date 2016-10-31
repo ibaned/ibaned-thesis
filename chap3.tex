@@ -1591,6 +1591,63 @@ length & \#edges \\ \hline
 \end{center}
 \end{table}
 
+\subsection{Size Field Scaling Test}
+\label{sec:scale_test}
+
+In order to demonstrate the implied size field
+formula described in Section \ref{sec:ident_size} and the
+size field scaling to target a given element count
+described in Section \ref{sec:elem_count}, we use
+a series of mesh adaptations to increase the element
+count of a mesh by a factor of $2$ at each adaptation.
+Note that uniform template refinement, which involves
+marking all edges for refinement and using the corresponding
+template described in Section \ref{sec:ma_refine}, increases
+element count by a factor of $8$ in 3D, so for a factor $2$
+increase we need general non-uniform refinement.
+
+\begin{figure}
+\begin{center}
+\includegraphics[width=0.3\textwidth]{scale_7k.png}
+\includegraphics[width=0.3\textwidth]{scale_112k.png}
+\caption{
+Meshes before and after size field scaling}
+\label{fig:scale}
+\end{center}
+\end{figure}
+
+We begin with graded mesh as shown in Figure \ref{fig:scale}(left),
+taken from our circuit simulation work described in Section \ref{sec:albany}.
+We compute its implied isotropic size, scale this size field such
+that a mesh conforming to the scaled size field would have
+approximately twice the elements, and adapt to the scaled size
+field.
+We repeat this procedure $4$ times, going from 7K elements to 112K elements,
+with the final mesh shown in Figure \ref{fig:scale}(right).
+Table \ref{tab:scale} shows the desired and actual element
+counts at each step when this procedure is carried out
+using Omega\_h.
+We do expect the actual element count to be less than desired
+due to the thresholds used to decide when to refine edges.
+Also as expected in serial, adaptation time is directly
+proportional to element count (given that this workflow
+does approximately equal work per element).
+
+\begin{table}
+\caption{Element counts and adapt times for size field scaling}
+\label{tab:scale}
+\begin{center}
+\begin{tabular}{l|l|l}
+desired elements & actual elements & seconds to adapt \\ \hline
+7000   & 6912  & 0.19 \\
+14000  & 13079 & 0.50 \\
+28000  & 26255 & 0.96 \\
+56000  & 50441 & 1.62 \\
+112000 & 99320 & 3.07 \\
+\end{tabular}
+\end{center}
+\end{table}
+
 %%% Local Variables:
 %%% mode: latex
 %%% TeX-master: t
