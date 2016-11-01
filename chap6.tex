@@ -8,6 +8,29 @@
 
 \section{Conclusions}
 
+We presented two implementations of general, conformal,
+cavity-based mesh adaptation with a focus on high-performance
+execution on heterogeneous supercomputers.
+Two techniques for supporting mesh adaptation using array-based
+data structures are presented, one of which uses rapidly modifiable
+arrays and the second uses batched independent sets of modifications
+to static arrays.
+Highly scalable techniques for the parallelization of mesh adaptation are
+developed, including the implementation of irregular sparse
+communications using MPI, as well as the efficient interaction of
+MPI with shared-memory array parallelism.
+One of the implementations of mesh adaptation presented is capable of carrying out
+general mesh adaptation in the context of the restricted programming
+model required to execute on GPUs, and effectively takes advantage
+of GPU parallelism.
+Some exploration of mesh adaptation operators and their scheduling
+is carried out, and the trade-offs of different approaches are
+demonstrated.
+Finally, the use of both implementations of mesh adaptation was demonstrated
+by integrating them into the workflows of
+several scientific simulation codes in use by the U.S. Army Corps of Engineers,
+Sandia National Laboratories, Boeing, and others.
+
 \section{Future Work}
 
 \subsection{Convergence of PUMI and Omega\_h}
