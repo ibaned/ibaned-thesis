@@ -1634,6 +1634,187 @@ fully independent results for the overall adaptation algorithm.
 
 \section{Parallel Adaptation Performance}
 
+\subsection{Generating Large Meshes}
+
+\subsubsection{MeshAdapt Uniform Refinement}
+\label{sec:ma_scale}
+
+In order to test the capability of the hybrid MPI-thread system, PCU,
+and the overall PUMI system supporting MeshAdapt,
+a 1.6 billion element mesh is created using up to 16K cores of an
+IBM Blue Gene/Q.
+
+Mesh generation begins with a 4-part, 400K element tetrahedral
+mesh and proceeds so as to maintain a part density of 100K elements
+per part.
+Each up-scaling repartitioning uses uniform mesh refinement
+(see Section \ref{sec:ma_refine}), which
+multiplies element counts and part counts by a factor of $8$.
+At each step, we start with $2$ processes per node
+and then create $8$ threads per process, repartition the mesh
+among those threads with the help of migration (see Section \ref{sec:migr}),
+and then apply uniform refinement using those threads.
+The Blue Gene/Q has $16$ cores per node, which is why we choose $2$
+processes per node so that the total threads per node equals the
+number of cores per node.
+At the end of each step, files are written out from each of the
+threads, which will be read in by the initial processes of the
+next step, where the next step allocates $8$ times more nodes
+than the current step.
+
+\begin{figure}[!ht]
+\begin{center}
+\caption{Times for hybrid MeshAdapt uniform refinement}
+\label{fig:pcu_scale}
+\includegraphics[width=0.7\textwidth]{pcu_scaling.png}
+\end{center}
+\end{figure}
+
+Figure \ref{fig:pcu_scale} shows the time consumed by each step of the
+PCU-supported MeshAdapt workflow as the number of parts is increased from 4 to
+16K.
+The final step converts 2K parts into 16K parts.
+In this workflow, both migration and mesh file writing are being
+done using 8 threads per process.
+By comparison, file reading is done by the initial processes
+without multi-threading,
+and the times are very comparable even though each process
+is writing 8 times more data, so thread parallelism is achieved
+(the sizes of files are constant, so the times to read and write
+a single file should be similar).
+Migration shows an increase in runtime as part count is
+increased, which can be correlated with Figure \ref{fig:neighbor}, which
+shows how the number of neighbors of a mesh partition
+are increasing at the same rate as the migration runtime,
+both of which grow logarithmically with the number of elements and partitions.
+Recall that the exchange algorithm described in Section \ref{sec:exch}
+and migration in general have runtimes proportional to the number
+of neighbors.
+
+\begin{figure}[!ht]
+\begin{center}
+\caption{Neighborhood increase during MeshAdapt uniform refinement}
+\label{fig:neighbor}
+\includegraphics[width=0.6\textwidth]{pcu_neighbor.png}
+\end{center}
+\end{figure}
+
+After generating this mesh, we study the overhead of threading with
+a simple workflow.
+Beginning with $P$ processes and $T$ threads per process
+such that $NT$ always equals 16K, we read the 16K-part,
+1.6 billion element mesh.
+In terms of hardware, we are using 16K cores of the Blue Gene/Q,
+which is 1024 nodes or one full rack.
+Then every thread migrates 10K elements to one of its
+neighbors.
+The resulting mesh is then written out.
+All operations are done in the hybrid mode, and the
+number of threads per process $T$ is varied.
+In all cases, the ideal outcome is that runtime
+remains the same.
+
+\begin{figure}[!ht]
+\begin{center}
+\caption{Hybrid File IO performance}
+\label{fig:pcu_fileio}
+\includegraphics[width=0.6\textwidth]{pcu_fileio.png}
+\end{center}
+\end{figure}
+
+Figure \ref{fig:pcu_fileio} shows the times for hybrid file IO.
+File IO is more prone to fluctuation because the filesystem
+and associated networks are shared by all users of the supercomputer.
+Despite this, we see file IO performance remains
+fairly constant as we move from process-only to hybrid operation.
+
+\begin{figure}[!ht]
+\begin{center}
+\caption{Hybrid migration performance}
+\label{fig:pcu_migrate}
+\includegraphics[width=0.6\textwidth]{pcu_migrate.png}
+\end{center}
+\end{figure}
+
+Figure \ref{fig:pcu_migrate} shows migration time over threads per process.
+Since the ideal result is constant, we see a logarithmic overhead
+in this part of the workflow.
+
+\subsubsection{Omega\_h Parallel Size Field Scaling}
+\label{sec:osh_scale}
+
+In order to carry out a study similar to the one in Section \ref{sec:ma_scale}
+using Omega\_h instead of MeshAdapt, we choose to use general mesh
+adaptation with a scaled size field because Omega\_h does not use refinement
+templates, including the uniform refinement template.
+We therefore parallelize the size field scaling workflow from
+Section \ref{sec:scale_test}.
+Our initial geometry, as illustrated by Figure \ref{fig:osh_scale}, is
+a $4\times 4$ array of the solder ball geometry used in Section \ref{sec:scale_test}.
+The initial mesh contains 80K elements.
+At each step $i$, two programs are run.
+The first program uses $P=2^i$ processes to read a mesh of $2^{i-1}$
+parts and use global Recursive Inertial Bisection to repartition it
+into $2^i$ parts.
+The second program uses $P=2^i$ processes to compute the implied
+isotropic size field, scale it with the goal of obtaining
+$(80\cdot 10^3 \cdot 2^i)$ elements, and run mesh adaptation.
+At all times we use $\lceil 2^i / 16 \rceil$ nodes such that there are
+at most $16$ processes in a node.
+Note that because we use size field scaling, we can multiply
+by a factor of $2$ at each step, whereas uniform refinement
+is limited to a factor of exactly $8$, which can be too coarse
+a mechanism for achieving a desired element count.
+
+\begin{figure}[t]\vspace*{4pt}
+\centerline{
+\includegraphics[width=0.45\textwidth]{sb_160k.png}
+\includegraphics[width=0.45\textwidth]{sb_20480k_part40.png}
+}
+\caption{(left) the $4\times 4$ solder ball mesh with 160K elements,
+(right) one of 256 partitions of the mesh with 20M elements}
+\label{fig:osh_scale}
+\end{figure}
+
+Table \ref{tab:osh_scale} shows several performance metrics collected
+during this study.
+The correlation between actual and target element counts is consistent
+with the behavior described in Section \ref{sec:scale_test}.
+Both repartitioning and adaptation times show good scalability,
+growing roughly logarithmically with the number of elements and parts.
+Note that here we are exercising all components
+of adaptation described in Section \ref{sec:omega_h-adapt}, not just
+refinement.
+These components are all parallelized using the methods described
+in Sections \ref{sec:indset}, \ref{sec:indset_select}, and
+\ref{sec:indset_ghost}, and all of them scale well in this study.
+Memory usage per part shows a similar pattern of scalability.
+
+\begin{table}
+\caption{Performance metrics of Omega\_h parallel scaling}
+\label{tab:osh_scale}
+\begin{center}
+\begin{tabular}{r|r|r|r|r}
+target elements & actual elements & repart. time & adapt time &
+memory used \\
+(thousands)     & (thousands)     & (seconds)    & (seconds)  &
+(MB per part) \\\hline
+      160 &     160 & 4.52 & 398 & 149 \\
+      320 &     283 & 6.46 & 362 & 125 \\
+      640 &     566 & 6.26 & 409 & 133 \\
+     1280 &    1146 & 6.18 & 370 & 119 \\
+     2560 &    2340 & 8.13 & 385 & 117 \\
+     5120 &    4615 & 8.78 & 482 & 131 \\
+    10240 &    9320 & 10.5 & 422 & 110 \\
+    20480 &   18784 & 10.8 & 525 & 129 \\
+    40960 &   37273 & 16.8 & 544 & 138 \\
+    81920 &   74847 & 22.1 & 607 & 148 \\
+   163840 &  150338 & 34.1 & 660 & 157 \\
+   327680 &  299090 & 46.8 & 677 & 159 \\
+\end{tabular}
+\end{center}
+\end{table}
+
 \subsection{Moving Objects on Shared Memory Devices}
 
 In this test case, we focus on the potential for mesh adaptation to support simulations
