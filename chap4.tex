@@ -1702,7 +1702,7 @@ of neighbors.
 After generating this mesh, we study the overhead of threading with
 a simple workflow.
 Beginning with $P$ processes and $T$ threads per process
-such that $NT$ always equals 16K, we read the 16K-part,
+such that $(P\cdot T)$ always equals 16K, we read the 16K-part,
 1.6 billion element mesh.
 In terms of hardware, we are using 16K cores of the Blue Gene/Q,
 which is 1024 nodes or one full rack.
@@ -1781,10 +1781,16 @@ during this study.
 The correlation between actual and target element counts is consistent
 with the behavior described in Section \ref{sec:scale_test}.
 Both repartitioning and adaptation times show good scalability,
-growing roughly logarithmically with the number of elements and parts.
+growing roughly logarithmically with the number of elements and parts,
+with the notable exception of the jump in repartitioning time
+to reach 8K parts.
 Note that here we are exercising all components
 of adaptation described in Section \ref{sec:omega_h-adapt}, not just
 refinement.
+Even collapses are exercised, as the edge length loop in
+Section \ref{sec:osh} will carry out many collapses of short
+edges created during refinement (e.g. splitting the long edge
+of an obtuse triangle creates a very short edge).
 These components are all parallelized using the methods described
 in Sections \ref{sec:indset}, \ref{sec:indset_select}, and
 \ref{sec:indset_ghost}, and all of them scale well in this study.
@@ -1794,23 +1800,25 @@ Memory usage per part shows a similar pattern of scalability.
 \caption{Performance metrics of Omega\_h parallel scaling}
 \label{tab:osh_scale}
 \begin{center}
-\begin{tabular}{r|r|r|r|r}
-target elements & actual elements & repart. time & adapt time &
-memory used \\
+\begin{tabular}{r|r|r|r|r|r}
+tgt. elements & act. elements & repart. time & adapt time &
+mem. used  & parts \\
 (thousands)     & (thousands)     & (seconds)    & (seconds)  &
-(MB per part) \\\hline
-      160 &     160 & 4.52 & 398 & 149 \\
-      320 &     283 & 6.46 & 362 & 125 \\
-      640 &     566 & 6.26 & 409 & 133 \\
-     1280 &    1146 & 6.18 & 370 & 119 \\
-     2560 &    2340 & 8.13 & 385 & 117 \\
-     5120 &    4615 & 8.78 & 482 & 131 \\
-    10240 &    9320 & 10.5 & 422 & 110 \\
-    20480 &   18784 & 10.8 & 525 & 129 \\
-    40960 &   37273 & 16.8 & 544 & 138 \\
-    81920 &   74847 & 22.1 & 607 & 148 \\
-   163840 &  150338 & 34.1 & 660 & 157 \\
-   327680 &  299090 & 46.8 & 677 & 159 \\
+(MB/part) & \\\hline
+      160 &     160 & 4.52 & 398 & 149 &     2 \\
+      320 &     283 & 6.46 & 362 & 125 &     4 \\
+      640 &     566 & 6.26 & 409 & 133 &     8 \\
+     1280 &    1146 & 6.18 & 370 & 119 &    16 \\
+     2560 &    2340 & 8.13 & 385 & 117 &    32 \\
+     5120 &    4615 & 8.78 & 482 & 131 &    64 \\
+    10240 &    9320 & 10.5 & 422 & 110 &   128 \\
+    20480 &   18784 & 10.8 & 525 & 129 &   256 \\
+    40960 &   37273 & 16.8 & 544 & 138 &   512 \\
+    81920 &   74847 & 22.1 & 607 & 148 &  1024 \\
+   163840 &  150338 & 34.1 & 660 & 157 &  2048 \\
+   327680 &  299090 & 46.8 & 677 & 159 &  4096 \\
+   655360 &  599510 &  165 & 711 & 160 &  8192 \\
+  1310720 & 1201815 &  146 & 876 & 190 & 16384 \\
 \end{tabular}
 \end{center}
 \end{table}
