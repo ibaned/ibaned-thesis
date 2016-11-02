@@ -1795,30 +1795,36 @@ These components are all parallelized using the methods described
 in Sections \ref{sec:indset}, \ref{sec:indset_select}, and
 \ref{sec:indset_ghost}, and all of them scale well in this study.
 Memory usage per part shows a similar pattern of scalability.
+The speedup in the last column is the weak scaling speedup,
+computed as the number of processes times the parallel
+efficiency, where parallel efficiency is the slowdown
+in adaptation compared to ideal linear scaling.
 
 \begin{table}
 \caption{Performance metrics of Omega\_h parallel scaling}
 \label{tab:osh_scale}
 \begin{center}
-\begin{tabular}{r|r|r|r|r|r}
-tgt. elements & act. elements & repart. time & adapt time &
-mem. used  & parts \\
-(thousands)     & (thousands)     & (seconds)    & (seconds)  &
-(MB/part) & \\\hline
-      160 &     160 & 4.52 & 398 & 149 &     2 \\
-      320 &     283 & 6.46 & 362 & 125 &     4 \\
-      640 &     566 & 6.26 & 409 & 133 &     8 \\
-     1280 &    1146 & 6.18 & 370 & 119 &    16 \\
-     2560 &    2340 & 8.13 & 385 & 117 &    32 \\
-     5120 &    4615 & 8.78 & 482 & 131 &    64 \\
-    10240 &    9320 & 10.5 & 422 & 110 &   128 \\
-    20480 &   18784 & 10.8 & 525 & 129 &   256 \\
-    40960 &   37273 & 16.8 & 544 & 138 &   512 \\
-    81920 &   74847 & 22.1 & 607 & 148 &  1024 \\
-   163840 &  150338 & 34.1 & 660 & 157 &  2048 \\
-   327680 &  299090 & 46.8 & 677 & 159 &  4096 \\
-   655360 &  599510 &  165 & 711 & 160 &  8192 \\
-  1310720 & 1201815 &  146 & 876 & 190 & 16384 \\
+\begin{tabular}{r|r|r|r|r|r|r}
+target & actual & repart. & adapt &
+MB  & parts & speedup \\
+elements & elements & time & time &
+per & & \\
+$(\times 10^3)$ & $(\times 10^3)$ & (sec.) & (sec.) &
+part & & \\\hline
+     160 &     160 & 4.52 & 398 & 149 &     2 &    2 \\
+     320 &     283 & 6.46 & 362 & 125 &     4 &    4 \\
+     640 &     566 & 6.26 & 409 & 133 &     8 &    8 \\
+    1280 &    1146 & 6.18 & 370 & 119 &    16 &   17 \\
+    2560 &    2340 & 8.13 & 385 & 117 &    32 &   33 \\
+    5120 &    4615 & 8.78 & 482 & 131 &    64 &   53 \\
+   10240 &    9320 & 10.5 & 422 & 110 &   128 &  121 \\
+   20480 &   18784 & 10.8 & 525 & 129 &   256 &  194 \\
+   40960 &   37273 & 16.8 & 544 & 138 &   512 &  374 \\
+   81920 &   74847 & 22.1 & 607 & 148 &  1024 &  671 \\
+  163840 &  150338 & 34.1 & 660 & 157 &  2048 & 1235 \\
+  327680 &  299090 & 46.8 & 677 & 159 &  4096 & 2408 \\
+  655360 &  599510 &  165 & 711 & 160 &  8192 & 4586 \\
+ 1310720 & 1201815 &  146 & 876 & 190 & 16384 & 7444 \\
 \end{tabular}
 \end{center}
 \end{table}
