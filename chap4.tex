@@ -1635,6 +1635,7 @@ fully independent results for the overall adaptation algorithm.
 \section{Parallel Adaptation Performance}
 
 \subsection{Generating Large Meshes}
+\label{sec:big_gen}
 
 \subsubsection{MeshAdapt Uniform Refinement}
 \label{sec:ma_scale}
@@ -1828,6 +1829,67 @@ part & & \\\hline
 \end{tabular}
 \end{center}
 \end{table}
+
+\subsection{Non-Uniform Size Field with Load Balancing}
+
+The test in Section \ref{sec:osh_scale} demonstrates the scalability of
+adapting to a uniform size field.
+However, many interesting load balancing and performance considerations
+come into play when adapting to a non-uniform size field,
+and this section studies that capability using Omega\_h.
+First, recall from Section \ref{sec:elem_count} that in the process
+of targeting a particular element count we derived a formula to predict
+how many output elements an input element would generate during adaptivity,
+based roughly on its size in metric space.
+We can use these values as weights in a load-balancing problem, such that
+partitions are created not only on how many elements they have prior to
+adaptation, but also based on how many they will have at the end of adaptation.
+If a partition is sized based on input elements and it ends up refining
+much more than others, then during or after adaptation a load imbalance and
+possibly a memory overflow (of the memory space where this partition is)
+could occur.
+Conversely, if a partition is sized based only on output elements, and it
+is due for heavy coarsening, then before adaptation we again have severe
+imbalance and possibly a memory overflow.
+Thus, our load-balancing weight for an element is actually the average of $1.0$
+and the predicted output element count of the given element,
+where $1.0$ represents how many elements the element is prior to adaptation.
+In this way we establish a partition which is halfway between the optimal
+partitions for input and output meshes.
+
+The above load balancing algorithm is here referred to as predictive
+load balancing.
+After adaptation, we apply a post-processing load balance step based
+on the exact number of output elements.
+Figure \ref{fig:tall} illustrates this process on a geometry that is
+purposely elongated to induce a 1D partitioning when our Recursive
+Inertial Bisection method is used.
+The initial mesh is uniformly sized, and the first part of
+Figure \ref{fig:tall} shows the desired size field, which is three
+times larger at the top and bottom than at the center.
+The following four parts of Figure \ref{fig:tall} show how the mesh
+is initially partitioned, how the predictive load balancing increases
+the size of the top and bottom partitions to account for their coarsening
+(but only halfway), and how after adaptation the other half of the distance
+is covered by post-balancing to arrive at a well-balanced partitioning.
+In this example, the mesh is perfectly balanced at the start and end
+of the workflow (to within $\pm 1$ element), and the ``halfway" partition
+used for adaptivity has an imbalance value of $1.32$, where imbalance
+is defined as the maximum partition size divided by the average partition size.
+
+\begin{figure}
+\begin{center}
+\includegraphics[width=0.18\textwidth]{tall_size.png}
+\includegraphics[width=0.18\textwidth]{tall_input.png}
+\includegraphics[width=0.18\textwidth]{tall_predictive.png}
+\includegraphics[width=0.18\textwidth]{tall_adapted.png}
+\includegraphics[width=0.18\textwidth]{tall_post.png}
+\caption{Left to right: size field, input partitions, predictive partitions,
+adapted partitions, and post-balanced partitions
+for a simple 4-part problem}
+\label{fig:tall}
+\end{center}
+\end{figure}
 
 \subsection{Moving Objects on Shared Memory Devices}
 
