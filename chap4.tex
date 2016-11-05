@@ -45,11 +45,12 @@ meaning that the operation takes $O((N/P)\log(P))$ time in parallel.
 
 Notice that we are considering a single operation which takes $O(N)$
 time in serial.
-For example, a Recursive Bisection partitioning method is a
+For example, a Recursive Inertial Bisection partitioning method is a
 divide-and-conquer algorithm which uses $O(\log(P))$ steps, each
 taking $O(N)$ time, to assign $N$ items to $P$ partitions
 for a total serial runtime which is $O(N\log(P))$
-(analogous to an incomplete sorting algorithm).
+(analogous to an incomplete sorting algorithm)
+\cite{simon1991partitioning}.
 If the items are already well partitioned amongst $P$ processes
 and we run a parallel version of this procedure to adjust the
 partitioning, each $O(N)$ step becomes $O((N/P)\log(P))$
@@ -1756,7 +1757,7 @@ The initial mesh contains 80K elements.
 At each step $i$, two programs are run.
 The first program uses $P=2^i$ processes to read a mesh of $2^{i-1}$
 parts and use global Recursive Inertial Bisection to repartition it
-into $2^i$ parts.
+into $2^i$ parts \cite{simon1991partitioning}.
 The second program uses $P=2^i$ processes to compute the implied
 isotropic size field, scale it with the goal of obtaining
 $(80\cdot 10^3 \cdot 2^i)$ elements, and run mesh adaptation.
