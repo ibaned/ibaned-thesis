@@ -1107,6 +1107,56 @@ Its implementation of mesh adaption will be discussed mainly
 in Section \ref{sec:omega_h-adapt}, with key parallel aspects
 covered throughout Chapter \ref{chap:parallel}.
 
+\section{Contributions}
+
+This thesis centers around contributions made to the design,
+implementation, and distribution of mesh adaptation libraries.
+In the following summary, any reference to the design of an
+algorithm or structure indicates that said design is a completely novel
+contribution of this thesis.
+Likewise, any reference to the implementation of a software
+library indicates that said library was developed in its entirety
+by the author in the course of this thesis work.
+
+\begin{enumerate}
+
+\item The design and implementation of a new mesh adaptation library,
+Omega\_h, built using the parallel {\bf for} loop model to allow
+it to execute on GPUs, Intel Xeon Phis, etc.
+There are more novel algorithms encompassed in this contribution
+than can be included in this summary, see Sections
+\ref{sec:omega_h-struct}, \ref{sec:omega_h-adapt},
+\ref{sec:sf}, \ref{sec:conserve}, \ref{sec:indset}, and \ref{sec:determinism}.
+
+\item The design of a new data structure and its implementation
+in MDS, which has an object-oriented interface and an array-based
+implementation (Section \ref{sec:sisc}).
+This is the first such design that directly maintains the types
+of adjacency arrays needed for a full topological representation.
+
+\item The design of scalable communication for unstructured mesh
+adaptation codes, exemplified by the implementation of the PCU
+communication library (Section \ref{sec:pcu}) for inter-thread message passing
+and by certain components of the Omega\_h library
+(Sections \ref{sec:dist}).
+
+\item The implementation of the most recent version of MeshAdapt,
+which is based on the scalable communication of PCU and the
+novel structure of MDS.
+This library provides the algorithms developed
+by decades of research prior to this thesis
+(as described in Section \ref{sec:ma_methods}) in a form that is scalable
+(Section \ref{sec:cavity_operator}),
+efficient, and has high quality source code.
+
+\item The use of MeshAdapt and Omega\_h to bring adaptive capabilities
+to real simulation codes used by universities, government
+researchers, and private companies to solve problems in structural
+mechanics, aerodynamics, hydrodynamics, and other areas.
+Chapter \ref{chap:apps} describes these applications.
+
+\end{enumerate}
+
 %%% Local Variables:
 %%% mode: latex
 %%% TeX-master: t
