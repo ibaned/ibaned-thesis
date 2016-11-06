@@ -1892,6 +1892,61 @@ for a simple 4-part problem}
 \end{center}
 \end{figure}
 
+We now take this same non-uniform size field in which the center of a solder
+ball geometry aims to be 3X finer than the top and bottom, and conduct
+a scaling study on an IBM Blue Gene/Q computer.
+We start with a uniformly-sized 90 million element mesh, which is
+partitioned into versions with 2048, 4096, and 8192 parts.
+A 195K element version of this mesh is shown in Figure \ref{fig:slope_195k}.
+Then each version is adapted to the non-uniform size field using
+the predictive method described above.
+We use size field scaling to ensure the mesh has about 90 million
+elements after adaptation, and in all cases we do end up
+with 89.5 million elements (recall that Omega\_h produces the
+same mesh regardless of partitioning).
+Since the size of the problem is constant (i.e. we are ``strong scaling"),
+we expect runtime to decrease in proportion to the increase
+in parallelism.
+Table \ref{tab:slope_scale} shows the adaptation times,
+speedups relative to the 2048 part case, and imbalances
+after ``halfway" predictive load balancing and after
+adaptation.
+Before predictive load balancing and after post-balancing,
+there is essentially no imbalance ($1.0\pm 10^{-4}$).
+Since the goal of our predictive method is to find the middle
+ground between partitions optimal for the input and output
+meshes, then we expect that if we are successful the
+imbalance values after predictive balance and after
+adaptation will be similar, i.e. two values which
+vary inversely to one another are minimized by making
+them equal.
+We do see these two imbalances being close in
+Table \ref{tab:slope_scale}.
+
+\begin{figure}
+\begin{center}
+\includegraphics[width=0.6\textwidth]{uniform_195k.png}
+\caption{A 195K element version of the 90M element mesh
+used for the non-uniform size field strong scaling study}
+\label{fig:slope_195k}
+\end{center}
+\end{figure}
+
+\begin{table}
+\caption{Strong scaling with non-uniform size field}
+\label{tab:slope_scale}\vspace*{4pt}
+\centerline{
+\begin{tabular}{r|r|r|r|r}
+\#parts & predictive & adapted   & adapt   & speedup \\
+        & imbalance  & imbalance & time    & \\
+        & (max/avg)  & (max/avg) & (seconds) & \\\hline
+   2048 &      1.658 &     1.797 & 1447    & 1.00  \\
+   4096 &      1.722 &     1.874 &  828    & 1.74 \\
+   8192 &      1.775 &     1.941 &  507    & 2.85 \\
+\end{tabular}
+}
+\end{table}
+
 \subsection{Moving Objects on Shared Memory Devices}
 
 In this test case, we focus on the potential for mesh adaptation to support simulations
