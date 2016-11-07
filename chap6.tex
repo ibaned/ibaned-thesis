@@ -55,3 +55,14 @@ accept more than just simplices, as described in Section \ref{sec:sisc_mstruct}.
 Finally, several MeshAdapt algorithms not discussed
 in this thesis would need to be re-designed to use parallel
 \texttt{for} loops.
+
+\subsection{Snapping to Boundary Geometry}
+
+This thesis has not presented any new developments in the area of
+snapping (although MeshAdapt supports this in a limited capacity).
+This capability is required for many applications of interest,
+including aerodynamics simulations of rigid aircraft and mechanical
+simulations in which the shape of the solid objects does not
+significantly change,
+and thus the implementation of snapping in at least one of the
+codes presented here is considered important future work.

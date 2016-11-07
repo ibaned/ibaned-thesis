@@ -130,8 +130,15 @@ modifies connectivity to improve minimum element quality.
 There is no known method guaranteed to raise all elements to a quality
 that is useful for simulation and adaptation, but heuristic
 methods can achieve great results in practice \cite{klingner2008aggressive}.
-\item Snapping: procedures intended to improve the discrete
-mesh approximation of a continuous curved boundary.
+\item Snapping: Many simulations are based on a geometric model, usually a CAD
+boundary representation in which the shape of an object is defined
+by parametric descriptions of curves and surfaces.
+Other boundary representations which are separate from the mesh
+may be used.
+In these cases, mesh adaptation should modify the boundary of the
+mesh to be as similar as possible to the geometric (CAD) boundary.
+We refer to this as ``snapping", because for interpolating basis
+functions it involves snapping mesh nodes onto the geometric boundary.
 \end{enumerate}
 
 \section{Related Work}
@@ -1624,6 +1631,8 @@ We compute its implied isotropic size, scale this size field such
 that a mesh conforming to the scaled size field would have
 approximately twice the elements, and adapt to the scaled size
 field.
+Notice that despite the curved boundary, no snapping takes
+place.
 We repeat this procedure $4$ times, going from 7K elements to 112K elements,
 with the final mesh shown in Figure \ref{fig:scale}(right).
 Table \ref{tab:scale} shows the desired and actual element
