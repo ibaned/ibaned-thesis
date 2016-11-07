@@ -164,7 +164,7 @@ If we have fewer parallel processes than array entries, we can use a hybrid mix
 of the two trees in Figure \ref{fig:reduce}, where each processor
 uses a serial tree to reduce $O(N/P)$ values in $O(N/P)$ time, and
 then each process' local results are reduced using a balanced tree
-in $O(\log(N))$ time resulting in an $O((N/P)+\log(N))$ runtime.
+in $O(\log(P))$ time resulting in an $O((N/P)+\log(P))$ runtime.
 
 The binary operators used most often in Omega\_h reductions
 are the sum, minimum, and maximum of the two inputs.
