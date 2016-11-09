@@ -8,7 +8,7 @@
 \label{chap:parallel}
 \blfootnote{
 Portions of this chapter previously appeared as:
-D.~A. Ibanez, E.~S. Seol, C.~W. Smith, and M.~S. Shephard, ``Pumi: Parallel
+D.~A. Ibanez, E.~S. Seol, C.~W. Smith, and M.~S. Shephard, ``PUMI: Parallel
   unstructured mesh infrastructure,'' \emph{ACM Trans. Math. Softw.}, vol.~42,
   no.~3, pp. 17:1--17:28, May 2016.
 }\nocite{ibanez2016pumi}
@@ -37,7 +37,7 @@ Then we consider any operation which would take $O(N)$ time to execute
 on a single processor such as the reference computer
 in Section \ref{sec:ref_comp}, and analyze the runtime bound
 of this operation when it is parallelized using $P$ cooperating processes.
-When this the parallel runtime is $O(N/P)$, we say the operation
+When the parallel runtime is $O(N/P)$, we say the operation
 has perfect linear scaling.
 Linear scaling typically only occurs when the processes do not have to coordinate,
 and coordination usually adds a factor $\log(P)$ to the runtime,
@@ -422,7 +422,7 @@ non-blocking synchronous message passing primitives are defined. There are
 two versions, one of which is a direct interface to MPI, and the second supports
 message passing between threads \cite{ibanez2016hybrid}. The two versions
 are interchangeable, and PCU can change which set of them is being used at
-run-time without affecting the rest of software components.
+runtime without affecting the rest of software components.
 
 Building on the point-to-point primitives, PCU has an extensible framework for
 collective operations such as reduction, broadcast, scan, and barrier.
@@ -750,7 +750,8 @@ elements.
 The choice of elements is typically such that each element resides
 in exactly one partition (we call this an ``element-based" partitioning),
 or an element may reside in multiple partitions (the most common
-example of this is a special case we call ``ghosting").
+example of this is a special case we call ``ghosting"
+\cite{ibanez2016pumi}).
 A partitioning may be represented as a map from unique entities
 to a subset of partitions (MPI ranks).
 Each single mapping from a unique entity to a single partition
@@ -763,7 +764,8 @@ the same unique mesh entity.
 When working with a partitioned mesh, it is also very useful to
 designate one of the copies that represent the same unique entity
 as the owner copy, making it responsible for changes involving
-that unique entity.
+that unique entity
+\cite{seol2005fmdb,seol2006efficient,ibanez2016pumi}.
 Figure \ref{fig:remotes} shows the two ways in which we maintain
 this information.
 On the left, we have the PUMI implementation in which every copy
@@ -924,7 +926,7 @@ involves careful duplication of mesh entities into ``copies"
 in different memory spaces, and establishing the needed
 links between copies of the same entity.
 Creation of a partitioned mesh is handled by a procedure
-called ``migration" \cite{ibanez2016pumi}.
+called ``migration" \cite{seol2005fmdb,seol2006efficient,ibanez2016pumi}.
 It accepts as input a partitioned mesh (the input partitioning
 may be such that the entire mesh is in a single partition),
 and outputs a new partitioned mesh based on an input description
@@ -1044,7 +1046,7 @@ communications are carried out by a single \texttt{Dist}.
 
 Permanent topological adjacencies need to be constructed
 between different dimensions (see Figures \ref{fig:adjs_mds} and
-\ref{fig:adjs_osh} from Chapter \ref{chap:struct}).
+\ref{fig:adjs_osh}).
 This brings about an interesting consideration, which is that we
 usually create adjacency information in a bottom-up fashion (vertices
 are created, then edges are defined from vertices, etc.), but
@@ -1095,7 +1097,7 @@ In our work we only consider vertex bridges $(b=0)$.
 
 The interface to PUMI's element-based migration procedure is
 ``push-based", meaning that each partition specifies, for each
-of it current elements, a single destination partition to send
+of its current elements, a single destination partition to send
 that element to.
 By definition, such a specification cannot express ghosting.
 Although PUMI has recently acquired a ghosting capability, it was
@@ -1718,7 +1720,7 @@ remains the same.
 
 \begin{figure}[!ht]
 \begin{center}
-\caption{Hybrid File IO performance}
+\caption{Hybrid file IO performance}
 \label{fig:pcu_fileio}
 \includegraphics[width=0.6\textwidth]{pcu_fileio.png}
 \end{center}
@@ -1773,8 +1775,8 @@ a mechanism for achieving a desired element count.
 \includegraphics[width=0.45\textwidth]{sb_160k.png}
 \includegraphics[width=0.45\textwidth]{sb_20480k_part40.png}
 }
-\caption{(left) the $4\times 4$ solder ball mesh with 160K elements,
-(right) one of 256 partitions of the mesh with 20M elements}
+\caption{(left) The $4\times 4$ solder ball mesh with 160K elements,
+(right) One of 256 partitions of the mesh with 20M elements}
 \label{fig:osh_scale}
 \end{figure}
 
@@ -1937,8 +1939,8 @@ used for the non-uniform size field strong scaling study}
 \label{tab:slope_scale}\vspace*{4pt}
 \centerline{
 \begin{tabular}{r|r|r|r|r}
-\#parts & predictive & adapted   & adapt   & speedup \\
-        & imbalance  & imbalance & time    & \\
+        & predictive & adapted   & adapt   & \\
+\#parts & imbalance  & imbalance & time    & speedup \\
         & (max/avg)  & (max/avg) & (seconds) & \\\hline
    2048 &      1.658 &     1.797 & 1447    & 1.00  \\
    4096 &      1.722 &     1.874 &  828    & 1.74 \\
@@ -1976,9 +1978,9 @@ stirred.
 \caption{Runtime in minutes on different hardware}
 \label{tab:twin_rotor_times}\vspace*{4pt}
 \centerline{
-\begin{tabular}{l|r|r|r|r|r| r| r| r}
+\begin{tabular}{l|c|r|r|r|r| r| r| r}
  & \multicolumn{7}{c}{number of OpenMP threads} \\
-Hardware              & GPU &    1 &   2 &   4 &   8 & 16 & 32 & 64 \\\hline
+hardware              & GPU &    1 &   2 &   4 &   8 & 16 & 32 & 64 \\\hline
 Intel Xeon 2620 v4    &     &  203 & 115 &  76 &  55 &    &    &    \\
 Intel Knights Landing &     & 1196 & 598 & 299 & 153 & 79 & 42 & 24 \\
 NVidia K80            &  35 &      &     &     &     &    &    &    \\
