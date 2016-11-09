@@ -151,12 +151,12 @@ on a use of independent sets for coarsening purposes
 (an idea that we extend significantly in Section \ref{sec:indset}).
 Later, substantial extensions were introduced by Li on anisotropy using the metric
 tensor and the selection of operators for shape correction
-\cite{li20053d,li2003mesh}.
+\cite{li2003mesh,li20053d}.
 Our implementations of tetrahedral edge swaps make use
 of guidance on fast implementation by Olivier-Gooch \cite{freitag1997tetrahedral}.
 Researchers at INRIA have provided useful mathematical foundations
 for handling the anisotropic metric tensor field
-\cite{frey2005,alauzet2006parallel,loseille2015parallel},
+\cite{loseille2015parallel,frey2005,alauzet2006parallel},
 and work at the Catholic University of Louvain explored
 the use of mesh adaptation to respond to moving objects
 \cite{compere2010mesh}, a path we continue with our Omega\_h work.
@@ -280,7 +280,7 @@ The two triangles and the collapsing edge must bound a single tetrahedron,
 and the triangle adjacent to the collapsing vertex must have the same classification
 as this tetrahedron.
 \item All the resulting tetrahedra must have positive volume.
-In the 2D planar case, triangle normals should all be positive in the Z axis.
+In the 2D planar case, triangle normals should all be positive in the $Z$ axis.
 For straight-sided simplices in an equal-dimensional space (i.e. triangles in 2D
 and tetrahedra in 3D), this check on its own can prevent some topological invalidities,
 except those in Figure \ref{fig:circle_hole} and Figure \ref{fig:surf_collapse}.
@@ -382,7 +382,7 @@ However, we are having increasing success with
 careful rejection of operations and some researchers
 are able to avoid using sliver removal techniques
 altogether if their quality requirements are low
-enough \cite{loseille20093d,michal2012anisotropic}.
+enough \cite{michal2012anisotropic,loseille20093d}.
 
 Typically, mesh adaptation libraries implement a balance
 between prevention of quality degradation and repairing
@@ -411,8 +411,8 @@ to collapse each edge adjacent to either endpoint vertex.
 to its opposing triangle face.
 Here we try to execute an edge swap (see Figure \ref{fig:swap})
 on each of the three edges bounding the opposing triangle face.
-(The work of Li suggests that a face split and collapse operation
-should also be implemented as future work).
+The work of Li suggests that a face split and collapse operation
+should also be implemented as future work \cite{li2003mesh}.
 \item In the third case, we have the classic sliver tetrahedron
 which has two opposing edges being too close to one another.
 We first attempt to perform an edge swap on each of the two
@@ -597,7 +597,7 @@ for how such splits are selected).
 Several researchers have similarly had success
 using only single edge splits rather than
 template-based refinement
-\cite{compere2010mesh,loseille20093d,michal2012anisotropic}.
+\cite{michal2012anisotropic,compere2010mesh,loseille20093d}.
 Like MeshAdapt, Omega\_h marks all edges whose
 metric length exceeds some threshold (typically $\sqrt{2}$) as candidates
 for edge splits.
@@ -630,7 +630,7 @@ Combined with the fact that refinement cannot technically produce
 inverted elements or invalid meshes, this is a strong motivation to immediately
 and unconditionally refine all edges that exceed a given threshold.
 On the other hand, immediate refinement can produce elements of arbitrarily
-bad quality, making it increasing difficult to apply future mesh modifications
+bad quality, making it increasingly difficult to apply future mesh modifications
 and driving numerical conditioning of the physical simulation to unwanted extremes.
 Since computers use finite precision arithmetic, there are cases in practice
 where the refined element volumes are indistinguishable from zero to the computer.
@@ -844,11 +844,11 @@ struct AdaptOpts {
 
 A common problem that arises when doing Lagrangian simulations
 (those in which the mesh follows the simulated fluid and objects)
-as described in Sections \ref{sec:proteus}, \ref{sec:albany}, and \ref{sec:alexa},
+as described in Sections \ref{sec:proteus}, \ref{sec:alexa}, and \ref{sec:albany},
 is that vertex motions may be requested such that after
 deformation the mesh has inverted or arbitrarily low-quality elements.
 Similarly, when aiming to satisfy an anisotropic metric tensor
-field, it may be that the elements of a initial mesh have arbitrary low
+field, it may be that the elements of an initial mesh have arbitrary low
 (though not negative) quality when measured in the desired metric space.
 
 Omega\_h implements two methods (which are similar to one another)
@@ -1038,8 +1038,7 @@ z_i \\
 1 = ax_i^2 + by_i^2 + cz_i^2 + 2dx_iy_i + 2ey_iz_i + 2fx_iz_i
 \end{gather*}
 
-This leads to a linear system, which following our 3D example
-is a $6\times 6$ system:
+In our 3D example, this leads to a $6\times 6$ linear system:
 
 \begin{equation}
 \begin{bmatrix}
@@ -1062,13 +1061,13 @@ Where $y_3$ is the $y$ component of the length of edge 3,
 and so on.
 The matrix and right hand side are formed based on the element
 and the linear system is solved via QR decomposition
-\cite{trefethen1997numerical}, giving us
+\cite{trefethen1997numerical}, resulting in
 the implied metric tensor for an element.
 This derivation can be repeated for triangles in 2D, giving
 a $3\time 3$ system for the symmetric tensor components.
 
 In order to compute metric tensors at vertices,
-We need to conceptually average the implied values obtained
+what is used is conceptually an average the implied values obtained
 at adjacent elements.
 First, we transform the element metric tensors into their
 ``linear" form, which is one of the forms described
@@ -1648,7 +1647,7 @@ does approximately equal work per element).
 \caption{Element counts and adapt times for size field scaling}
 \label{tab:scale}
 \begin{center}
-\begin{tabular}{l|l|l}
+\begin{tabular}{r|r|r}
 desired elements & actual elements & seconds to adapt \\ \hline
 7000   & 6912  & 0.19 \\
 14000  & 13079 & 0.50 \\
