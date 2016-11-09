@@ -131,7 +131,7 @@ If some of them are not stored, the remaining adjacency relationships
 would need to be annotated with ordering information such that the correct
 ordering can still be reconstructed.
 \item Depending on the implementation, downward adjacencies would either
-not have constant degree of have ``null" values where non-stored entities
+not have constant degree or have ``null" values where non-stored entities
 are adjacent.
 Both would complicate all code that queries and manages
 downward adjacencies.
@@ -147,10 +147,12 @@ would not allow creating entities individually in this manner.
 Beall and Shephard indicate other complexities involved
 with handling reduced representations \cite{beall1997general}.
 
-Given that adaptation would require us to store edges and boundary
-faces, we are left only considering whether to introduce great
+Given that it is convenient to store edges for adaptation and boundary
+faces are needed for classification,
+the remaining consideration is whether to introduce
 complexity in exchange for not storing interior faces.
-In this work we choose instead to store all entities.
+The choice made in this work is to use a full representation,
+i.e. store all entities.
 
 \subsection{Choosing Adjacencies to Store}
 
@@ -190,7 +192,7 @@ of topological adjacency.
 geometric model entities.
 \item The common element types of FE/FV methods can coexist in one structure.
 \item Additional data can be associated with entities to implement
-high order basis functions, including for geometric approximation.
+high order basis functions.
 \item A mesh can be modified by adding and removing single entities in constant time.
 \item The entire mesh is stored in a few contiguous dynamic arrays.
 \end{enumerate}
@@ -217,7 +219,7 @@ adjacency relations.
 \begin{center}
 \includegraphics[width=0.53\textwidth]{full_rep.png}
 \caption{A geometric representation of one-level
-relations among a subset of the entities that bound a tetrahedron.}
+relations among a subset of the entities that bound a tetrahedron}
 \label{fig:mds_topo}
 \end{center}
 \end{figure}
@@ -225,7 +227,7 @@ relations among a subset of the entities that bound a tetrahedron.}
 \begin{figure}
 \begin{center}
 \includegraphics[width=0.8\textwidth]{adjs_mds.png}
-\caption{Single-entity adjacency derivations in MDS.}
+\caption{Single-entity adjacency derivations in MDS}
 \label{fig:adjs_mds}
 \end{center}
 \end{figure}
@@ -241,9 +243,9 @@ regions are related only to faces, etc.
 MDS stores these one-level adjacencies directly
 and updates them as needed during entity addition and removals,
 so we can call them the ``permanent" adjacencies.
-In order to fulfil requests for any adjacency information regarding a single
+In order to fulfill requests for any adjacency information regarding a single
 mesh entity at runtime,
-MDS it carries out derivations based on the permanent adjacency information
+MDS carries out derivations based on the permanent adjacency information
 as shown in Figure \ref{fig:adjs_mds}.
 
 Downward adjacencies not directly stored are derived
@@ -291,11 +293,11 @@ four pointers to its bounding faces.
 \begin{figure}
 \begin{center}
 \includegraphics[width=0.9\textwidth]{oo.png}
-\caption{(left) the example mesh: a reduced representation of two
+\caption{(left) The example mesh: a reduced representation of two
 triangles sharing one edge and two vertices.
-(middle) the linked-list storage of upward adjacency information
+(middle) The linked-list storage of upward adjacency information
 for vertices to triangles.
-(right) a key describing the meaning of symbols in the middle figure}
+(right) A key describing the meaning of symbols in the middle figure}
 \label{fig:oo}
 \end{center}
 \end{figure}
@@ -458,8 +460,8 @@ virtual address space.
 \begin{figure}
 \begin{center}
 \includegraphics[width=0.6\textwidth]{arraylist.png}
-\caption{(left) A linked list in object form.
-(right) The same linked list packed into an array.}
+\caption{(left) A linked list in object form
+(right) The same linked list packed into an array}
 \label{fig:arraylist}
 \end{center}
 \end{figure}
@@ -474,10 +476,10 @@ arrays.
 \begin{figure}
 \begin{center}
 \includegraphics[width=0.95\textwidth]{mixed.png}
-\caption{(left) an example subset of a mixed mesh:
-an edge adjacent to a triangle and a quad.
-(right) the corresponding upward adjacency linkage
-must traverse separate triangle and quad arrays.}
+\caption{(left) An example subset of a mixed mesh:
+an edge adjacent to a triangle and a quad
+(right) The corresponding upward adjacency linkage
+must traverse separate triangle and quad arrays}
 \label{fig:mixed}
 \end{center}
 \end{figure}
@@ -516,47 +518,47 @@ a mix of wedges and pyramids:
 \item Vertices
   \begin{enumerate}
   \item Coordinates (size $=3\times$vertex capacity)
-  \item First edge (size $=$vertex capacity)
-  \item Free list (size $=$vertex capacity)
+  \item First edge (size $=$ vertex capacity)
+  \item Free list (size $=$ vertex capacity)
   \end{enumerate}
 \item Edges
   \begin{enumerate}
   \item Vertices used (size $=2\times$edge capacity)
   \item Next edge up (size $=2\times$edge capacity)
-  \item First face up (size $=$edge capacity)
-  \item Free list (size $=$edge capacity)
+  \item First face up (size $=$ edge capacity)
+  \item Free list (size $=$ edge capacity)
   \end{enumerate}
 \item Triangles
   \begin{enumerate}
   \item Edges used (size $=3\times$triangle capacity)
   \item Next face up (size $=3\times$triangle capacity)
-  \item First region up (size $=$triangle capacity)
-  \item Free list (size $=$triangle capacity)
+  \item First region up (size $=$ triangle capacity)
+  \item Free list (size $=$ triangle capacity)
   \end{enumerate}
 \item Quadrilaterals
   \begin{enumerate}
   \item Edges used (size $=4\times$quadrilateral capacity)
   \item Next face up (size $=4\times$quadrilateral capacity)
-  \item First region up (size $=$quadrilateral capacity)
-  \item Free list (size $=$quadrilateral capacity)
+  \item First region up (size $=$ quadrilateral capacity)
+  \item Free list (size $=$ quadrilateral capacity)
   \end{enumerate}
 \item Tetrahedra
   \begin{enumerate}
-  \item Faces used (size $=4\times$tetrahedra capacity)
-  \item Next region up (size $=4\times$tetrahedra capacity)
-  \item Free list (size $=$tetrahedra capacity)
+  \item Faces used (size $=4\times$tetrahedron capacity)
+  \item Next region up (size $=4\times$tetrahedron capacity)
+  \item Free list (size $=$ tetrahedron capacity)
   \end{enumerate}
 \item Wedges
   \begin{enumerate}
-  \item Faces used (size $=5\times$wedges capacity)
-  \item Next region up (size $=5\times$wedges capacity)
-  \item Free list (size $=$wedges capacity)
+  \item Faces used (size $=5\times$wedge capacity)
+  \item Next region up (size $=5\times$wedge capacity)
+  \item Free list (size $=$ wedge capacity)
   \end{enumerate}
 \item Pyramids
   \begin{enumerate}
   \item Faces used (size $=5\times$pyramid capacity)
   \item Next region up (size $=5\times$pyramid capacity)
-  \item Free list (size $=$pyramid capacity)
+  \item Free list (size $=$ pyramid capacity)
   \end{enumerate}
 \end{enumerate}
 Where the capacities refer to the geometric growth
@@ -628,9 +630,9 @@ structure is a static read-only topological structure.
 \includegraphics[width=0.15\textwidth]{up_down_mesh.png}
 \includegraphics[width=0.3\textwidth]{down.png}
 \includegraphics[width=0.45\textwidth]{up.png}
-\caption{(left) an example 4-vertex 2-triangle mesh
+\caption{(left) An example 4-vertex 2-triangle mesh
 (middle) the downward adjacency array
-(right) the upward adjacency array}
+(right) The upward adjacency array}
 \label{fig:osh_up_down}
 \end{center}
 \end{figure}
@@ -648,8 +650,8 @@ Upward adjacencies (and all complex graphs in Omega\_h, for that matter)
 are stored in the widely known compressed row format,
 used for example in the METIS graph partitioner interface \cite{METIS}.
 This consists of two arrays, one containing the destinations
-of all graph edges, sorted by the source of the edge.
-The second array contains offsets indicating where in the first
+of all graph edges, sorted by the source of the edge,
+and the other containing offsets indicating where in the first
 array the edges going out from a given graph node are stored.
 
 \subsection{Alignment Information}
@@ -798,13 +800,13 @@ dimension & entity count \\\hline
 2 & 212846 \\
 3 & 103303 \\
 \end{tabular}
-\begin{tabular}{|r|r|r r r r}
+\begin{tabular}{|c|r|r r r r}
                &   & \multicolumn{4}{c}{to dimension} \\\hline
                &   &    0 &    1 &    2 &   3  \\\hline
-               & 0 &      &  3.9 & 48.7 & 88.9 \\
-               & 1 &  2.4 &      & 11.9 & 40.4 \\
-from           & 2 & 16.2 &  4.2 &      &  9.0 \\
-dimension      & 3 & 21.1 & 13.1 &  2.2 &      \\
+from           & 0 &      &  3.9 & 48.7 & 88.9 \\
+dimension      & 1 &  2.4 &      & 11.9 & 40.4 \\
+               & 2 & 16.2 &  4.2 &      &  9.0 \\
+               & 3 & 21.1 & 13.1 &  2.2 &      \\
 \end{tabular}
 \end{center}
 \end{table}
@@ -820,13 +822,13 @@ dimension & entity count \\\hline
 2 & 439107 \\
 3 & 213535 \\
 \end{tabular}
-\begin{tabular}{|r|r|r r r r}
+\begin{tabular}{|c|r|r r r r}
                &   & \multicolumn{4}{c}{to dimension} \\\hline
                &   &    0 &    1 &     2 &     3 \\\hline
-               & 0 &      &  8.7 & 104.8 & 191.5 \\
-               & 1 &  5.0 &      &  26.3 &  84.7 \\
-from           & 2 & 33.4 &  8.7 &       &  20.3 \\
-dimension      & 3 & 45.6 & 27.8 &   4.5 &       \\
+from           & 0 &      &  8.7 & 104.8 & 191.5 \\
+dimension      & 1 &  5.0 &      &  26.3 &  84.7 \\
+               & 2 & 33.4 &  8.7 &       &  20.3 \\
+               & 3 & 45.6 & 27.8 &   4.5 &       \\
 \end{tabular}
 \end{center}
 \end{table}
@@ -857,13 +859,13 @@ Omega\_h performance for a particular series of queries.
 \caption{Omega\_h traversal timings (in milliseconds) for 100K tet mesh}
 \label{tab:osh_walk_100}
 \begin{center}
-\begin{tabular}{|r|r|r r r r}
+\begin{tabular}{|c|r|r r r r}
                &   & \multicolumn{4}{c}{to dimension} \\\hline
                &   &    0 &    1 &    2 &   3  \\\hline
-               & 0 &      &  0.2 &  0.2 &  0.2 \\
-               & 1 &  1.7 &      &  1.4 &  1.4 \\
-from           & 2 &  2.6 &  2.7 &      &  2.3 \\
-dimension      & 3 &  1.2 &  1.2 &  1.3 &      \\
+from           & 0 &      &  0.2 &  0.2 &  0.2 \\
+dimension      & 1 &  1.7 &      &  1.4 &  1.4 \\
+               & 2 &  2.6 &  2.7 &      &  2.3 \\
+               & 3 &  1.2 &  1.2 &  1.3 &      \\
 \end{tabular}
 \end{center}
 \end{table}
@@ -872,13 +874,13 @@ dimension      & 3 &  1.2 &  1.2 &  1.3 &      \\
 \caption{Omega\_h incremental construction timings (in milliseconds) for 100K tet mesh}
 \label{tab:osh_adj_100}
 \begin{center}
-\begin{tabular}{|r|r|r r r r}
+\begin{tabular}{|c|r|r r r r}
                &   & \multicolumn{4}{c}{to dimension} \\\hline
                &   &    0 &    1 &    2 &   3  \\\hline
-               & 0 &      &  7.6 & 31.1 & 16.1 \\
-               & 1 &      &      & 11.1 &  9.7 \\
-from           & 2 &  5.5 &      &      &  4.7 \\
-dimension      & 3 &  3.2 &  9.1 &      &      \\
+from           & 0 &      &  7.6 & 31.1 & 16.1 \\
+dimension      & 1 &      &      & 11.1 &  9.7 \\
+               & 2 &  5.5 &      &      &  4.7 \\
+               & 3 &  3.2 &  9.1 &      &      \\
 \end{tabular}
 \end{center}
 \end{table}
@@ -987,7 +989,7 @@ METIS                & 1120368 &  1234170 &  2849735 \\
 
 PUMI implements a BFS method with heuristics that use geometric
 classification for selecting a starting node
-\cite{zhou2010adjacency, beall1997general}.
+\cite{beall1997general,zhou2010adjacency}.
 One of the difficulties with the BFS method is that it is difficult
 to parallelize, since layers need to be constructed sequentially.
 Early versions of Omega\_h implemented a BFS method that was not
