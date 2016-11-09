@@ -567,8 +567,8 @@ reduced (see Section \ref{sec:sf}).
 
 Many researchers use a quality measure known as the mean ratio
 to evaluate tetrahedra and triangles
-\cite{liu1994relationship,loseille2015parallel,compere2010mesh,
-li20053d}.
+\cite{loseille2015parallel,compere2010mesh,
+li20053d,liu1994relationship}.
 In Equation \ref{eq:tet_mean_ratio}, we define the mean ratio
 in an equivalent but slightly different form than presented by other
 authors.
@@ -1048,7 +1048,7 @@ Key components of PUMI include:
 
 \subsubsection{PCU}
 
-PCU is a C library which implements the key parallel communication
+The Parallel Control Utility is a C library which implements the key parallel communication
 systems required to construct more complex parallel programs
 which remain scalable.
 Its algorithms and implementation will be covered in detail
@@ -1061,7 +1061,7 @@ MPI-like communication between threads.
 
 \subsubsection{APF}
 
-APF is a C++ library whose original goal was to manage fields discretized
+Attached Parallel Fields is a C++ library whose original goal was to manage fields discretized
 over a mesh.
 In order to achieve that goal without being tied to a particular mesh
 implementation, APF included an abstract interface for interacting
@@ -1072,7 +1072,7 @@ many such algorithms dealing with topological and parallel operations.
 
 \subsubsection{MDS}
 
-MDS is a C library implementing the main mesh data structure for APF and
+The Mesh Data Structure library is a C library implementing the main mesh data structure for APF and
 therefore PUMI.
 It is array-based, supports adding and removing entities in constant time,
 can represent multiple element types at once, and is augmented with
@@ -1094,7 +1094,7 @@ with the restrictions and potential of GPU programming in mind
 \cite{osh_github}.
 It aims to provide as much of the core functionality of PUMI as
 is feasible in a portably performant way, which currently
-amounts to adapting triangle and tetrahedral meshes using anisotropic
+amounts to adapting triangular and tetrahedral meshes using anisotropic
 metrics.
 Omega\_h represents the first such portably performant code capable
 of mesh adaptation, and is a major contribution of this thesis.

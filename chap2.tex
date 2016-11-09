@@ -64,7 +64,7 @@ which offer various subsets of the features described herein:
 
 First, there are dynamic structures which support mesh adaptation.
 FMDB is an object-oriented structure that
-stores full one-level representations \cite{seol2006efficient}.
+stores full or reduced representations \cite{seol2005fmdb,seol2006efficient}.
 It is capable of constant-time local
 mesh modifications and supporting adaptation code.
 Similar to FMDB is the mesh databased used by Comp\`{e}re and Remacle
@@ -100,7 +100,8 @@ every entity is said to be a {\it full}
 representation.
 Any schemes which allow some entities to be represented
 implicitly (i.e. their presence does not consume memory)
-are {\it reduced} representations.
+are {\it reduced} representations
+\cite{seol2005fmdb,garimella2002mesh,remacle2003algorithm}.
 
 As we began to discuss in Section \ref{sec:def_adapt},
 there are multiple factors in the decision of which entities to store:
