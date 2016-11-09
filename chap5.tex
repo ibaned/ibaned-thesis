@@ -129,8 +129,8 @@ a wider range of applications.
 PHASTA \cite{JanWhi99,WhiJanDey2003} is an effective implicit finite element
 based CFD code for bridging a broad range of time and length scales in various
 flows including turbulent ones (based on URANSS, DES, LES, DNS). It has been
-applied with anisotropic adaptive algorithms \cite{Sahn06,Sahn07,Sahn08,
-ovcharenko2013parallel}
+applied with anisotropic adaptive algorithms
+\cite{ovcharenko2013parallel,Sahn06,Sahn07,Sahn08}
 along with advanced numerical models of flow physics
 \cite{HugLES99,TeJaSUPG,TeJaDFWR2}. Modeling large-scale aerodynamic problems
 and active flow control's effects on large-scale flow changes (for instance,
@@ -234,7 +234,8 @@ with fields}};
 \end{tikzpicture}
 \end{scriptsize}
 \end{center}
-\caption{Workflow of parallel PHASTA adaptive loop}
+\caption{Workflow of parallel PHASTA adaptive loop
+\cite{ibanez2016pumi}}
 \label{fig:phastaWorkflow}  \end{figure}
 
 \begin{figure}
@@ -251,7 +252,7 @@ A workflow supporting parallel adaptive PHASTA flow simulations is illustrated i
 Figure \ref{fig:phastaWorkflow}.
 Figure \ref{fig:phasta-mesh} shows the initial
 and adapted mesh near the leading edge of TrapWing NASA test
-case \cite{chitale-aiaa14}.
+case \cite{chitale-aiaa14,ibanez2016pumi}.
 The Argonne Leadership Computing Facility's IBM
 BlueGene Q Mira system provides 4 hardware threads per core.
 Running this workflow in Mira system with 4 MPI processes per core,
@@ -330,7 +331,7 @@ Krylov vectors in this problem.
   \includegraphics[width=.5\textwidth]{albany2.png}
 \end{tabular}
 \caption{Initial (left) and adapted mesh showing the Von Mises stress field that
-guides adaptivity (right)} \label{fig:albany-mesh}
+guides adaptivity (right) \cite{ibanez2016pumi}} \label{fig:albany-mesh}
 \end{figure}
 
 \begin{figure}
@@ -436,6 +437,6 @@ with fields}};
 \end{tikzpicture}
 \end{scriptsize}
 \end{center}
-\caption{Workflow of parallel Albany adaptive loop}
+\caption{Workflow of parallel Albany adaptive loop \cite{ibanez2016pumi}}
 \label{fig:albanyWorkflow}
 \end{figure}
