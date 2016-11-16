@@ -40,7 +40,8 @@ scale_7k.png \
 scale_112k.png
 
 BIBS = \
-scorec-refs/scorec-refs.bib
+scorec-refs/scorec-refs.bib \
+scorec-refs/IEEEtran_rpi.bst
 
 SRCS = \
 $(MAIN) \
