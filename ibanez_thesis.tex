@@ -55,7 +55,10 @@
   numbers=left,
   xleftmargin=2em
 }
-\usepackage{hyperref}
+%Dan: inferior PDF viewers (Adobe Acrobat lol) create red/green blocking around links
+%when using hyperref, but you can't just tell OGE their PDF viewers are terrible.
+%When submitting your thesis, remove hyperref
+%\usepackage{hyperref}
 %Dan: this macro undoes the italics that are the default
 %for conditions in algorithm2e
 \newcommand{\algt}{\mdseries \rmfamily \upshape}
