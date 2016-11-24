@@ -647,7 +647,8 @@ that can be thought of as two-dimensional
 (see Figure \ref{fig:osh_up_down}(middle)).
 Upward adjacencies (and all complex graphs in Omega\_h, for that matter)
 are stored in the widely known compressed row format,
-used for example in the METIS graph partitioner interface \cite{METIS}.
+used for example in the METIS graph partitioner interface
+\cite{karypis1998fast}.
 This consists of two arrays, one containing the destinations
 of all graph edges, sorted by the source of the edge,
 and the other containing offsets indicating where in the first
@@ -943,7 +944,7 @@ Other (geometric) methods take advantage of the vertex coordinates,
 for example by arranging vertices along the Hilbert Space-Filling Curve
 (HSFC) \cite{devine2005new}.
 There are also libraries implementing hierarchic methods of
-graph reordering, such as METIS \cite{METIS}.
+graph reordering, such as METIS \cite{karypis1998fast}.
 The most effective methods at minimizing the linear arrangement metric
 are those which begin with one of the above methods and then apply
 a form of simulated annealing in which local modifications are made
